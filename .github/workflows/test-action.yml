@@ -1,0 +1,22 @@
+name: Test Augment Agent Action
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Skip if secret not set
+        if: ${{ !secrets.AUGMENT_SESSION_AUTH }}
+        run: echo "Skipping: AUGMENT_SESSION_AUTH is not configured in repo secrets."
+
+      - name: Test Augment Agent (public action)
+        if: ${{ secrets.AUGMENT_SESSION_AUTH }}
+        uses: augmentcode/augment-agent@v1
+        with:
+          augment_session_auth: ${{ secrets.AUGMENT_SESSION_AUTH }}
+          instruction: "Say hello"

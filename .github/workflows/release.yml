@@ -1,0 +1,131 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2.0.2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Type check
+        run: bun run typecheck
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG_NAME#v}
+          MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "major_version=v$MAJOR_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Verify package.json version matches tag
+        run: |
+          PACKAGE_VERSION=$(jq -r '.version' package.json)
+          if [ "$PACKAGE_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "❌ Version mismatch: package.json has $PACKAGE_VERSION but tag is ${{ steps.version.outputs.version }}"
+            exit 1
+          fi
+          echo "✅ Version verified: $PACKAGE_VERSION"
+
+      - name: Update major version tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f "${{ steps.version.outputs.major_version }}" -m "Release ${{ steps.version.outputs.major_version }} (latest)"
+          git push origin "${{ steps.version.outputs.major_version }}" --force
+
+      - name: Create GitHub Release
+        run: |
+          # Create release body content
+          RELEASE_BODY=$(cat << 'EOF'
+          ## Release ${{ steps.version.outputs.tag_name }}
+
+          ### Quick Usage
+          ```yaml
+          - uses: augmentcode/augment-agent@${{ steps.version.outputs.tag_name }}
+            with:
+              augment_api_token: ${{ secrets.AUGMENT_API_TOKEN }}
+              augment_api_url: ${{ vars.AUGMENT_API_URL }}
+              github_token: ${{ secrets.GITHUB_TOKEN }}
+              instruction_file: /tmp/instruction.txt
+          ```
+
+          ### Major Version Tag
+          You can also use the major version tag for automatic updates:
+          ```yaml
+          - uses: augmentcode/augment-agent@${{ steps.version.outputs.major_version }}
+          ```
+
+          ### Documentation
+          - 📖 [Full Documentation](https://github.com/augmentcode/augment-agent#readme)
+          - 🚀 [Quick Start Guide](https://github.com/augmentcode/augment-agent#quick-start)
+          - ⚙️ [Configuration Options](https://github.com/augmentcode/augment-agent#inputs)
+          - 💡 [Example Workflows](https://github.com/augmentcode/augment-agent#example-workflows)
+          EOF
+          )
+
+          # Create the release using GitHub REST API
+          echo "📡 Creating GitHub release..."
+          RESPONSE=$(curl -s -w "%{http_code}" -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/${{ github.repository }}/releases \
+            -d "$(jq -n \
+              --arg tag_name "${{ steps.version.outputs.tag_name }}" \
+              --arg name "Release ${{ steps.version.outputs.tag_name }}" \
+              --arg body "${RELEASE_BODY}" \
+              '{
+                "tag_name": $tag_name,
+                "target_commitish": "main",
+                "name": $name,
+                "body": $body,
+                "draft": false,
+                "prerelease": false
+              }')")
+
+          # Extract HTTP status code (last 3 characters)
+          HTTP_CODE="${RESPONSE: -3}"
+          RESPONSE_BODY="${RESPONSE%???}"
+
+          # Check if the request was successful
+          if [ "$HTTP_CODE" -eq 201 ]; then
+            echo "✅ Successfully created release ${{ steps.version.outputs.tag_name }}"
+
+            # Extract and display the release URL if available
+            RELEASE_URL=$(echo "$RESPONSE_BODY" | jq -r '.html_url // empty')
+            if [ -n "$RELEASE_URL" ]; then
+              echo "🔗 Release URL: $RELEASE_URL"
+            fi
+
+            echo "🎉 Release process completed successfully!"
+          else
+            echo "❌ Failed to create release. HTTP status: $HTTP_CODE"
+            echo "Response: $RESPONSE_BODY"
+            exit 1
+          fi
+
