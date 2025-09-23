@@ -70,7 +70,7 @@ Add the workflows under `.github/workflows/` in your repository.
 ## Feedback and bug reports
 
 - In Auggie or the IDE agent, use `/feedback` to send feedback or report bugs directly with helpful context.
-- Alternatively, open a GitHub issue using our templates (Bug report / Feature request) from the Issues tab.
+- Alternatively, open a GitHub issue using our templates (Bug report / Feature request) in the [Github Issues](https://github.com/augmentcode/auggie/issues) tab.
 
 ## Community
 
