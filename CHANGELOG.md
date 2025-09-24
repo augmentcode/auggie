@@ -1,5 +1,14 @@
 # Changelog
 
+### 0.5.6
+- New `auggie rules list` command: Display workspace rules and guidelines directly from the CLI
+- Enhanced `/rules` command: View workspace rules with improved colored formatting in the TUI
+- Smarter TUI mode switching: Exit modes now return to the previous mode instead of always going back to Normal mode, enabling better workflows with FilePicker and Ask modes
+- Session continuation tip: See a helpful reminder about using `auggie session continue` when exiting the TUI
+- Better error messages: Reduced duplicate warnings and improved error tracking for cleaner output
+- Fixed Ctrl+C handling: Properly interrupt the agent when Ctrl+C is pressed while the agent is running
+- Fixed Option+Delete: Keyboard shortcut now correctly deletes words backward instead of forward
+
 ### 0.5.5
 
 - Ask Mode: a streamlined prompt-first interaction mode with improved transcript rendering.
