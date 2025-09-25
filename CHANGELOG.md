@@ -8,7 +8,8 @@
 - Better error messages: Reduced duplicate warnings and improved error tracking for cleaner output
 - Fixed Ctrl+C handling: Properly interrupt the agent when Ctrl+C is pressed while the agent is running
 - Fixed Option+Delete: Keyboard shortcut now correctly deletes words backward instead of forward
-
+- Fixed issue where rules were not being attached to the agent request
+- 
 ### 0.5.5
 
 - Ask Mode: a streamlined prompt-first interaction mode with improved transcript rendering.
