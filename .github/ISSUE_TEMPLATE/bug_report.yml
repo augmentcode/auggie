@@ -36,9 +36,7 @@ body:
       label: "Steps to reproduce"
       description: "List the steps to reproduce the issue. Include commands, inputs, and observed output."
       value: |-
-        1.
-        2.
-        3.
+          -
 
   - type: "input"
     id: "auggie-version"
