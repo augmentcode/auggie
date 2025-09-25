@@ -1,0 +1,23 @@
+# Basic PR Description Generation
+# Automatically generates AI-powered descriptions for new pull requests
+
+name: Auto-describe PRs
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  describe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Generate PR Description
+        uses: augmentcode/describe-pr@v0
+        with:
+          augment_session_auth: ${{ secrets.AUGMENT_SESSION_AUTH }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pull_number: ${{ github.event.pull_request.number }}
+          repo_name: ${{ github.repository }}
+
