@@ -1,0 +1,49 @@
+# On-Demand PR Description
+# Generates descriptions when the "augment_describe" label is added to a PR
+
+name: On-Demand PR Description
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  describe:
+    # Only run when the specific label is added
+    if: github.event.label.name == 'augment_describe'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Generate PR Description
+        uses: augmentcode/describe-pr@v0
+        with:
+          augment_session_auth: ${{ secrets.AUGMENT_SESSION_AUTH }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pull_number: ${{ github.event.pull_request.number }}
+          repo_name: ${{ github.repository }}
+
+      - name: Remove trigger label
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            // Remove the trigger label after processing
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              name: 'augment_describe'
+            });
+
+      - name: Add completion label
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            // Add a label to indicate the description was generated
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['auto-described']
+            });
+
