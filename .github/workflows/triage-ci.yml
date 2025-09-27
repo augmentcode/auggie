@@ -3,7 +3,7 @@ name: Auggie CI Triage
 on:
   workflow_run:
     workflows:
-      - CI # Update with the workflow name(s) you want Auggie to triage
+      - on-demand-review # Update with the workflow name(s) you want Auggie to triage
     types:
       - completed
 
@@ -31,7 +31,7 @@ jobs:
       - name: Set up Node.js 22
         uses: actions/setup-node@60edb5dd5019e0a72c57c00ac6c032d28fc096f4 # v4.1.0
         with:
-          node-version: '22'
+          node-version: "22"
 
       - name: Download failing workflow logs
         id: download-logs
@@ -60,13 +60,13 @@ jobs:
             cat "$logfile" >> ci-failure.log
             echo "" >> ci-failure.log
           done
-          
+
           # Ensure we have some content to analyze
           if [ ! -s ci-failure.log ]; then
             echo "No log content found to analyze" > ci-failure.log
             exit 1
           fi
-          
+
           # Truncate to last 4000 lines to keep Auggie input manageable
           tail -n 4000 ci-failure.log > ci-failure-tail.log
           mv ci-failure-tail.log ci-failure.log
