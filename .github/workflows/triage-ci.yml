@@ -18,7 +18,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Abort when Auggie session auth is missing
-        if: ${{ !secrets.AUGMENT_SESSION_AUTH }}
+        if: ${{ secrets.AUGMENT_SESSION_AUTH == '' }}
         run: |
           echo "Skipping triage because AUGMENT_SESSION_AUTH is not configured." >> "$GITHUB_STEP_SUMMARY"
           exit 0
