@@ -1,0 +1,113 @@
+name: Auggie CI Triage
+
+on:
+  workflow_run:
+    workflows:
+      - CI # Update with the workflow name(s) you want Auggie to triage
+    types:
+      - completed
+
+jobs:
+  triage:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Abort when Auggie session auth is missing
+        if: ${{ !secrets.AUGMENT_SESSION_AUTH }}
+        run: |
+          echo "Skipping triage because AUGMENT_SESSION_AUTH is not configured." >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@60edb5dd5019e0a72c57c00ac6c032d28fc096f4 # v4.1.0
+        with:
+          node-version: '22'
+
+      - name: Download failing workflow logs
+        id: download-logs
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const runId = context.payload.workflow_run.id;
+            const result = await github.rest.actions.downloadWorkflowRunLogs({
+              owner,
+              repo,
+              run_id: runId
+            });
+            fs.writeFileSync('ci-logs.zip', Buffer.from(result.data));
+            core.setOutput('zip-path', 'ci-logs.zip');
+
+      - name: Extract log bundle
+        run: unzip -q "${{ steps.download-logs.outputs.zip-path }}" -d ci-logs
+
+      - name: Consolidate failing job logs
+        run: |
+          # Find all log files (txt, log formats) and concatenate with job context
+          find ci-logs -name '*.txt' -o -name '*.log' | while read -r logfile; do
+            echo "=== $(basename "$logfile") ===" >> ci-failure.log
+            cat "$logfile" >> ci-failure.log
+            echo "" >> ci-failure.log
+          done
+          
+          # Ensure we have some content to analyze
+          if [ ! -s ci-failure.log ]; then
+            echo "No log content found to analyze" > ci-failure.log
+            exit 1
+          fi
+          
+          # Truncate to last 4000 lines to keep Auggie input manageable
+          tail -n 4000 ci-failure.log > ci-failure-tail.log
+          mv ci-failure-tail.log ci-failure.log
+
+      - name: Install Auggie CLI
+        run: npm install -g @augmentcode/auggie
+
+      - name: Run Auggie CI triage
+        env:
+          AUGMENT_SESSION_AUTH: ${{ secrets.AUGMENT_SESSION_AUTH }}
+        run: |
+          # Run Auggie triage and handle potential failures
+          if ! auggie --print "/triage-ci ci-failure.log" --quiet > triage-output.md; then
+            echo "⚠️ Auggie triage failed. Raw log analysis:" > triage-output.md
+            echo "\`\`\`" >> triage-output.md
+            head -n 100 ci-failure.log >> triage-output.md
+            echo "\`\`\`" >> triage-output.md
+          fi
+
+      - name: Attach triage summary to workflow run
+        run: cat triage-output.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload triage artifact
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: auggie-triage-report
+          path: triage-output.md
+
+      - name: Comment on related pull requests
+        if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests }}
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('triage-output.md', 'utf8');
+            const { owner, repo } = context.repo;
+            for (const pr of context.payload.workflow_run.pull_requests) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pr.number,
+                body: `🤖 Auggie CI triage report (workflow run ${context.payload.workflow_run.id})\n\n${body}`
+              });
+            }
