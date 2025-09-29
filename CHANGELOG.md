@@ -1,5 +1,17 @@
 # Changelog
 
+### 0.5.7
+- **MCP Support**: Added `mcp add-json` command for importing MCP servers via JSON configuration
+- **MCP Reliability**: Improved MCP server validation to continue loading valid servers even when some configurations are invalid
+- **Version Management**: Enhanced upgrade system with semantic versioning support and better handling of prerelease versions
+- **TUI Navigation**: Improved input mode switching with history-based navigation for more natural mode transitions
+- **File Picker**: Fixed double @ symbol display issue in file picker mode
+- **Select Menus**: Fixed arrow key handling in TUI select menus for smoother navigation
+- **Non-Interactive Mode**: Agent now runs without stopping for user input when in non-interactive mode
+- **Tool Execution**: Fixed regex command execution bug that was causing incorrect string formatting
+- **Tool Permissions**: Improved consistency in tool permission settings format
+- **Feedback**: Added GitHub repository link to the feedback command for easier issue reporting
+
 ### 0.5.6
 - New `auggie rules list` command: Display workspace rules and guidelines directly from the CLI
 - Enhanced `/rules` command: View workspace rules with improved colored formatting in the TUI
