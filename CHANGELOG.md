@@ -1,5 +1,15 @@
 # Changelog
 
+### 0.5.8
+- Added `/copy` command to copy request ID or response text to clipboard
+- Added OAuth authentication support for MCP (Model Context Protocol) servers
+- Added interactive session picker when using `--resume` without specifying a session ID
+- Improved help command readability with better formatting and organization
+- Added fuzzy search for slash commands, making them easier to discover
+- Improved file picker performance with better fuzzy search algorithm for large codebases
+- Enhanced tool permission system reliability with improved regex matching
+- Fixed extra blank lines appearing at the beginning of agent responses
+
 ### 0.5.7
 - **MCP Support**: Added `mcp add-json` command for importing MCP servers via JSON configuration
 - **MCP Reliability**: Improved MCP server validation to continue loading valid servers even when some configurations are invalid
