@@ -1,5 +1,13 @@
 # Changelog
 
+### 0.5.9
+- **Image support**: Attach images to prompts using `--image` flag or the new `/image` command with drag-and-drop and paste support
+- **Enhanced clipboard**: Fixed clipboard copying in SSH sessions and terminal multiplexers (tmux/screen) using OSC 52 protocol
+- **Copy command**: Added `/copy` command to easily copy request IDs and agent responses
+- **Session improvements**: Session list now shows last modified time and request IDs for better debugging
+- **OAuth improvements**: Display authentication URL when browser fails to open (useful for SSH connections)
+- **Simplified commands**: Consolidated `/new` and `/clear` commands for starting fresh conversations
+
 ### 0.5.8
 - Added `/copy` command to copy request ID or response text to clipboard
 - Added OAuth authentication support for MCP (Model Context Protocol) servers
