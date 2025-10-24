@@ -1,5 +1,16 @@
 # Changelog
 
+### 0.5.10
+- **Commands**: Added `/request-id` command to display request IDs for debugging
+- **UI**: Improved session picker with dynamic column resizing
+- **UI**: Added modified time to session list display
+- **UI**: Fixed credit usage display to round down for accuracy
+- **Settings**: Improved settings validation to handle invalid fields gracefully
+- **Errors**: Added request IDs to API error messages for better debugging
+- **Stability**: Fixed crash when using @ with large codebases (150,000+ files)
+- **MCP**: Fixed MCP server configuration validation to prevent crashes
+- **Performance**: Fixed file picker performance issue that caused UI lag
+
 ### 0.5.9
 - **Image support**: Attach images to prompts using `--image` flag or the new `/image` command with drag-and-drop and paste support
 - **Enhanced clipboard**: Fixed clipboard copying in SSH sessions and terminal multiplexers (tmux/screen) using OSC 52 protocol
