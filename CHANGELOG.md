@@ -1,5 +1,21 @@
 # Changelog
 
+### 0.6.0
+
+#### New Features
+- **Parallel Tool Calls**: Added support for models calling multiple tools simultaneously
+- **Agent Client Protocol (ACP)**: Added experimental support for external editor integration via `--acp` flag, including file mentions and image support
+- **User Rules**: Added support for user-specific rules in `~/.augment/rules` directory for custom agent behavior
+- **Tool Management**: Added `--disable-tool` flag and settings configuration to disable specific tools from the agent's toolset
+
+#### Improvements
+- **Vim Mode**: Added 'e' keybind for moving to the end of a word, matching standard vim behavior
+- **Session Picker**: Improved UI with dynamic column resizing for better readability
+- **Settings Validation**: Enhanced error handling to gracefully handle invalid configuration fields
+
+#### Commands & Utilities
+- **Request ID**: Added `/request-id` command to display request IDs for debugging and support
+
 ### 0.5.10
 - **Commands**: Added `/request-id` command to display request IDs for debugging
 - **UI**: Improved session picker with dynamic column resizing
