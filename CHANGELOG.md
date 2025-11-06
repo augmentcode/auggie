@@ -1,5 +1,19 @@
 # Changelog
 
+### 0.7.0
+#### New Features
+- **Agent Client Protocol (ACP) Support**: Added comprehensive support for the Agent Client Protocol with terminal authentication, model selection, and indexing control via new `--acp` and `--allow-indexing` flags
+- **Thinking Summaries**: Display GPT-5 model thinking process summaries with collapsible sections in the TUI
+- **MCP Server Support**: Extended support for HTTP and SSE-based Model Context Protocol servers in addition to stdio servers
+
+#### Improvements
+- **CLI is now GA**: Removed beta label from the CLI banner
+- **Model Selection**: Simplified model selection with short names (e.g., 'sonnet4.5' instead of full model IDs)
+- **File Mentions**: Fixed file mentions to not include @ symbol in prompts
+
+#### Bug Fixes
+- **Content Handling**: Improved stability when handling undefined content to prevent crashes
+
 ### 0.6.0
 
 #### New Features
