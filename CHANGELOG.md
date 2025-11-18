@@ -1,5 +1,20 @@
 # Changelog
 
+### 0.8.0
+
+#### New Features
+- **Shell Configuration**: Added automatic shell detection and startup script support with `--shell` and `--startup-script` options
+- **Windows Support**: Fixed PowerShell execution on Windows for better cross-platform compatibility
+- **Terminal Authentication**: Added terminal authentication support for ACP mode
+- **ACP Mode**: Made `--acp` flag publicly available for Agent Communication Protocol support
+- **Queue Management**: Enabled message queue when agent is busy
+
+#### Improvements
+- **Rules Management**: Improved rules filtering and status display for better visibility of manual and dynamic rules
+
+#### Bug Fixes
+- **Chat Summarization**: Fixed chat history summarization
+
 ### 0.7.0
 #### New Features
 - **Agent Client Protocol (ACP) Support**: Added comprehensive support for the Agent Client Protocol with terminal authentication, model selection, and indexing control via new `--acp` and `--allow-indexing` flags
