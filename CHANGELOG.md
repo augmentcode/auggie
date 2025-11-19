@@ -1,5 +1,18 @@
 # Changelog
 
+### 0.9.0
+
+#### New Features
+- **Session Sharing**: New `/share` command in TUI and `augment session share` CLI command to generate shareable links for chat sessions
+- **Auto-Update Control**: New `autoUpdate` setting in settings.json to control automatic updates
+
+#### Improvements
+- **ACP Mode**: Now fully released (no longer experimental) with non-interactive chat mode and thinking summaries for better visibility
+- **TUI Performance**: Improved rendering performance with Ink 6.5.0 incremental rendering
+- **Session Resumption**: Chat history now displays when resuming sessions with `--continue` or `--resume` flags
+- **Agent Capabilities**: Enhanced apply_patch tool with more robust patch parsing for better file editing reliability
+- **Error Messages**: Improved error messages when file editing operations fail
+
 ### 0.8.0
 
 #### New Features
