@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.9.1
+- Fixed issue with extraneous git processes spawning after indexing
+
 ### 0.9.0
 
 #### New Features
