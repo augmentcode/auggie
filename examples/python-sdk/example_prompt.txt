@@ -1,0 +1,1 @@
+Analyze all Python files in the src/ directory, identify any security vulnerabilities or code quality issues, create a detailed report in markdown format, and if there are any critical security issues found, generate fix suggestions for each one with specific code changes needed.
