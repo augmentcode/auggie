@@ -4,7 +4,7 @@
 
 #### TUI Features
 - **Bash Mode**: Added Bash mode (!) to run shell commands directly in chat and see output in transcript
-- **Session Switching**: Added `/resume` command to switch between sessions without restarting CLI
+- **Session Switching**: Added `/sessions` command to switch between sessions without restarting CLI
 - **Shell Configuration**: Added `/config` command to configure default shell and startup script
 - **Keyboard Shortcuts**: Added Ctrl+/ for undo and Ctrl+Y for redo in normal edit mode
 - **Verbose Thinking**: Added verbose output mode for thinking summaries to show full agent reasoning
