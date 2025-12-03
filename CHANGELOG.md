@@ -1,5 +1,37 @@
 # Changelog
 
+### 0.10.0
+
+#### TUI Features
+- **Bash Mode**: Added Bash mode (!) to run shell commands directly in chat and see output in transcript
+- **Session Switching**: Added `/sessions` command to switch between sessions without restarting CLI
+- **Shell Configuration**: Added `/config` command to configure default shell and startup script
+- **Keyboard Shortcuts**: Added Ctrl+/ for undo and Ctrl+Y for redo in normal edit mode
+- **Verbose Thinking**: Added verbose output mode for thinking summaries to show full agent reasoning
+- **Terminal Focus Tracking**: Added focus detection to hide cursor when terminal window loses focus
+
+#### Session Management
+- Show session ID when closing sessions with command to resume by ID
+- Support resuming sessions by ID prefix (unambiguous matches)
+- Added `-f` flag to filter session list to current workspace only
+- Reversed session list order to show newest sessions first
+
+#### Hooks System
+- Integrated hooks system into CLI/TUI for tool execution and session lifecycle events
+
+#### UI Improvements
+- Fixed text wrapping in tool result summaries
+- Truncate web fetch results to 150 characters for better readability
+- Increased max length for thinking summary titles to reduce truncation
+- Truncate large file views to prevent excessive memory usage
+
+#### Bug Fixes
+- Fixed escape key behavior in ask mode (now properly exits to normal mode)
+- Fixed race condition in terminal focus tracking that caused escape sequences to leak
+- Fixed ACP login flow path identification
+- Removed duplicate error messages in output
+- Suppressed verbose npm output during auto-upgrade failures for cleaner error messages
+
 ### 0.9.1
 - Fixed issue with extraneous git processes spawning after indexing
 
