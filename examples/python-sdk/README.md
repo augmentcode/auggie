@@ -1,6 +1,23 @@
-# Augment SDK Examples
+# Augment Python SDK Examples
 
 This directory contains examples demonstrating how to use the Augment Python SDK.
+
+## Quick Links
+
+- **[User Examples](user_examples/)** - Numbered tutorial examples (01-09) with a comprehensive [user guide](user_examples/user_guide.md)
+- **[Documentation](docs/)** - Detailed guides on specific features
+- **Basic Examples** - See below for standalone example scripts
+
+## Installation
+
+```bash
+pip install auggie-sdk
+```
+
+Make sure you have the Auggie CLI installed:
+```bash
+auggie --version
+```
 
 ## Basic Examples
 
@@ -16,7 +33,7 @@ Demonstrates fundamental SDK features:
 
 **Run it:**
 ```bash
-python examples/basic_usage.py
+python basic_usage.py
 ```
 
 ### `session_usage.py`
@@ -28,16 +45,15 @@ Shows how to use sessions for conversation continuity:
 
 **Run it:**
 ```bash
-python examples/session_usage.py
+python session_usage.py
 ```
 
-### `list_prs.py` / `list_prs_2.py`
-Examples of working with GitHub PRs using the SDK.
+### `list_prs.py`
+Example of working with GitHub PRs using the SDK.
 
-**Run them:**
+**Run it:**
 ```bash
-python examples/list_prs.py
-python examples/list_prs_2.py
+python list_prs.py
 ```
 
 ## ACP Client Examples
@@ -51,33 +67,13 @@ Demonstrates the AuggieACPClient for persistent sessions with the Augment CLI:
 
 **Run it:**
 ```bash
-python examples/acp_example_usage.py
+python acp_example_usage.py
 ```
 
-### Claude Code Client Tests
+### Claude Code Client
 
-For ClaudeCodeACPClient examples and testing, see the **real E2E tests**:
-
-**Location:** `tests/test_claude_code_client_e2e.py`
-
-**Prerequisites:**
-```bash
-npm install -g @zed-industries/claude-code-acp
-export ANTHROPIC_API_KEY=...
-```
-
-**Run tests:**
-```bash
-# Quick tests (~30 seconds)
-pytest tests/test_claude_code_client_e2e.py
-
-# All tests including slow ones (~5-10 minutes)
-pytest tests/test_claude_code_client_e2e.py -m ""
-```
-
-**Documentation:**
-- [Claude Code Client Guide](../docs/CLAUDE_CODE_CLIENT.md)
-- [Testing Guide](../tests/README_CLAUDE_CODE_TESTS.md)
+For ClaudeCodeACPClient documentation, see:
+- [Claude Code Client Guide](docs/CLAUDE_CODE_CLIENT.md)
 
 ## Prompt-to-SDK Conversion
 
@@ -104,22 +100,7 @@ Finally:
 - Create fix suggestions for top 3
 ```
 
-**Convert it to SDK code:**
-```bash
-# In TUI mode
-/prompt-to-sdk examples/example_complex_prompt.txt
-
-# From command line
-auggie command prompt-to-sdk examples/example_complex_prompt.txt
-```
-
-### `demo_prompt_to_sdk.sh`
-Interactive demo script that shows the prompt-to-sdk conversion process.
-
-**Run it:**
-```bash
-./examples/demo_prompt_to_sdk.sh
-```
+See [README_PROMPT_TO_CODE.md](README_PROMPT_TO_CODE.md) for more details on prompt-to-code conversion.
 
 ## Workflow Patterns
 
@@ -252,28 +233,35 @@ All examples can be run directly:
 
 ```bash
 # Run a specific example
-python examples/basic_usage.py
+python basic_usage.py
 
 # Run with custom workspace
-python examples/basic_usage.py --workspace /path/to/workspace
+python basic_usage.py --workspace /path/to/workspace
 
 # Run with different model
-python examples/basic_usage.py --model gpt-4o
+python basic_usage.py --model gpt-4o
 ```
 
 ## Documentation
 
-- **SDK README**: `../README.md`
-- **Prompt-to-SDK Guide**: `../PROMPT_TO_SDK_GUIDE.md`
-- **Slash Command Summary**: `../SLASH_COMMAND_SUMMARY.md`
+For more comprehensive documentation, see the [docs](docs/) directory:
+- [Agent Event Listener](docs/AGENT_EVENT_LISTENER.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Automatic Type Inference](docs/AUTOMATIC_TYPE_INFERENCE.md)
+- [Claude Code Client](docs/CLAUDE_CODE_CLIENT.md)
+- [Function Calling](docs/FUNCTION_CALLING.md)
+- [Prompt to Code](docs/PROMPT_TO_CODE.md)
+- [Session Continuity](docs/SESSION_CONTINUITY.md)
+
+Also check out the [user_examples](user_examples/) directory for more examples and the [user guide](user_examples/user_guide.md).
 
 ## Getting Help
 
 If you encounter issues:
 
-1. Check that the SDK is installed: `pip install -e .`
+1. Check that the SDK is installed: `pip install auggie-sdk`
 2. Verify auggie CLI is available: `auggie --version`
 3. Check the workspace path is correct
 4. Review error messages for specific issues
 
-For more help, see the main SDK documentation.
+For more help, see the documentation in the [docs](docs/) directory.
