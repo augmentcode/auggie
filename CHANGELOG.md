@@ -3,7 +3,6 @@
 ### 0.10.0
 
 #### TUI Features
-- **Bash Mode**: Added Bash mode (!) to run shell commands directly in chat and see output in transcript
 - **Session Switching**: Added `/sessions` command to switch between sessions without restarting CLI
 - **Shell Configuration**: Added `/config` command to configure default shell and startup script
 - **Keyboard Shortcuts**: Added Ctrl+/ for undo and Ctrl+Y for redo in normal edit mode
@@ -15,9 +14,6 @@
 - Support resuming sessions by ID prefix (unambiguous matches)
 - Added `-f` flag to filter session list to current workspace only
 - Reversed session list order to show newest sessions first
-
-#### Hooks System
-- Integrated hooks system into CLI/TUI for tool execution and session lifecycle events
 
 #### UI Improvements
 - Fixed text wrapping in tool result summaries
