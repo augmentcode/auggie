@@ -11,6 +11,33 @@
  */
 
 import { FileSystemContext } from "@augmentcode/auggie-sdk";
+import { readFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
+/**
+ * Read API credentials from ~/.augment/session.json
+ * This is a workaround until FileSystemContext supports session file natively
+ */
+async function readSessionCredentials(): Promise<{
+  apiKey?: string;
+  apiUrl?: string;
+} | null> {
+  try {
+    const sessionPath = join(homedir(), ".augment", "session.json");
+    const content = await readFile(sessionPath, "utf-8");
+    const data = JSON.parse(content);
+    if (data.accessToken && data.tenantURL) {
+      return {
+        apiKey: data.accessToken,
+        apiUrl: data.tenantURL,
+      };
+    }
+  } catch {
+    // Session file doesn't exist or can't be read
+  }
+  return null;
+}
 
 async function main() {
   console.log("=== FileSystem Context Sample ===\n");
@@ -18,6 +45,23 @@ async function main() {
   // Use the current SDK directory as the workspace
   const workspaceDir = process.cwd();
   console.log(`Workspace directory: ${workspaceDir}`);
+
+  // Read credentials from session file if not in environment
+  // This allows the example to work after running `auggie login`
+  if (!process.env.AUGMENT_API_TOKEN) {
+    const credentials = await readSessionCredentials();
+    if (credentials) {
+      process.env.AUGMENT_API_TOKEN = credentials.apiKey;
+      process.env.AUGMENT_API_URL = credentials.apiUrl;
+      console.log("✓ Using credentials from ~/.augment/session.json");
+    } else {
+      console.warn(
+        "⚠️  No credentials found. Run 'auggie login' or set AUGMENT_API_TOKEN environment variable."
+      );
+    }
+  } else {
+    console.log("✓ Using credentials from environment variables");
+  }
 
   // Create a FileSystem Context instance
   console.log("\nCreating FileSystem Context (spawning auggie --mcp)...");

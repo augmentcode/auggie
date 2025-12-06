@@ -15,6 +15,80 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DirectContext } from "@augmentcode/auggie-sdk";
 
+/**
+ * Retry a search operation with exponential backoff
+ * This helps handle intermittent API failures
+ */
+async function searchWithRetry(
+  context: DirectContext,
+  query: string,
+  maxRetries = 3
+): Promise<string> {
+  const RETRY_MESSAGE = "Retrieval failed. Please try again.";
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const result = await context.search(query);
+
+    // Check if the result indicates a failure
+    if (result.includes(RETRY_MESSAGE)) {
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        console.log(`  ⚠️  Search failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      } else {
+        console.log(`  ❌ Search failed after ${maxRetries} attempts`);
+        return result; // Return the failure message
+      }
+    }
+
+    // Success
+    if (attempt > 1) {
+      console.log(`  ✅ Search succeeded on attempt ${attempt}`);
+    }
+    return result;
+  }
+
+  return RETRY_MESSAGE;
+}
+
+/**
+ * Retry a searchAndAsk operation with exponential backoff
+ */
+async function searchAndAskWithRetry(
+  context: DirectContext,
+  searchQuery: string,
+  prompt: string,
+  maxRetries = 3
+): Promise<string> {
+  const RETRY_MESSAGE = "Retrieval failed. Please try again.";
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const result = await context.searchAndAsk(searchQuery, prompt);
+
+    // Check if the result indicates a search failure
+    if (result.includes(RETRY_MESSAGE)) {
+      if (attempt < maxRetries) {
+        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+        console.log(`  ⚠️  Search failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      } else {
+        console.log(`  ❌ Search failed after ${maxRetries} attempts`);
+        return result; // Return the failure message
+      }
+    }
+
+    // Success
+    if (attempt > 1) {
+      console.log(`  ✅ Search succeeded on attempt ${attempt}`);
+    }
+    return result;
+  }
+
+  return RETRY_MESSAGE;
+}
+
 async function main() {
   console.log("=== Direct Context Sample ===\n");
 
@@ -81,12 +155,12 @@ console.log("Result:", formatNumber(result));`,
 
   // Search the codebase - returns formatted string ready for LLM use or display
   console.log("\n--- Search 1: Find calculator functions ---");
-  const results1 = await context.search("calculator functions for arithmetic");
+  const results1 = await searchWithRetry(context, "calculator functions for arithmetic");
   console.log("Search results:");
   console.log(results1);
 
   console.log("\n--- Search 2: Find utility functions ---");
-  const results2 = await context.search("utility functions");
+  const results2 = await searchWithRetry(context, "utility functions");
   console.log("Search results:");
   console.log(results2);
 
@@ -95,7 +169,8 @@ console.log("Result:", formatNumber(result));`,
   const question = "How does the Calculator class handle division by zero?";
   console.log(`Question: ${question}`);
 
-  const answer = await context.searchAndAsk(
+  const answer = await searchAndAskWithRetry(
+    context,
     "division by zero error handling",
     question
   );
@@ -104,7 +179,8 @@ console.log("Result:", formatNumber(result));`,
 
   // Use searchAndAsk to generate documentation
   console.log("\n--- searchAndAsk Example 2: Generate documentation ---");
-  const documentation = await context.searchAndAsk(
+  const documentation = await searchAndAskWithRetry(
+    context,
     "Calculator class methods",
     "Generate API documentation in markdown format for this code"
   );
@@ -114,7 +190,8 @@ console.log("Result:", formatNumber(result));`,
 
   // Use searchAndAsk to explain code patterns
   console.log("\n--- searchAndAsk Example 3: Explain code patterns ---");
-  const explanation = await context.searchAndAsk(
+  const explanation = await searchAndAskWithRetry(
+    context,
     "utility functions",
     "Explain what these utility functions do and when they would be useful"
   );
@@ -134,12 +211,11 @@ console.log("Result:", formatNumber(result));`,
 
   // Import state in a new context
   console.log("\n--- Testing state import ---");
-  const context2 = await DirectContext.create({ debug: false });
-  await context2.importFromFile(stateFile);
+  const context2 = await DirectContext.importFromFile(stateFile, { debug: false });
   console.log("State imported successfully");
 
   // Verify we can still search
-  const results3 = await context2.search("division by zero");
+  const results3 = await searchWithRetry(context2, "division by zero");
   console.log("\nSearch after importing state:");
   console.log(results3);
 
