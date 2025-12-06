@@ -1,0 +1,79 @@
+name: Index Repository
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'  # Index feature branches
+      - 'release/**'  # Index release branches
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to index (leave empty for current branch)'
+        required: false
+        type: string
+      force_full_reindex:
+        description: 'Force full re-index'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for comparison
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Restore index state
+        uses: actions/cache@v4
+        with:
+          path: .augment-index-state
+          # Use branch-specific cache key
+          key: augment-index-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            augment-index-${{ github.ref_name }}-
+      
+      - name: Index repository
+        id: index
+        run: npm run index
+        env:
+          AUGMENT_API_TOKEN: ${{ secrets.AUGMENT_API_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STORAGE_TYPE: file
+          # Branch-specific state path (automatically determined from GITHUB_REF)
+          # STATE_PATH is optional - defaults to .augment-index-state/{branch}/state.json
+          MAX_COMMITS: 100
+          MAX_FILES: 500
+      
+      - name: Print results
+        if: always()
+        run: |
+          echo "Success: ${{ steps.index.outputs.success }}"
+          echo "Type: ${{ steps.index.outputs.type }}"
+          echo "Files Indexed: ${{ steps.index.outputs.files_indexed }}"
+          echo "Files Deleted: ${{ steps.index.outputs.files_deleted }}"
+          echo "Checkpoint ID: ${{ steps.index.outputs.checkpoint_id }}"
+          echo "Commit SHA: ${{ steps.index.outputs.commit_sha }}"
+      
+      - name: Upload state artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: index-state
+          path: .augment-index-state/
+          retention-days: 30
+
