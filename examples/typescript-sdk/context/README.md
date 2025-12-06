@@ -46,9 +46,9 @@ Local directory search via MCP protocol.
 **Prerequisites:**
 - Auggie CLI must be installed and in your PATH
 - Authentication via `auggie login` or `AUGMENT_API_TOKEN` environment variable
-- A `.gitignore` file in the workspace directory to exclude `node_modules/` and other large directories
+- A `.gitignore` or `.augmentignore` file in the workspace directory to exclude `node_modules/` and other large directories
 
-**Important:** The FileSystem Context indexes all files in the workspace directory. To avoid timeouts when indexing large directories (like `node_modules/`), make sure you have a `.gitignore` file that excludes them. The auggie CLI respects `.gitignore` patterns during indexing.
+**Important:** The FileSystem Context indexes all files in the workspace directory. To avoid timeouts when indexing large directories (like `node_modules/`), make sure you have a `.gitignore` or `.augmentignore` file that excludes them. The auggie CLI respects both `.gitignore` and `.augmentignore` patterns during indexing.
 
 **Run it:**
 ```bash
@@ -126,17 +126,17 @@ Note: This will download dependencies on each run. For better performance, use `
 
 **Cause:** The workspace directory contains too many files (e.g., `node_modules/` with 45,000+ files).
 
-**Solution:** Create a `.gitignore` file in the workspace directory to exclude large directories:
+**Solution:** Create a `.gitignore` or `.augmentignore` file in the workspace directory to exclude large directories:
 
 ```bash
-# .gitignore
+# .gitignore or .augmentignore
 node_modules/
 dist/
 *.log
 .DS_Store
 ```
 
-The auggie CLI respects `.gitignore` patterns and will skip excluded files during indexing.
+The auggie CLI respects both `.gitignore` and `.augmentignore` patterns and will skip excluded files during indexing.
 
 ### Authentication Errors
 
