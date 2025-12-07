@@ -118,10 +118,7 @@ async function main(): Promise<void> {
   }
 
   try {
-    // Create DirectContext instance
-    const context = await DirectContext.create({ apiKey: apiToken, apiUrl });
-
-    // Load the index state
+    // Load the index state first
     const statePath = getStatePath();
     console.log(`Loading index state from: ${statePath}`);
     const state = await loadState(statePath);
@@ -132,8 +129,15 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    // Import the state into DirectContext
-    await context.import(state.contextState);
+    // Create a temporary file with the context state for import
+    const tempStateFile = `/tmp/github-indexer-state-${Date.now()}.json`;
+    await fs.writeFile(tempStateFile, JSON.stringify(state.contextState, null, 2));
+
+    // Import state using DirectContext.importFromFile
+    const context = await DirectContext.importFromFile(tempStateFile, { apiKey: apiToken, apiUrl });
+
+    // Clean up temporary file
+    await fs.unlink(tempStateFile);
 
     const fileCount = state.contextState.blobs
       ? state.contextState.blobs.length

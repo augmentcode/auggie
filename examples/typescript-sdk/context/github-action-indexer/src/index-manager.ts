@@ -5,7 +5,7 @@
 
 import { promises as fs } from "node:fs";
 import { dirname } from "node:path";
-import type { DirectContext } from "@augmentcode/auggie-sdk";
+import { DirectContext } from "@augmentcode/auggie-sdk";
 import { GitHubClient } from "./github-client.js";
 import type {
   FileChange,
@@ -122,10 +122,8 @@ export class IndexManager {
       // Load previous state
       const previousState = await this.loadState();
 
-      // If we have previous state, import it into DirectContext
-      if (previousState) {
-        await this.context.import(previousState.contextState);
-      }
+      // If we have previous state, we'll need to create a new context with the imported state
+      // For now, we'll handle this in the incremental update logic
 
       // Determine if we need full re-index
       const shouldFullReindex = await this.shouldFullReindex(previousState);
@@ -372,6 +370,21 @@ export class IndexManager {
     previousState: IndexState
   ): Promise<IndexResult> {
     console.log("Performing incremental update...");
+
+    // Create a temporary file with the previous context state
+    const tempStateFile = `/tmp/github-indexer-incremental-${Date.now()}.json`;
+    await fs.writeFile(tempStateFile, JSON.stringify(previousState.contextState, null, 2));
+
+    try {
+      // Create a new context from the previous state
+      this.context = await DirectContext.importFromFile(tempStateFile, {
+        apiKey: this.config.apiKey,
+        apiUrl: this.config.apiUrl,
+      });
+    } finally {
+      // Clean up temporary file
+      await fs.unlink(tempStateFile);
+    }
 
     // Get file changes
     const comparison = await this.github.compareCommits(
