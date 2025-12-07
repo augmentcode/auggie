@@ -1,0 +1,15 @@
+{
+  "name": "@augment-examples/context",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@augmentcode/auggie-sdk": "file:../../../../auggie-sdk-typescript",
+    "tsx": "^4.19.2"
+  },
+  "scripts": {
+    "direct-context": "tsx direct-context/index.ts",
+    "filesystem-context": "tsx filesystem-context/index.ts",
+    "file-search-server": "tsx file-search-server/index.ts",
+    "prompt-enhancer-server": "tsx prompt-enhancer-server/index.ts"
+  }
+}
