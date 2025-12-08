@@ -15,80 +15,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DirectContext } from "@augmentcode/auggie-sdk";
 
-/**
- * Retry a search operation with exponential backoff
- * This helps handle intermittent API failures
- */
-async function searchWithRetry(
-  context: DirectContext,
-  query: string,
-  maxRetries = 3
-): Promise<string> {
-  const RETRY_MESSAGE = "Retrieval failed. Please try again.";
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const result = await context.search(query);
-
-    // Check if the result indicates a failure
-    if (result.includes(RETRY_MESSAGE)) {
-      if (attempt < maxRetries) {
-        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
-        console.log(`  ⚠️  Search failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      } else {
-        console.log(`  ❌ Search failed after ${maxRetries} attempts`);
-        return result; // Return the failure message
-      }
-    }
-
-    // Success
-    if (attempt > 1) {
-      console.log(`  ✅ Search succeeded on attempt ${attempt}`);
-    }
-    return result;
-  }
-
-  return RETRY_MESSAGE;
-}
-
-/**
- * Retry a searchAndAsk operation with exponential backoff
- */
-async function searchAndAskWithRetry(
-  context: DirectContext,
-  searchQuery: string,
-  prompt: string,
-  maxRetries = 3
-): Promise<string> {
-  const RETRY_MESSAGE = "Retrieval failed. Please try again.";
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const result = await context.searchAndAsk(searchQuery, prompt);
-
-    // Check if the result indicates a search failure
-    if (result.includes(RETRY_MESSAGE)) {
-      if (attempt < maxRetries) {
-        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
-        console.log(`  ⚠️  Search failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      } else {
-        console.log(`  ❌ Search failed after ${maxRetries} attempts`);
-        return result; // Return the failure message
-      }
-    }
-
-    // Success
-    if (attempt > 1) {
-      console.log(`  ✅ Search succeeded on attempt ${attempt}`);
-    }
-    return result;
-  }
-
-  return RETRY_MESSAGE;
-}
-
 async function main() {
   console.log("=== Direct Context Sample ===\n");
 
@@ -416,23 +342,23 @@ export class HttpClient {
 
   const result = await context.addToIndex(files);
   console.log("\nIndexing result:");
-  console.log("  Newly indexed:", result.newlyIndexed);
-  console.log("  Already indexed:", result.alreadyIndexed);
+  console.log("  Newly uploaded:", result.newlyUploaded);
+  console.log("  Already uploaded:", result.alreadyUploaded);
 
   // Search the codebase - returns formatted string ready for LLM use or display
   // Using queries that work well with our realistic content
   console.log("\n--- Search 1: Find string utility functions ---");
-  const results1 = await searchWithRetry(context, "string utility functions for text formatting");
+  const results1 = await context.search("string utility functions for text formatting");
   console.log("Search results:");
   console.log(results1);
 
   console.log("\n--- Search 2: Find user management service ---");
-  const results2 = await searchWithRetry(context, "user management service with CRUD operations");
+  const results2 = await context.search("user management service with CRUD operations");
   console.log("Search results:");
   console.log(results2);
 
   console.log("\n--- Search 3: Find HTTP client for API requests ---");
-  const httpResults = await searchWithRetry(context, "HTTP client for making API requests");
+  const httpResults = await context.search("HTTP client for making API requests");
   console.log("Search results:");
   console.log(httpResults);
 
@@ -441,8 +367,7 @@ export class HttpClient {
   const question = "How does the UserService class handle user creation and validation?";
   console.log(`Question: ${question}`);
 
-  const answer = await searchAndAskWithRetry(
-    context,
+  const answer = await context.searchAndAsk(
     "user creation and validation in UserService",
     question
   );
@@ -451,8 +376,7 @@ export class HttpClient {
 
   // Use searchAndAsk to generate documentation
   console.log("\n--- searchAndAsk Example 2: Generate documentation ---");
-  const documentation = await searchAndAskWithRetry(
-    context,
+  const documentation = await context.searchAndAsk(
     "string utility functions",
     "Generate API documentation in markdown format for the string utility functions"
   );
@@ -462,8 +386,7 @@ export class HttpClient {
 
   // Use searchAndAsk to explain code patterns
   console.log("\n--- searchAndAsk Example 3: Explain code patterns ---");
-  const explanation = await searchAndAskWithRetry(
-    context,
+  const explanation = await context.searchAndAsk(
     "utility functions",
     "Explain what these utility functions do and when they would be useful"
   );
@@ -487,7 +410,7 @@ export class HttpClient {
   console.log("State imported successfully");
 
   // Verify we can still search
-  const results3 = await searchWithRetry(context2, "string utility functions");
+  const results3 = await context2.search("string utility functions");
   console.log("\nSearch after importing state:");
   console.log(results3);
 

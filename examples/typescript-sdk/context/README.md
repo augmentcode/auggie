@@ -146,14 +146,4 @@ The auggie CLI respects both `.gitignore` and `.augmentignore` patterns and will
 
 **Solution:** Run `auggie login` to authenticate, or set the `AUGMENT_API_TOKEN` and `AUGMENT_API_URL` environment variables.
 
-### API Search Failures
 
-**Problem:** Some searches return `"Retrieval failed. Please try again."`
-
-**Cause:** Known issue with the staging API backend where certain query patterns consistently fail.
-
-**Solution:** The Direct Context example includes automatic retry logic with exponential backoff. If queries still fail after retries, try rephrasing them:
-- ❌ "calculator functions for arithmetic" → ✅ "calculator functions"
-- ❌ "Calculator class methods" → ✅ "Calculator methods"
-
-See [ISSUE_2_FINDINGS.md](./ISSUE_2_FINDINGS.md) for detailed analysis and failure patterns.
