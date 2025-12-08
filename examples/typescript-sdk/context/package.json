@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@augmentcode/auggie-sdk": "file:../../../../auggie-sdk-typescript",
+    "@augmentcode/auggie-sdk": "^0.1.9",
     "tsx": "^4.19.2"
   },
   "scripts": {
