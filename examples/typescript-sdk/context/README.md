@@ -7,7 +7,7 @@ Examples demonstrating the Auggie SDK's context modes and AI-powered code analys
 1. **Node.js 18+** - Required to run the examples
 2. **Auggie CLI** - Required for FileSystem Context examples
    ```bash
-   npm install -g @augmentcode/auggie
+   npm install -g @augmentcode/auggie@latest
    ```
 3. **Authentication** - Required for all examples
    ```bash

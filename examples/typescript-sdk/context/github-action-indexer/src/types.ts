@@ -41,8 +41,7 @@ export type IndexConfig = {
 
   /**
    * Augment API URL
-   * Can be provided via AUGMENT_API_URL env var, or extracted from
-   * a JSON-formatted AUGMENT_API_TOKEN that includes tenantURL field
+   * Provided via AUGMENT_API_URL env var
    */
   apiUrl: string;
 

@@ -6,7 +6,7 @@ HTTP server that enhances vague prompts using AI with codebase context.
 
 Install the `auggie` CLI and authenticate:
 ```bash
-npm install -g @augmentcode/auggie
+npm install -g @augmentcode/auggie@latest
 auggie login
 ```
 

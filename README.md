@@ -14,7 +14,7 @@ Learn more in the Augment Docs:
 1. Install Auggie (Node 22+ required):
 
 ```sh
-npm install -g @augmentcode/auggie
+npm install -g @augmentcode/auggie@latest
 ```
 
 2. Login:

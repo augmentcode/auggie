@@ -73,39 +73,17 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Get API token
-  const apiTokenEnv = process.env.AUGMENT_API_TOKEN;
-  if (!apiTokenEnv) {
+  // Get API credentials
+  const apiToken = process.env.AUGMENT_API_TOKEN;
+  if (!apiToken) {
     console.error("Error: AUGMENT_API_TOKEN environment variable is required");
     process.exit(1);
   }
 
-  // Parse API token - it can be either a JSON object or a plain string
-  let apiToken: string;
-  let apiUrl: string | undefined = process.env.AUGMENT_API_URL;
-
-  try {
-    const tokenObj = JSON.parse(apiTokenEnv) as {
-      accessToken?: string;
-      tenantURL?: string;
-    };
-    if (tokenObj.accessToken) {
-      apiToken = tokenObj.accessToken;
-      // Use tenantURL from token if not overridden by env var
-      if (!apiUrl && tokenObj.tenantURL) {
-        apiUrl = tokenObj.tenantURL;
-      }
-    } else {
-      apiToken = apiTokenEnv;
-    }
-  } catch {
-    // Not JSON, use as-is
-    apiToken = apiTokenEnv;
-  }
-
+  const apiUrl = process.env.AUGMENT_API_URL;
   if (!apiUrl) {
     console.error(
-      "Error: AUGMENT_API_URL environment variable is required. Please set it to your tenant-specific URL (e.g., 'https://your-tenant.api.augmentcode.com') or include tenantURL in your API token JSON."
+      "Error: AUGMENT_API_URL environment variable is required. Please set it to your tenant-specific URL (e.g., 'https://your-tenant.api.augmentcode.com/')"
     );
     process.exit(1);
   }
