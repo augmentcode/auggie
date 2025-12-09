@@ -18,7 +18,7 @@ const DEFAULT_MAX_FILES = 500;
 
 export class IndexManager {
   private readonly github: GitHubClient;
-  private readonly context: DirectContext;
+  private context: DirectContext;
   private readonly config: IndexConfig;
   private readonly statePath: string;
 
@@ -373,7 +373,7 @@ export class IndexManager {
     try {
       // Create a new context from the previous state
       this.context = await DirectContext.importFromFile(tempStateFile, {
-        apiKey: this.config.apiKey,
+        apiKey: this.config.apiToken,
         apiUrl: this.config.apiUrl,
       });
     } finally {
