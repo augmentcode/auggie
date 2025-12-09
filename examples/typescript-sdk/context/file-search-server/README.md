@@ -1,18 +1,18 @@
 # File Search Server Example
 
-REST API for semantic file search with AI-powered summarization and code explanation.
+REST API for semantic file search with AI-powered summarization.
 
 ## Prerequisites
 
-Install the `auggie` CLI:
+Install the `auggie` CLI and authenticate:
 ```bash
-auggie --version
+npm install -g @augmentcode/auggie
+auggie login
 ```
 
 ## Usage
 
 ```bash
-export AUGMENT_API_TOKEN="your-token"
 npx tsx examples/context/file-search-server/index.ts .
 ```
 
@@ -21,21 +21,7 @@ npx tsx examples/context/file-search-server/index.ts .
 ### Search Files
 ```bash
 curl "http://localhost:3000/search?q=typescript"
-curl "http://localhost:3000/search?q=package.json&format=text"
-```
-
-### Summarize (AI)
-```bash
-curl -X POST http://localhost:3000/summarize \
-  -H "Content-Type: application/json" \
-  -d '{"query":"authentication logic"}'
-```
-
-### Explain Code (AI)
-```bash
-curl -X POST http://localhost:3000/explain \
-  -H "Content-Type: application/json" \
-  -d '{"path":"src/auth.ts"}'
+curl "http://localhost:3000/search?q=authentication+logic"
 ```
 
 ### Health Check

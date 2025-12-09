@@ -1,25 +1,20 @@
 /**
  * File filtering logic for GitHub repository indexing
- * Based on services/integrations/github/processor/server/path_filter.go
- * and github_event_handler.go
  */
 
 /**
  * Keyish pattern regex - matches files that likely contain secrets/keys
- * From path_filter.go line 24
  */
 const KEYISH_PATTERN =
   /^(\.git|.*\.pem|.*\.key|.*\.pfx|.*\.p12|.*\.jks|.*\.keystore|.*\.pkcs12|.*\.crt|.*\.cer|id_rsa|id_ed25519|id_ecdsa|id_dsa)$/;
 
 /**
  * Default max file size in bytes (1 MB)
- * From github_event_handler.go isValidFileSizeToUpload()
  */
-const DEFAULT_MAX_FILE_SIZE = 1024 * 1024; // 1 MB
+export const DEFAULT_MAX_FILE_SIZE = 1024 * 1024; // 1 MB
 
 /**
  * Check if a path should always be ignored (security measure)
- * From github_event_handler.go alwaysIgnorePath()
  */
 export function alwaysIgnorePath(path: string): boolean {
   return path.includes("..");
@@ -27,7 +22,6 @@ export function alwaysIgnorePath(path: string): boolean {
 
 /**
  * Check if a path matches the keyish pattern (secrets/keys)
- * From path_filter.go
  */
 export function isKeyishPath(path: string): boolean {
   // Extract filename from path
@@ -37,7 +31,6 @@ export function isKeyishPath(path: string): boolean {
 
 /**
  * Check if file size is valid for upload
- * From github_event_handler.go isValidFileSizeToUpload()
  */
 export function isValidFileSize(
   sizeBytes: number,
@@ -48,7 +41,6 @@ export function isValidFileSize(
 
 /**
  * Check if file content is valid UTF-8 (not binary)
- * From github_event_handler.go isValidFileToUpload()
  */
 export function isValidUtf8(content: Buffer): boolean {
   try {
@@ -67,7 +59,7 @@ export function isValidUtf8(content: Buffer): boolean {
  * Returns { filtered: true, reason: string } if file should be skipped
  * Returns { filtered: false } if file should be included
  *
- * Priority order (from file-filtering.md):
+ * Priority order:
  * 1. Path validation (contains "..")
  * 2. File size check
  * 3. .augmentignore rules (checked by caller)

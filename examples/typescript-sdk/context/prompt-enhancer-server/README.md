@@ -2,12 +2,17 @@
 
 HTTP server that enhances vague prompts using AI with codebase context.
 
+## Prerequisites
+
+Install the `auggie` CLI and authenticate:
+```bash
+npm install -g @augmentcode/auggie
+auggie login
+```
+
 ## Usage
 
 ```bash
-export AUGMENT_API_TOKEN="your-token"
-export AUGMENT_API_URL="https://your-tenant.api.augmentcode.com"
-
 # Start server with workspace directory
 npx tsx examples/context/prompt-enhancer-server/index.ts .
 ```

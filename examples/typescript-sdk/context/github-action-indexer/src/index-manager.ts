@@ -1,6 +1,5 @@
 /**
  * Index Manager - Core indexing logic
- * Modeled after services/integrations/github/processor/server/github_event_handler.go
  */
 
 import { promises as fs } from "node:fs";
@@ -111,7 +110,6 @@ export class IndexManager {
 
   /**
    * Main indexing entry point
-   * Similar to HandlePush in github_event_handler.go (lines 846-984)
    */
   async index(): Promise<IndexResult> {
     console.log(
@@ -154,7 +152,6 @@ export class IndexManager {
 
   /**
    * Determine if full re-index is needed
-   * Similar to logic in HandlePush (lines 900-950)
    */
   private async shouldFullReindex(
     previousState: IndexState | null
@@ -233,7 +230,6 @@ export class IndexManager {
 
   /**
    * Perform full repository re-index
-   * Similar to RegisterRepo in github_event_handler.go (lines 986-1119)
    */
   private async fullReindex(reason?: string): Promise<IndexResult> {
     console.log(`Performing full re-index (reason: ${reason || "unknown"})`);
@@ -364,7 +360,6 @@ export class IndexManager {
 
   /**
    * Perform incremental update
-   * Similar to HandlePush incremental logic (lines 1300-1450)
    */
   private async incrementalUpdate(
     previousState: IndexState

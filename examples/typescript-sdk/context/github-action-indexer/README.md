@@ -37,7 +37,7 @@ npm run search "authentication functions"
 npm run search "error handling"
 ```
 
-The index state is saved to `.augment-index-state/state.json` by default, so subsequent runs will perform incremental updates.
+The index state is saved to `.augment-index-state/{branch}/state.json` by default (where `{branch}` is the current branch name), so subsequent runs will perform incremental updates.
 
 ## Deploy to Production (GitHub Actions)
 
@@ -67,12 +67,14 @@ The installation script will:
 
 Add these secrets to your repository (Settings → Secrets and variables → Actions):
 
-| Secret Name | Description | Example |
-|-------------|-------------|---------|
-| `AUGMENT_API_TOKEN` | Your Augment API token | `your-token-here` |
-| `AUGMENT_API_URL` | Your tenant-specific API URL | `https://your-tenant.api.augmentcode.com/` |
+| Secret Name | Description | Required |
+|-------------|-------------|----------|
+| `AUGMENT_API_TOKEN` | Your Augment API token (can be a JSON object with `accessToken` and `tenantURL` fields, or a plain token string) | Yes |
 
-**Note:** `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, and `GITHUB_SHA` are automatically provided by GitHub Actions.
+**Note:**
+- If using a plain token string, you must also set `AUGMENT_API_URL` as a secret or environment variable
+- If your token is a JSON object from `~/.augment/session.json` (with `accessToken` and `tenantURL`), the URL will be extracted automatically
+- `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, and `GITHUB_SHA` are automatically provided by GitHub Actions
 
 ### 3. Push and Run
 

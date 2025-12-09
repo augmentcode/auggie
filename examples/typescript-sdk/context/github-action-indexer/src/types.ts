@@ -39,8 +39,12 @@ export type IndexConfig = {
   /** Augment API token */
   apiToken: string;
 
-  /** Augment API URL (optional) */
-  apiUrl?: string;
+  /**
+   * Augment API URL
+   * Can be provided via AUGMENT_API_URL env var, or extracted from
+   * a JSON-formatted AUGMENT_API_TOKEN that includes tenantURL field
+   */
+  apiUrl: string;
 
   /** GitHub token */
   githubToken: string;

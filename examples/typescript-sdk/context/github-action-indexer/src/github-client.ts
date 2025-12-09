@@ -1,6 +1,5 @@
 /**
  * GitHub API client for fetching repository data
- * Modeled after services/integrations/github/processor/server/github_event_handler.go
  */
 
 import { Readable } from "node:stream";
@@ -37,7 +36,6 @@ export class GitHubClient {
 
   /**
    * Download repository as tarball and extract files
-   * Similar to uploadBlobsFromTarball in github_event_handler.go (lines 1194-1274)
    */
   async downloadTarball(
     owner: string,
@@ -156,7 +154,6 @@ export class GitHubClient {
 
   /**
    * Compare two commits and get file changes
-   * Similar to parseCompareCommits in github_event_handler.go (lines 1707-1745)
    */
   async compareCommits(
     owner: string,
