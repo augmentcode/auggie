@@ -8,40 +8,18 @@ import { IndexManager } from "./index-manager.js";
 import type { IndexConfig } from "./types.js";
 
 /**
- * Parse API token from environment variable
- * Handles both plain string tokens and JSON-formatted tokens
+ * Get API credentials from environment variables
  */
-function parseApiToken(): { apiToken: string; apiUrl: string } {
-  const apiTokenEnv = process.env.AUGMENT_API_TOKEN;
-  if (!apiTokenEnv) {
+function getApiCredentials(): { apiToken: string; apiUrl: string } {
+  const apiToken = process.env.AUGMENT_API_TOKEN;
+  if (!apiToken) {
     throw new Error("AUGMENT_API_TOKEN environment variable is required");
   }
 
-  let apiToken: string;
-  let apiUrl: string | undefined = process.env.AUGMENT_API_URL;
-
-  try {
-    const tokenObj = JSON.parse(apiTokenEnv) as {
-      accessToken?: string;
-      tenantURL?: string;
-    };
-    if (tokenObj.accessToken) {
-      apiToken = tokenObj.accessToken;
-      // Use tenantURL from token if not overridden by env var
-      if (!apiUrl && tokenObj.tenantURL) {
-        apiUrl = tokenObj.tenantURL;
-      }
-    } else {
-      apiToken = apiTokenEnv;
-    }
-  } catch {
-    // Not JSON, use as-is
-    apiToken = apiTokenEnv;
-  }
-
+  const apiUrl = process.env.AUGMENT_API_URL;
   if (!apiUrl) {
     throw new Error(
-      "AUGMENT_API_URL environment variable is required. Please set it to your tenant-specific URL (e.g., 'https://your-tenant.api.augmentcode.com') or include tenantURL in your API token JSON."
+      "AUGMENT_API_URL environment variable is required. Please set it to your tenant-specific URL (e.g., 'https://your-tenant.api.augmentcode.com/')"
     );
   }
 
@@ -96,7 +74,7 @@ function loadConfig(): IndexConfig {
     throw new Error("GITHUB_TOKEN environment variable is required");
   }
 
-  const { apiToken, apiUrl } = parseApiToken();
+  const { apiToken, apiUrl } = getApiCredentials();
   const { owner, repo, branch, currentCommit } = parseRepositoryInfo();
 
   return {

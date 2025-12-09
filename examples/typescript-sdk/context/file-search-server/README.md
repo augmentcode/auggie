@@ -6,7 +6,7 @@ REST API for semantic file search with AI-powered summarization.
 
 Install the `auggie` CLI and authenticate:
 ```bash
-npm install -g @augmentcode/auggie
+npm install -g @augmentcode/auggie@latest
 auggie login
 ```
 

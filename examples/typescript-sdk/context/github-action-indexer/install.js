@@ -209,6 +209,7 @@ jobs:
         run: npm run index
         env:
           AUGMENT_API_TOKEN: \${{ secrets.AUGMENT_API_TOKEN }}
+          AUGMENT_API_URL: \${{ secrets.AUGMENT_API_URL }}
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           MAX_COMMITS: ${settings.maxCommits}
           MAX_FILES: ${settings.maxFiles}
@@ -264,6 +265,7 @@ jobs:
         run: npm run index
         env:
           AUGMENT_API_TOKEN: \${{ secrets.AUGMENT_API_TOKEN }}
+          AUGMENT_API_URL: \${{ secrets.AUGMENT_API_URL }}
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           MAX_COMMITS: ${settings.maxCommits}
           MAX_FILES: ${settings.maxFiles}

@@ -65,15 +65,36 @@ The installation script will:
 
 ### 2. Configure Repository Secrets
 
-Add these secrets to your repository (Settings → Secrets and variables → Actions):
+In the GitHub UI, navigate to your repository **Settings → Secrets and variables → Actions** and add these secrets:
 
 | Secret Name | Description | Required |
 |-------------|-------------|----------|
-| `AUGMENT_API_TOKEN` | Your Augment API token (can be a JSON object with `accessToken` and `tenantURL` fields, or a plain token string) | Yes |
+| `AUGMENT_API_TOKEN` | Your Augment API token | Yes |
+| `AUGMENT_API_URL` | Your tenant-specific Augment API URL (e.g., `https://your-tenant.api.augmentcode.com/`) | Yes |
+
+**How to get your credentials:**
+
+1. **Using the Auggie CLI** (recommended):
+   ```bash
+   # Login to Augment
+   auggie login
+
+   # Print your credentials
+   auggie token print
+   ```
+
+   This outputs:
+   ```
+   TOKEN={"accessToken":"your-token-here","tenantURL":"https://your-tenant.api.augmentcode.com/","scopes":["read","write"]}
+   ```
+
+   Extract the values from the JSON:
+   - `accessToken` → use for `AUGMENT_API_TOKEN`
+   - `tenantURL` → use for `AUGMENT_API_URL`
+
+2. **From your Augment account**: Contact your Augment administrator or check your account settings for API credentials.
 
 **Note:**
-- If using a plain token string, you must also set `AUGMENT_API_URL` as a secret or environment variable
-- If your token is a JSON object from `~/.augment/session.json` (with `accessToken` and `tenantURL`), the URL will be extracted automatically
 - `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, and `GITHUB_SHA` are automatically provided by GitHub Actions
 
 ### 3. Push and Run
