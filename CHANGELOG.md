@@ -1,5 +1,24 @@
 # Changelog
 
+### 0.11.1
+- Task list UI: Fix uncaught exception that resulted in the agent being unable to add to the tasklist
+
+### 0.11.0
+
+#### MCP Mode Improvements
+- **MCP Logging**: Added --log-file option for MCP mode to enable error logging (default: /tmp/augment-log.txt)
+- **MCP Performance**: Improved MCP mode startup performance with asynchronous workspace initialization
+
+#### TUI Improvements
+- **Thinking Display**: Improved visual styling for thinking entries with better readability and less intrusive appearance
+- **Bash Mode**: Bash mode is now available, trigger by pressing !
+- **Input History**: Fixed input history navigation state after submitting commands and queued messages now properly added to history
+
+#### Bug Fixes
+- **Tool Interruption**: Fixed crash when interrupting tool execution with escape key
+- **Parallel Interrupts**: Improved interrupt handling to properly cancel all running parallel sub-agents
+- **Exit Message**: Fixed typo in exit tip message
+
 ### 0.10.0
 
 #### TUI Features
