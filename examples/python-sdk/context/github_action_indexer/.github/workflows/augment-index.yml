@@ -22,22 +22,22 @@ on:
 jobs:
   index:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Full history for comparison
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
-          cache: 'npm'
-      
+          python-version: '3.11'
+          cache: 'pip'
+
       - name: Install dependencies
-        run: npm ci
-      
+        run: pip install -r augment_indexer/requirements.txt
+
       - name: Restore index state
         uses: actions/cache@v4
         with:
@@ -46,10 +46,10 @@ jobs:
           key: augment-index-${{ github.ref_name }}-${{ github.sha }}
           restore-keys: |
             augment-index-${{ github.ref_name }}-
-      
+
       - name: Index repository
         id: index
-        run: npm run index
+        run: python -m augment_indexer.main
         env:
           AUGMENT_API_TOKEN: ${{ secrets.AUGMENT_API_TOKEN }}
           AUGMENT_API_URL: ${{ secrets.AUGMENT_API_URL }}
@@ -59,7 +59,7 @@ jobs:
           # STATE_PATH is optional - defaults to .augment-index-state/{branch}/state.json
           MAX_COMMITS: 100
           MAX_FILES: 500
-      
+
       - name: Print results
         if: always()
         run: |
@@ -69,7 +69,7 @@ jobs:
           echo "Files Deleted: ${{ steps.index.outputs.files_deleted }}"
           echo "Checkpoint ID: ${{ steps.index.outputs.checkpoint_id }}"
           echo "Commit SHA: ${{ steps.index.outputs.commit_sha }}"
-      
+
       - name: Upload state artifact
         if: success()
         uses: actions/upload-artifact@v4

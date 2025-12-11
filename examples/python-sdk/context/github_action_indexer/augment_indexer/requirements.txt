@@ -1,0 +1,14 @@
+# GitHub Action Indexer dependencies
+
+# Augment SDK for indexing and search
+auggie-sdk>=0.1.0
+
+# GitHub API client
+PyGithub>=2.1.0
+
+# HTTP requests (for tarball download)
+requests>=2.25.0
+
+# Gitignore-style pattern matching
+pathspec>=0.11.0
+

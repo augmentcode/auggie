@@ -2,9 +2,15 @@
 
 This directory contains examples demonstrating how to use the Augment Python SDK.
 
+The SDK has two main components:
+
+1. **Auggie SDK** - An agent-based interface for AI-powered workflows with typed responses, sessions, and function calling
+2. **Context SDK** - Semantic search and AI-powered code analysis via `FileSystemContext` and `DirectContext`
+
 ## Quick Links
 
 - **[User Examples](user_examples/)** - Numbered tutorial examples (01-09) with a comprehensive [user guide](user_examples/user_guide.md)
+- **[Context Examples](context/)** - Semantic search and AI-powered code analysis examples
 - **[Documentation](docs/)** - Detailed guides on specific features
 - **Basic Examples** - See below for standalone example scripts
 
@@ -74,6 +80,18 @@ python acp_example_usage.py
 
 For ClaudeCodeACPClient documentation, see:
 - [Claude Code Client Guide](docs/CLAUDE_CODE_CLIENT.md)
+
+## Context SDK Examples
+
+The **[context](context/)** directory contains examples demonstrating the Auggie SDK's context modes for semantic search and AI-powered code analysis:
+
+- **[Direct Context](context/direct_context/)** - API-based indexing with semantic search and AI Q&A
+- **[FileSystem Context](context/filesystem_context/)** - Local directory search via MCP protocol
+- **[File Search Server](context/file_search_server/)** - REST API for semantic file search with AI summarization
+- **[Prompt Enhancer Server](context/prompt_enhancer_server/)** - HTTP server that enhances prompts with codebase context
+- **[GitHub Action Indexer](context/github_action_indexer/)** - Index GitHub repositories for semantic search
+
+See the [context README](context/README.md) for prerequisites and detailed usage instructions.
 
 ## Prompt-to-SDK Conversion
 
