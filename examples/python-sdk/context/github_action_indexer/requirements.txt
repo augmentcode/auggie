@@ -1,0 +1,13 @@
+# GitHub Action Indexer dependencies
+# Core SDK (from parent package)
+# For running standalone, also install context_sdk from parent
+
+# GitHub API client
+PyGithub>=2.1.0
+
+# HTTP requests (for tarball download)
+requests>=2.25.0
+
+# Gitignore-style pattern matching
+pathspec>=0.11.0
+
