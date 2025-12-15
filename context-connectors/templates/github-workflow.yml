@@ -1,0 +1,48 @@
+name: Index Repository
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install context-connectors
+        run: npm install -g @augmentcode/context-connectors
+        
+      - name: Restore index cache
+        uses: actions/cache@v4
+        with:
+          path: .context-connectors
+          key: index-${{ github.repository }}-${{ github.ref_name }}
+          restore-keys: |
+            index-${{ github.repository }}-
+            
+      - name: Index repository
+        run: |
+          context-connectors index \
+            -s github \
+            --owner ${{ github.repository_owner }} \
+            --repo ${{ github.event.repository.name }} \
+            --ref ${{ github.sha }} \
+            -k ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUGMENT_API_TOKEN: ${{ secrets.AUGMENT_API_TOKEN }}
+          AUGMENT_API_URL: ${{ secrets.AUGMENT_API_URL }}
+          
+      - name: Upload index artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-index-${{ github.ref_name }}
+          path: .context-connectors/
+          retention-days: 30
+

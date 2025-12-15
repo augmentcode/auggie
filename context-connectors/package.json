@@ -1,0 +1,131 @@
+{
+  "name": "@augmentcode/context-connectors",
+  "version": "0.1.0",
+  "description": "Modular system for indexing any data source and making it searchable via Augment's context engine",
+  "type": "module",
+  "bin": {
+    "context-connectors": "./dist/bin/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "cli": "tsx src/bin/index.ts",
+    "cli:index": "tsx src/bin/index.ts index",
+    "cli:search": "tsx src/bin/index.ts search"
+  },
+  "keywords": [
+    "augment",
+    "context",
+    "indexing",
+    "sdk"
+  ],
+  "author": "Augment Code",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./sources": {
+      "types": "./dist/sources/index.d.ts",
+      "import": "./dist/sources/index.js"
+    },
+    "./stores": {
+      "types": "./dist/stores/index.d.ts",
+      "import": "./dist/stores/index.js"
+    },
+    "./tools": {
+      "types": "./dist/tools/index.d.ts",
+      "import": "./dist/tools/index.js"
+    },
+    "./ai-sdk": {
+      "types": "./dist/ai-sdk/index.d.ts",
+      "import": "./dist/ai-sdk/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
+    },
+    "./integrations": {
+      "types": "./dist/integrations/index.d.ts",
+      "import": "./dist/integrations/index.js"
+    },
+    "./integrations/vercel": {
+      "types": "./dist/integrations/github-webhook-vercel.d.ts",
+      "import": "./dist/integrations/github-webhook-vercel.js"
+    },
+    "./integrations/express": {
+      "types": "./dist/integrations/github-webhook-express.d.ts",
+      "import": "./dist/integrations/github-webhook-express.js"
+    }
+  },
+  "dependencies": {
+    "@augmentcode/auggie-sdk": "^0.1.6",
+    "commander": "^12.0.0",
+    "ignore": "^5.3.0",
+    "minimatch": "^9.0.0",
+    "tar": "^6.2.0"
+  },
+  "devDependencies": {
+    "@ai-sdk/anthropic": "^2.0.0",
+    "@ai-sdk/google": "^2.0.0",
+    "@ai-sdk/openai": "^2.0.86",
+    "@aws-sdk/client-s3": "^3.948.0",
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "@octokit/rest": "^22.0.1",
+    "@types/node": "^20.10.0",
+    "@types/tar": "^6.1.10",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.0"
+  },
+  "peerDependencies": {
+    "@ai-sdk/anthropic": ">=1.0.0",
+    "@ai-sdk/google": ">=1.0.0",
+    "@ai-sdk/openai": ">=1.0.0",
+    "@anthropic-ai/sdk": ">=0.30.0",
+    "@aws-sdk/client-s3": ">=3.0.0",
+    "@modelcontextprotocol/sdk": ">=1.0.0",
+    "@octokit/rest": ">=20.0.0",
+    "ai": ">=4.0.0",
+    "cheerio": ">=1.0.0",
+    "ioredis": ">=5.0.0",
+    "zod": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@ai-sdk/anthropic": {
+      "optional": true
+    },
+    "@ai-sdk/google": {
+      "optional": true
+    },
+    "@ai-sdk/openai": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
+      "optional": true
+    },
+    "@aws-sdk/client-s3": {
+      "optional": true
+    },
+    "@modelcontextprotocol/sdk": {
+      "optional": true
+    },
+    "@octokit/rest": {
+      "optional": true
+    },
+    "ai": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    },
+    "cheerio": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "my-codebase": {
+      "command": "npx",
+      "args": [
+        "@augmentcode/context-connectors",
+        "mcp",
+        "-k", "my-codebase",
+        "--store", "filesystem",
+        "--store-path", "/path/to/.context-connectors",
+        "--with-source",
+        "-p", "/path/to/codebase"
+      ],
+      "env": {
+        "AUGMENT_API_TOKEN": "your-augment-api-token",
+        "AUGMENT_API_URL": "https://your-tenant.api.augmentcode.com/"
+      }
+    }
+  }
+}
+

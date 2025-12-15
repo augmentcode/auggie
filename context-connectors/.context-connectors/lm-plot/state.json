@@ -1,0 +1,65 @@
+{
+  "contextState": {
+    "addedBlobs": [
+      "f3cc500470ccfbc7da58aabf4750316f56e3f9ef6990475b788829743a0c30c8",
+      "b183eed5914587dd44c5cd6ee4f17da65f315fc9dcdfed558fd998d07c50231c",
+      "aa99b6f3a85651ef0d26e4e72cfd8a85b88624172064977bf46b777ed4c0632b",
+      "108340afdc91e0cb726e86b6af9ec028d02eee0c084a7772f9b0ad2569366453",
+      "e99fa38550b8e293424a82f2d8d59e58b9a8be252f0f07e9e60ba9cde446f6c5",
+      "3afe6876114ca8d64b3a61797a40aafae00fb4da654ebb8400b728c6ee27c258",
+      "9155fd5a4e8dca09a263c2f70233e5cf0c2649d70349be8b0e6b8976ddacbbcc",
+      "7557ff0f07485b6361b87da826082c72a30e229e22e79b4073cd40d5944ee2b6",
+      "e8748d15a246dc3d556d9344aa14879c7cf3bdde6ba28647ac24a7534120c9d2",
+      "c7aa295ffd5b8d4ad964671e1a4da2d5ad88d1fd52809e7329ede1c97b0a1e9d"
+    ],
+    "deletedBlobs": [],
+    "blobs": [
+      [
+        "f3cc500470ccfbc7da58aabf4750316f56e3f9ef6990475b788829743a0c30c8",
+        ".gitignore"
+      ],
+      [
+        "b183eed5914587dd44c5cd6ee4f17da65f315fc9dcdfed558fd998d07c50231c",
+        "LICENSE"
+      ],
+      [
+        "aa99b6f3a85651ef0d26e4e72cfd8a85b88624172064977bf46b777ed4c0632b",
+        "README.md"
+      ],
+      [
+        "108340afdc91e0cb726e86b6af9ec028d02eee0c084a7772f9b0ad2569366453",
+        "lm_plot/__init__.py"
+      ],
+      [
+        "e99fa38550b8e293424a82f2d8d59e58b9a8be252f0f07e9e60ba9cde446f6c5",
+        "lm_plot/eval/__init__.py"
+      ],
+      [
+        "3afe6876114ca8d64b3a61797a40aafae00fb4da654ebb8400b728c6ee27c258",
+        "lm_plot/eval/eval.py"
+      ],
+      [
+        "9155fd5a4e8dca09a263c2f70233e5cf0c2649d70349be8b0e6b8976ddacbbcc",
+        "lm_plot/eval/plot.py"
+      ],
+      [
+        "7557ff0f07485b6361b87da826082c72a30e229e22e79b4073cd40d5944ee2b6",
+        "lm_plot/files/__init__.py"
+      ],
+      [
+        "e8748d15a246dc3d556d9344aa14879c7cf3bdde6ba28647ac24a7534120c9d2",
+        "lm_plot/files/collector.py"
+      ],
+      [
+        "c7aa295ffd5b8d4ad964671e1a4da2d5ad88d1fd52809e7329ede1c97b0a1e9d",
+        "setup.py"
+      ]
+    ]
+  },
+  "source": {
+    "type": "github",
+    "identifier": "igor0/lm-plot",
+    "ref": "3d2479f808062cdc040b84efa7785eb942d718d9",
+    "syncedAt": "2025-12-14T18:00:25.360Z"
+  }
+}
