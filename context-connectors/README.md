@@ -6,7 +6,7 @@ Index any data source and make it searchable with Augment's context engine.
 
 - **Multiple Sources**: Index from GitHub, GitLab, websites, or local filesystem
 - **Flexible Storage**: Store indexes locally, in S3, or other backends
-- **Multiple Clients**: CLI search, interactive agent, MCP server, AI SDK tools
+- **Multiple Clients**: CLI search, interactive agent, MCP server
 - **Incremental Updates**: Only re-index what changed
 - **Smart Filtering**: Respects `.gitignore`, `.augmentignore`, and filters binary/generated files
 
@@ -24,9 +24,6 @@ npm install @octokit/rest
 
 # For S3 storage
 npm install @aws-sdk/client-s3
-
-# For AI SDK tools
-npm install ai zod @ai-sdk/openai
 
 # For MCP server (Claude Desktop)
 npm install @modelcontextprotocol/sdk
@@ -153,28 +150,6 @@ await client.initialize();
 
 const result = await client.search("authentication");
 console.log(result.results);
-```
-
-### AI SDK Tools
-
-```typescript
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { SearchClient, createAISDKTools } from "@augmentcode/context-connectors";
-import { FilesystemStore } from "@augmentcode/context-connectors/stores";
-
-const store = new FilesystemStore({ basePath: ".context-connectors" });
-const client = new SearchClient({ store, key: "my-project" });
-await client.initialize();
-
-const tools = createAISDKTools({ client });
-
-const result = await generateText({
-  model: openai("gpt-4o"),
-  tools,
-  maxSteps: 5,
-  prompt: "Find the main entry point of this project",
-});
 ```
 
 ### MCP Server
@@ -338,7 +313,7 @@ async function handleRequest(req: Request) {
 | `AUGMENT_API_URL` | Augment API URL | All operations |
 | `GITHUB_TOKEN` | GitHub access token | GitHub source |
 | `GITHUB_WEBHOOK_SECRET` | Webhook signature secret | Webhook integration |
-| `OPENAI_API_KEY` | OpenAI API key | Agent, AI SDK tools |
+| `OPENAI_API_KEY` | OpenAI API key | Agent |
 | `AWS_ACCESS_KEY_ID` | AWS access key | S3 store |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key | S3 store |
 
@@ -351,7 +326,7 @@ Sources → Indexer → Stores → Clients
 - **Sources**: Fetch files from data sources (GitHub, Filesystem, etc.)
 - **Indexer**: Orchestrates indexing using Augment's context engine
 - **Stores**: Persist index state (Filesystem, S3)
-- **Clients**: Consume the index (CLI, Agent, MCP Server, AI SDK)
+- **Clients**: Consume the index (CLI, Agent, MCP Server)
 
 ## Filtering
 

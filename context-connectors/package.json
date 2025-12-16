@@ -39,10 +39,6 @@
       "types": "./dist/tools/index.d.ts",
       "import": "./dist/tools/index.js"
     },
-    "./ai-sdk": {
-      "types": "./dist/ai-sdk/index.d.ts",
-      "import": "./dist/ai-sdk/index.js"
-    },
     "./mcp": {
       "types": "./dist/mcp/index.d.ts",
       "import": "./dist/mcp/index.js"

@@ -30,8 +30,9 @@ import {
   ToolSet,
   stepCountIs,
   LanguageModel,
+  tool,
 } from "ai";
-import { createAISDKTools } from "./ai-sdk-tools.js";
+import { z } from "zod";
 import type { SearchClient } from "./search-client.js";
 
 /**
@@ -181,7 +182,70 @@ export class CLIAgent {
     this.verbose = config.verbose ?? false;
     this.stream = config.stream ?? true;
     this.systemPrompt = config.systemPrompt ?? DEFAULT_SYSTEM_PROMPT;
-    this.tools = createAISDKTools({ client: this.client }) as ToolSet;
+    this.tools = this.createTools();
+  }
+
+  /**
+   * Create AI SDK tools for the SearchClient.
+   */
+  private createTools(): ToolSet {
+    const client = this.client;
+    const hasSource = client.hasSource();
+
+    const searchSchema = z.object({
+      query: z.string().describe("Natural language search query describing what you're looking for"),
+      maxChars: z.number().optional().describe("Maximum characters in response"),
+    });
+
+    const searchTool = tool({
+      description: "Search the codebase using natural language. Returns relevant code snippets and file paths.",
+      inputSchema: searchSchema,
+      execute: async ({ query, maxChars }: z.infer<typeof searchSchema>) => {
+        const result = await client.search(query, { maxOutputLength: maxChars });
+        return result.results || "No results found.";
+      },
+    });
+
+    if (hasSource) {
+      const listFilesSchema = z.object({
+        pattern: z.string().optional().describe("Glob pattern to filter files (e.g., '**/*.ts', 'src/**')"),
+      });
+
+      const listFilesTool = tool({
+        description: "List all files in the codebase. Optionally filter by glob pattern.",
+        inputSchema: listFilesSchema,
+        execute: async ({ pattern }: z.infer<typeof listFilesSchema>) => {
+          const files = await client.listFiles({ pattern });
+          return files.map(f => f.path).join("\n");
+        },
+      });
+
+      const readFileSchema = z.object({
+        path: z.string().describe("Path to the file to read"),
+      });
+
+      const readFileTool = tool({
+        description: "Read the contents of a specific file from the codebase.",
+        inputSchema: readFileSchema,
+        execute: async ({ path }: z.infer<typeof readFileSchema>) => {
+          const result = await client.readFile(path);
+          if (result.error) {
+            return `Error: ${result.error}`;
+          }
+          return result.contents ?? "";
+        },
+      });
+
+      return {
+        search: searchTool,
+        listFiles: listFilesTool,
+        readFile: readFileTool,
+      } as ToolSet;
+    }
+
+    return {
+      search: searchTool,
+    } as ToolSet;
   }
 
   /**
