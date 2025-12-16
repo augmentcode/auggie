@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.12.0
+- /about command: View user information and debugging details with a new slash command
+- Keyboard navigation: Improved navigation with consistent arrow key and j/k shortcuts across all TUI components
+
 ### 0.11.1
 - Task list UI: Fix uncaught exception that resulted in the agent being unable to add to the tasklist
 
