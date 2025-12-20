@@ -22,6 +22,8 @@ export const indexCommand = new Command("index")
   .option("--url <url>", "Website URL to crawl")
   .option("--max-depth <n>", "Maximum crawl depth (website)", (v) => parseInt(v, 10), 3)
   .option("--max-pages <n>", "Maximum pages to crawl (website)", (v) => parseInt(v, 10), 100)
+  .option("--include <patterns...>", "URL path patterns to include (website, glob)")
+  .option("--exclude <patterns...>", "URL path patterns to exclude (website, glob)")
   // Store options
   .option("--store <type>", "Store type (filesystem, memory, s3)", "filesystem")
   .option("--store-path <path>", "Store base path (for filesystem store)", ".context-connectors")
@@ -68,6 +70,8 @@ export const indexCommand = new Command("index")
           url: options.url,
           maxDepth: options.maxDepth,
           maxPages: options.maxPages,
+          includePaths: options.include,
+          excludePaths: options.exclude,
         });
       } else {
         console.error(`Unknown source type: ${options.source}`);

@@ -143,8 +143,11 @@ export class GitLabSource implements Source {
     console.log(`Downloading archive for ${this.projectId}@${ref}...`);
 
     const url = `${this.baseUrl}/api/v4/projects/${this.encodedProjectId}/repository/archive.tar.gz?sha=${encodeURIComponent(ref)}`;
+    // Note: GitLab has hotlinking protection that returns 406 for cross-origin requests.
+    // Using mode: 'same-origin' works around this protection. See: https://github.com/unjs/giget/issues/97
     const response = await fetch(url, {
       headers: { "PRIVATE-TOKEN": this.token },
+      mode: "same-origin",
     });
 
     if (!response.ok) {

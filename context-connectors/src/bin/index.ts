@@ -6,6 +6,8 @@
 import { Command } from "commander";
 import { indexCommand } from "./cmd-index.js";
 import { searchCommand } from "./cmd-search.js";
+import { listCommand } from "./cmd-list.js";
+import { deleteCommand } from "./cmd-delete.js";
 import { initCommand } from "./cmd-init.js";
 import { mcpCommand } from "./cmd-mcp.js";
 import { agentCommand } from "./cmd-agent.js";
@@ -20,6 +22,8 @@ program
 // Add subcommands
 program.addCommand(indexCommand);
 program.addCommand(searchCommand);
+program.addCommand(listCommand);
+program.addCommand(deleteCommand);
 program.addCommand(initCommand);
 program.addCommand(mcpCommand);
 program.addCommand(agentCommand);

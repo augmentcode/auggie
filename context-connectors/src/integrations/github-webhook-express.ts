@@ -24,8 +24,15 @@ export function createExpressHandler(config: GitHubWebhookConfig) {
       }
 
       // Requires raw body - use express.raw() middleware
-      const body =
-        typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+      // Handle Buffer (from express.raw()), string, or object
+      let body: string;
+      if (Buffer.isBuffer(req.body)) {
+        body = req.body.toString("utf-8");
+      } else if (typeof req.body === "string") {
+        body = req.body;
+      } else {
+        body = JSON.stringify(req.body);
+      }
 
       const valid = await verifyWebhookSignature(body, signature, config.secret);
       if (!valid) {
@@ -33,8 +40,11 @@ export function createExpressHandler(config: GitHubWebhookConfig) {
         return;
       }
 
+      // Parse payload from the body string (handles Buffer, string, and object)
       const payload = (
-        typeof req.body === "string" ? JSON.parse(req.body) : req.body
+        Buffer.isBuffer(req.body) || typeof req.body === "string"
+          ? JSON.parse(body)
+          : req.body
       ) as PushEvent;
 
       const result = await handler(eventType, payload);

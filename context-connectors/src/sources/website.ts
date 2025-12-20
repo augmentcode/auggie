@@ -328,18 +328,27 @@ export class WebsiteSource implements Source {
         continue;
       }
 
-      // Check include/exclude patterns
-      if (!this.shouldCrawlUrl(url)) {
-        continue;
-      }
-
       // Rate limiting
-      if (this.crawledPages.length > 0) {
+      if (visited.size > 1) {
         await this.delay(this.delayMs);
       }
 
       const result = await this.crawlPage(url);
       if (!result) {
+        continue;
+      }
+
+      // Add links to queue if within depth limit (always traverse to discover pages)
+      if (depth < this.maxDepth) {
+        for (const link of result.links) {
+          if (!visited.has(link.href)) {
+            queue.push({ url: link, depth: depth + 1 });
+          }
+        }
+      }
+
+      // Check include/exclude patterns for indexing (not for traversal)
+      if (!this.shouldCrawlUrl(url)) {
         continue;
       }
 
@@ -359,15 +368,6 @@ export class WebsiteSource implements Source {
       });
 
       console.log(`Crawled: ${url.pathname} (${this.crawledPages.length}/${this.maxPages})`);
-
-      // Add links to queue if within depth limit
-      if (depth < this.maxDepth) {
-        for (const link of result.links) {
-          if (!visited.has(link.href)) {
-            queue.push({ url: link, depth: depth + 1 });
-          }
-        }
-      }
     }
 
     console.log(`Crawl complete. Indexed ${this.crawledPages.length} pages.`);

@@ -5,17 +5,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { MemoryStore } from "./memory.js";
 import type { IndexState } from "../core/types.js";
-import type { DirectContextState } from "@augmentcode/auggie-sdk";
 
 describe("MemoryStore", () => {
   let store: MemoryStore;
 
   const createTestState = (id: string): IndexState => ({
     contextState: {
-      version: 1,
-      contextId: `ctx-${id}`,
-      files: [],
-    } as DirectContextState,
+      checkpointId: `checkpoint-${id}`,
+      addedBlobs: [],
+      deletedBlobs: [],
+      blobs: [],
+    },
     source: {
       type: "filesystem",
       identifier: `/test/${id}`,

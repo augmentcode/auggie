@@ -15,6 +15,8 @@ function createMockState(): IndexState {
   return {
     contextState: {
       checkpointId: "test-checkpoint-123",
+      addedBlobs: [],
+      deletedBlobs: [],
       blobs: [],
     },
     source: {
