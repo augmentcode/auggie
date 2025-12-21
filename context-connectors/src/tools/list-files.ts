@@ -1,7 +1,12 @@
 /**
  * List files tool - List files from a source.
  *
- * Provides file listing functionality with optional glob filtering.
+ * Provides file listing functionality with:
+ * - Recursive depth control
+ * - Glob pattern filtering
+ * - Output truncation
+ * - Hidden file filtering
+ *
  * Requires a Source to be configured in the tool context.
  *
  * @module tools/list-files
@@ -10,50 +15,119 @@
 import type { FileInfo } from "../core/types.js";
 import type { ToolContext } from "./types.js";
 
+/** Default maximum output length in characters */
+const DEFAULT_MAX_OUTPUT = 50000;
+
+/** Default directory depth */
+const DEFAULT_DEPTH = 2;
+
 /**
  * Options for listing files.
  */
 export interface ListFilesOptions {
   /**
    * Directory to list (default: root "").
-   * Only immediate children of this directory are returned.
    * @example "src", "src/utils"
    */
   directory?: string;
   /**
-   * Glob pattern to filter results within the directory.
+   * Glob pattern to filter results.
    * Uses minimatch for pattern matching.
    * @example "*.ts", "*.json"
    */
   pattern?: string;
+  /**
+   * Maximum depth to recurse into subdirectories.
+   * 1 = immediate children only, 2 = one level of subdirectories, etc.
+   * @default 2
+   */
+  depth?: number;
+  /**
+   * Whether to include hidden files (starting with .).
+   * @default false
+   */
+  showHidden?: boolean;
+  /**
+   * Maximum characters in output.
+   * @default 50000
+   */
+  maxOutputLength?: number;
 }
 
 /**
- * List files and directories from the source (non-recursive).
+ * Result from listing files.
+ */
+export interface ListFilesResult {
+  /** Array of file/directory entries */
+  entries: FileInfo[];
+  /** Whether output was truncated */
+  truncated?: boolean;
+  /** Number of entries omitted due to truncation */
+  omittedCount?: number;
+}
+
+/**
+ * Format list entries as text with a descriptive header.
+ *
+ * @param entries - Array of file/directory entries
+ * @param options - The options used for listing (for header context)
+ * @returns Formatted string with header and entries
+ */
+export function formatListOutput(
+  entries: FileInfo[],
+  options?: ListFilesOptions
+): string {
+  if (entries.length === 0) {
+    return "No files found.";
+  }
+
+  const directory = options?.directory || "the root directory";
+  const depth = options?.depth ?? DEFAULT_DEPTH;
+  const showHidden = options?.showHidden ?? false;
+
+  // Build header with proper grammar
+  const depthDesc = depth === 1
+    ? "immediate children"
+    : `files and directories up to ${depth} levels deep`;
+  const hiddenDesc = showHidden ? "including" : "excluding";
+  const header = `Here are the ${depthDesc} in ${directory}, ${hiddenDesc} hidden items:\n`;
+
+  const body = entries.map((e) => `${e.path} [${e.type}]`).join("\n");
+
+  return header + body;
+}
+
+/**
+ * List files and directories from the source with depth control.
  *
  * This function requires a Source to be configured in the context.
  * When called in search-only mode (no Source), it throws an error.
  *
- * Returns only immediate children of the specified directory.
- * Each result includes a type field ("file" or "directory").
+ * Features:
+ * - Recursive listing up to specified depth (default: 2)
+ * - Optional glob pattern filtering
+ * - Hidden file filtering
+ * - Output truncation
  *
  * @param ctx - Tool context (must have source configured)
- * @param options - Optional filter options
+ * @param options - Optional filter and depth options
  * @returns Array of file/directory info objects
  * @throws Error if no Source is configured
  *
  * @example
  * ```typescript
- * // List root directory
- * const root = await listFiles(ctx);
- * // Returns: [{ path: "src", type: "directory" }, { path: "README.md", type: "file" }]
+ * // List with default depth (2 levels)
+ * const files = await listFiles(ctx);
  *
- * // List specific directory
- * const srcFiles = await listFiles(ctx, { directory: "src" });
- * // Returns: [{ path: "src/index.ts", type: "file" }, { path: "src/utils", type: "directory" }]
+ * // List only immediate children
+ * const shallow = await listFiles(ctx, { depth: 1 });
  *
- * // Filter by pattern
- * const tsFiles = await listFiles(ctx, { directory: "src", pattern: "*.ts" });
+ * // List deeper with pattern filter
+ * const tsFiles = await listFiles(ctx, {
+ *   directory: "src",
+ *   pattern: "*.ts",
+ *   depth: 3,
+ * });
  * ```
  */
 export async function listFiles(
@@ -64,15 +138,85 @@ export async function listFiles(
     throw new Error("Source not configured. Cannot list files in search-only mode.");
   }
 
-  let entries = await ctx.source.listFiles(options?.directory);
+  const {
+    directory = "",
+    pattern,
+    depth = DEFAULT_DEPTH,
+    showHidden = false,
+    maxOutputLength = DEFAULT_MAX_OUTPUT,
+  } = options ?? {};
 
-  // Optional: filter by pattern using minimatch (applies to filename only within directory)
-  if (options?.pattern) {
+  // Collect entries recursively up to depth
+  const allEntries: FileInfo[] = [];
+  await collectEntries(ctx, directory, depth, showHidden, allEntries);
+
+  // Apply pattern filter if specified
+  let filteredEntries = allEntries;
+  if (pattern) {
     const { minimatch } = await import("minimatch");
-    const { basename } = await import("node:path");
-    entries = entries.filter((f) => minimatch(basename(f.path), options.pattern!));
+    // Use matchBase to allow "*.ts" to match basename while "src/*.ts" matches full path
+    filteredEntries = allEntries.filter((f) =>
+      minimatch(f.path, pattern, { matchBase: true })
+    );
   }
 
-  return entries;
+  // Sort entries alphabetically
+  filteredEntries.sort((a, b) => a.path.localeCompare(b.path));
+
+  // Apply truncation based on output length
+  let truncatedEntries = filteredEntries;
+  let truncated = false;
+  let omittedCount = 0;
+
+  // Estimate output size (path + type annotation + newline)
+  let estimatedSize = 0;
+  for (let i = 0; i < filteredEntries.length; i++) {
+    const entry = filteredEntries[i];
+    const entrySize = entry.path.length + entry.type.length + 5; // " [type]\n"
+    if (estimatedSize + entrySize > maxOutputLength) {
+      truncatedEntries = filteredEntries.slice(0, i);
+      omittedCount = filteredEntries.length - i;
+      truncated = true;
+      break;
+    }
+    estimatedSize += entrySize;
+  }
+
+  // Add truncation info to last entry if needed (for display purposes)
+  if (truncated && truncatedEntries.length > 0) {
+    // The caller can check the array length vs reported total
+  }
+
+  return truncatedEntries;
+}
+
+/**
+ * Recursively collect entries up to specified depth.
+ */
+async function collectEntries(
+  ctx: ToolContext,
+  directory: string,
+  remainingDepth: number,
+  showHidden: boolean,
+  results: FileInfo[]
+): Promise<void> {
+  if (remainingDepth <= 0 || !ctx.source) return;
+
+  const entries = await ctx.source.listFiles(directory);
+
+  for (const entry of entries) {
+    // Skip hidden files unless requested
+    const name = entry.path.split("/").pop() || "";
+    if (!showHidden && name.startsWith(".")) {
+      continue;
+    }
+
+    results.push(entry);
+
+    // Recurse into directories
+    if (entry.type === "directory" && remainingDepth > 1) {
+      await collectEntries(ctx, entry.path, remainingDepth - 1, showHidden, results);
+    }
+  }
 }
 

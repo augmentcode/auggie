@@ -39,6 +39,8 @@ import type { IndexStoreReader } from "../stores/types.js";
 import type { Source } from "../sources/types.js";
 import type { IndexState } from "../core/types.js";
 import type { ToolContext, SearchOptions } from "../tools/types.js";
+import type { ListFilesOptions } from "../tools/list-files.js";
+import type { ReadFileOptions } from "../tools/read-file.js";
 import { search, listFiles, readFile } from "../tools/index.js";
 
 /**
@@ -194,27 +196,28 @@ export class SearchClient {
   }
 
   /**
-   * List files and directories in the source (non-recursive).
+   * List files and directories in the source.
    *
    * Requires a Source to be configured (full mode).
-   * Returns only immediate children of the specified directory.
+   * By default, lists up to 2 levels deep (like Auggie CLI).
    *
-   * @param options - Optional filter options (directory and pattern)
+   * @param options - Optional filter and depth options
    * @returns Array of file/directory info objects with paths and types
    * @throws Error if no Source is configured
    *
    * @example
    * ```typescript
-   * // List root directory
-   * const root = await client.listFiles();
-   * const dirs = root.filter(e => e.type === "directory");
+   * // List with default depth (2 levels)
+   * const files = await client.listFiles();
    *
-   * // List specific directory with pattern filter
+   * // List only immediate children
+   * const shallow = await client.listFiles({ depth: 1 });
+   *
+   * // List with pattern filter
    * const tsFiles = await client.listFiles({ directory: "src", pattern: "*.ts" });
-   * console.log(`Found ${tsFiles.length} TypeScript files in src/`);
    * ```
    */
-  async listFiles(options?: { directory?: string; pattern?: string }) {
+  async listFiles(options?: ListFilesOptions) {
     return listFiles(this.getToolContext(), options);
   }
 
@@ -222,23 +225,32 @@ export class SearchClient {
    * Read a file from the source.
    *
    * Requires a Source to be configured (full mode).
+   * Returns formatted output with line numbers by default.
    *
    * @param path - Relative path to the file
-   * @returns File contents or error
+   * @param options - Optional reading options (range, search, formatting)
+   * @returns File contents with formatting, or error
    * @throws Error if no Source is configured
    *
    * @example
    * ```typescript
+   * // Read entire file with line numbers
    * const result = await client.readFile("src/index.ts");
-   * if (result.contents) {
-   *   console.log(result.contents);
-   * } else {
-   *   console.error(result.error);
-   * }
+   *
+   * // Read specific range
+   * const result = await client.readFile("src/index.ts", {
+   *   startLine: 10,
+   *   endLine: 50,
+   * });
+   *
+   * // Search within file
+   * const result = await client.readFile("src/index.ts", {
+   *   searchPattern: "export.*function",
+   * });
    * ```
    */
-  async readFile(path: string) {
-    return readFile(this.getToolContext(), path);
+  async readFile(path: string, options?: ReadFileOptions) {
+    return readFile(this.getToolContext(), path, options);
   }
 
   /**

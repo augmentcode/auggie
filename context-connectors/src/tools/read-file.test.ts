@@ -52,7 +52,7 @@ describe("readFile tool", () => {
     );
   });
 
-  it("returns file contents", async () => {
+  it("returns file contents with line numbers by default", async () => {
     const mockSource = createMockSource(
       new Map([["src/index.ts", "export const foo = 1;"]])
     );
@@ -61,8 +61,58 @@ describe("readFile tool", () => {
     const result = await readFile(ctx, "src/index.ts");
 
     expect(result.path).toBe("src/index.ts");
+    expect(result.contents).toContain("cat -n");
+    expect(result.contents).toContain("     1\t");
+    expect(result.contents).toContain("export const foo = 1;");
+    expect(result.contents).toContain("Total lines in file: 1");
+    expect(result.totalLines).toBe(1);
+    expect(result.error).toBeUndefined();
+  });
+
+  it("returns raw contents when line numbers disabled", async () => {
+    const mockSource = createMockSource(
+      new Map([["src/index.ts", "export const foo = 1;"]])
+    );
+    const ctx = createToolContext(mockSource);
+
+    const result = await readFile(ctx, "src/index.ts", { includeLineNumbers: false });
+
+    expect(result.path).toBe("src/index.ts");
     expect(result.contents).toBe("export const foo = 1;");
     expect(result.error).toBeUndefined();
+  });
+
+  it("respects view range", async () => {
+    const mockSource = createMockSource(
+      new Map([["src/index.ts", "line1\nline2\nline3\nline4\nline5"]])
+    );
+    const ctx = createToolContext(mockSource);
+
+    const result = await readFile(ctx, "src/index.ts", {
+      startLine: 2,
+      endLine: 4,
+      includeLineNumbers: false,
+    });
+
+    expect(result.contents).toBe("line2\nline3\nline4");
+    expect(result.totalLines).toBe(5);
+  });
+
+  it("performs regex search with context", async () => {
+    const mockSource = createMockSource(
+      new Map([["src/index.ts", "line1\nline2\nmatch\nline4\nline5"]])
+    );
+    const ctx = createToolContext(mockSource);
+
+    const result = await readFile(ctx, "src/index.ts", {
+      searchPattern: "match",
+      contextLinesBefore: 1,
+      contextLinesAfter: 1,
+    });
+
+    expect(result.contents).toContain("match");
+    expect(result.contents).toContain("line2"); // context before
+    expect(result.contents).toContain("line4"); // context after
   });
 
   it("returns error for missing file", async () => {

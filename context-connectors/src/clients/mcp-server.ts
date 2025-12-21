@@ -118,22 +118,52 @@ export async function createMCPServer(
     };
   };
 
+  // Tool descriptions adapted from Auggie CLI
+  const searchDescription = `Search the indexed content (${meta.type}://${meta.identifier}) using natural language.
+Returns relevant snippets organized by file path with line numbers.
+
+Features:
+- Takes a natural language description of what you're looking for
+- Returns snippets ranked by relevance
+- Works across different file types
+- Reflects the indexed state of the content`;
+
+  const listFilesDescription = `List files and directories with type annotations.
+* \`directory\` is a path relative to the source root
+* Lists files and subdirectories up to 2 levels deep by default
+* Hidden files (starting with \`.\`) are excluded by default
+* Supports glob pattern filtering (e.g., \`*.ts\`, \`src/*.json\`)
+* If the output is long, it will be truncated`;
+
+  const readFileDescription = `Read file contents with line numbers (cat -n format).
+* \`path\` is a file path relative to the source root
+* Displays output with 6-character padded line numbers
+* Use \`startLine\` and \`endLine\` to read a specific range (1-based, inclusive)
+* Use \`searchPattern\` for regex search - only matching lines and context will be shown
+* Large files are automatically truncated
+
+Regex search:
+* Use \`searchPattern\` to search for patterns in the file
+* Non-matching sections between matches are replaced with \`...\`
+* Supported: \`.\`, \`[abc]\`, \`[a-z]\`, \`^\`, \`$\`, \`*\`, \`+\`, \`?\`, \`{n,m}\`, \`|\`, \`\\t\`
+* Not supported: \`\\n\`, \`\\d\`, \`\\s\`, \`\\w\`, look-ahead/behind, back-references`;
+
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     const tools: Tool[] = [
       {
         name: "search",
-        description: `Search the indexed codebase (${meta.type}://${meta.identifier}). Returns relevant code snippets.`,
+        description: searchDescription,
         inputSchema: {
           type: "object",
           properties: {
             query: {
               type: "string",
-              description: "Natural language search query",
+              description: "Natural language description of what you're looking for.",
             },
             maxChars: {
               type: "number",
-              description: "Maximum characters in response (optional)",
+              description: "Maximum characters in response (optional).",
             },
           },
           required: ["query"],
@@ -146,19 +176,25 @@ export async function createMCPServer(
       tools.push(
         {
           name: "list_files",
-          description: "List files and directories in a specific directory (non-recursive). Use multiple calls to explore subdirectories.",
+          description: listFilesDescription,
           inputSchema: {
             type: "object",
             properties: {
               directory: {
                 type: "string",
-                description:
-                  "Directory to list (default: root). Only immediate children are returned.",
+                description: "Directory to list (default: root).",
               },
               pattern: {
                 type: "string",
-                description:
-                  "Optional glob pattern to filter results (e.g., '*.ts')",
+                description: "Glob pattern to filter results (e.g., '*.ts', 'src/*.json').",
+              },
+              depth: {
+                type: "number",
+                description: "Maximum depth to recurse (default: 2). Use 1 for immediate children only.",
+              },
+              showHidden: {
+                type: "boolean",
+                description: "Include hidden files starting with '.' (default: false).",
               },
             },
             required: [],
@@ -166,13 +202,37 @@ export async function createMCPServer(
         },
         {
           name: "read_file",
-          description: "Read the contents of a specific file",
+          description: readFileDescription,
           inputSchema: {
             type: "object",
             properties: {
               path: {
                 type: "string",
-                description: "Path to the file to read",
+                description: "Path to the file to read, relative to the source root.",
+              },
+              startLine: {
+                type: "number",
+                description: "First line to read (1-based, inclusive). Default: 1.",
+              },
+              endLine: {
+                type: "number",
+                description: "Last line to read (1-based, inclusive). Use -1 for end of file. Default: -1.",
+              },
+              searchPattern: {
+                type: "string",
+                description: "Regex pattern to search for. Only matching lines and context will be shown.",
+              },
+              contextLinesBefore: {
+                type: "number",
+                description: "Lines of context before each regex match (default: 5).",
+              },
+              contextLinesAfter: {
+                type: "number",
+                description: "Lines of context after each regex match (default: 5).",
+              },
+              includeLineNumbers: {
+                type: "boolean",
+                description: "Include line numbers in output (default: true).",
               },
             },
             required: ["path"],
@@ -202,21 +262,36 @@ export async function createMCPServer(
         }
 
         case "list_files": {
-          const entries = await client.listFiles({
+          const listOpts = {
             directory: args?.directory as string | undefined,
             pattern: args?.pattern as string | undefined,
-          });
-          const text = entries.map((e) => `${e.path} [${e.type}]`).join("\n");
+            depth: args?.depth as number | undefined,
+            showHidden: args?.showHidden as boolean | undefined,
+          };
+          const entries = await client.listFiles(listOpts);
+          const { formatListOutput } = await import("../tools/list-files.js");
+          const text = formatListOutput(entries, listOpts);
           return {
-            content: [{ type: "text", text: text || "No files found." }],
+            content: [{ type: "text", text }],
           };
         }
 
         case "read_file": {
-          const result = await client.readFile(args?.path as string);
+          const result = await client.readFile(args?.path as string, {
+            startLine: args?.startLine as number | undefined,
+            endLine: args?.endLine as number | undefined,
+            searchPattern: args?.searchPattern as string | undefined,
+            contextLinesBefore: args?.contextLinesBefore as number | undefined,
+            contextLinesAfter: args?.contextLinesAfter as number | undefined,
+            includeLineNumbers: args?.includeLineNumbers as boolean | undefined,
+          });
           if (result.error) {
+            let errorText = `Error: ${result.error}`;
+            if (result.suggestions && result.suggestions.length > 0) {
+              errorText += `\n\nDid you mean one of these?\n${result.suggestions.map(s => `  - ${s}`).join("\n")}`;
+            }
             return {
-              content: [{ type: "text", text: `Error: ${result.error}` }],
+              content: [{ type: "text", text: errorText }],
               isError: true,
             };
           }

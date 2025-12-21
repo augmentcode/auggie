@@ -196,13 +196,43 @@ export class CLIAgent {
     const client = this.client;
     const hasSource = client.hasSource();
 
+    // Tool descriptions adapted from Auggie CLI
+    const searchDescription = `Search the indexed content using natural language.
+Returns relevant snippets organized by file path with line numbers.
+
+Features:
+- Takes a natural language description of what you're looking for
+- Returns snippets ranked by relevance
+- Works across different file types
+- Reflects the indexed state of the content`;
+
+    const listFilesDescription = `List files and directories with type annotations.
+* \`directory\` is a path relative to the source root
+* Lists files and subdirectories up to 2 levels deep by default
+* Hidden files (starting with \`.\`) are excluded by default
+* Supports glob pattern filtering (e.g., \`*.ts\`, \`src/*.json\`)
+* If the output is long, it will be truncated`;
+
+    const readFileDescription = `Read file contents with line numbers (cat -n format).
+* \`path\` is a file path relative to the source root
+* Displays output with 6-character padded line numbers
+* Use \`startLine\` and \`endLine\` to read a specific range (1-based, inclusive)
+* Use \`searchPattern\` for regex search - only matching lines and context will be shown
+* Large files are automatically truncated
+
+Regex search:
+* Use \`searchPattern\` to search for patterns in the file
+* Non-matching sections between matches are replaced with \`...\`
+* Supported: \`.\`, \`[abc]\`, \`[a-z]\`, \`^\`, \`$\`, \`*\`, \`+\`, \`?\`, \`{n,m}\`, \`|\`, \`\\t\`
+* Not supported: \`\\n\`, \`\\d\`, \`\\s\`, \`\\w\`, look-ahead/behind, back-references`;
+
     const searchSchema = z.object({
-      query: z.string().describe("Natural language search query describing what you're looking for"),
-      maxChars: z.number().optional().describe("Maximum characters in response"),
+      query: z.string().describe("Natural language description of what you're looking for."),
+      maxChars: z.number().optional().describe("Maximum characters in response."),
     });
 
     const searchTool = tool({
-      description: "Search the codebase using natural language. Returns relevant code snippets and file paths.",
+      description: searchDescription,
       inputSchema: searchSchema,
       execute: async ({ query, maxChars }: z.infer<typeof searchSchema>) => {
         const result = await client.search(query, { maxOutputLength: maxChars });
@@ -212,30 +242,51 @@ export class CLIAgent {
 
     if (hasSource) {
       const listFilesSchema = z.object({
-        directory: z.string().optional().describe("Directory to list (default: root). Only immediate children are returned."),
-        pattern: z.string().optional().describe("Glob pattern to filter results (e.g., '*.ts', '*.json')"),
+        directory: z.string().optional().describe("Directory to list (default: root)."),
+        pattern: z.string().optional().describe("Glob pattern to filter results (e.g., '*.ts', 'src/*.json')."),
+        depth: z.number().optional().describe("Maximum depth to recurse (default: 2). Use 1 for immediate children only."),
+        showHidden: z.boolean().optional().describe("Include hidden files starting with '.' (default: false)."),
       });
 
       const listFilesTool = tool({
-        description: "List files and directories in a specific directory (non-recursive). Use multiple calls to explore subdirectories.",
+        description: listFilesDescription,
         inputSchema: listFilesSchema,
-        execute: async ({ directory, pattern }: z.infer<typeof listFilesSchema>) => {
-          const entries = await client.listFiles({ directory, pattern });
-          return entries.map(e => `${e.path} [${e.type}]`).join("\n");
+        execute: async ({ directory, pattern, depth, showHidden }: z.infer<typeof listFilesSchema>) => {
+          const opts = { directory, pattern, depth, showHidden };
+          const entries = await client.listFiles(opts);
+          const { formatListOutput } = await import("../tools/list-files.js");
+          return formatListOutput(entries, opts);
         },
       });
 
       const readFileSchema = z.object({
-        path: z.string().describe("Path to the file to read"),
+        path: z.string().describe("Path to the file to read, relative to the source root."),
+        startLine: z.number().optional().describe("First line to read (1-based, inclusive). Default: 1."),
+        endLine: z.number().optional().describe("Last line to read (1-based, inclusive). Use -1 for end of file. Default: -1."),
+        searchPattern: z.string().optional().describe("Regex pattern to search for. Only matching lines and context will be shown."),
+        contextLinesBefore: z.number().optional().describe("Lines of context before each regex match (default: 5)."),
+        contextLinesAfter: z.number().optional().describe("Lines of context after each regex match (default: 5)."),
+        includeLineNumbers: z.boolean().optional().describe("Include line numbers in output (default: true)."),
       });
 
       const readFileTool = tool({
-        description: "Read the contents of a specific file from the codebase.",
+        description: readFileDescription,
         inputSchema: readFileSchema,
-        execute: async ({ path }: z.infer<typeof readFileSchema>) => {
-          const result = await client.readFile(path);
+        execute: async (args: z.infer<typeof readFileSchema>) => {
+          const result = await client.readFile(args.path, {
+            startLine: args.startLine,
+            endLine: args.endLine,
+            searchPattern: args.searchPattern,
+            contextLinesBefore: args.contextLinesBefore,
+            contextLinesAfter: args.contextLinesAfter,
+            includeLineNumbers: args.includeLineNumbers,
+          });
           if (result.error) {
-            return `Error: ${result.error}`;
+            let errorText = `Error: ${result.error}`;
+            if (result.suggestions && result.suggestions.length > 0) {
+              errorText += `\n\nDid you mean one of these?\n${result.suggestions.map(s => `  - ${s}`).join("\n")}`;
+            }
+            return errorText;
           }
           return result.contents ?? "";
         },
