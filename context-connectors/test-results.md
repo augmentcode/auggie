@@ -866,6 +866,157 @@ All three tools work correctly across all tested providers:
 
 ---
 
+## Phase 11: Programmatic API Testing
+
+**Date:** 2025-12-21
+**Status:** ✅ Complete
+
+### Test Results
+
+| Step | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 11.1 | Indexer class | ✅ Pass | Indexed 54 files from `./src` in 138ms |
+| 11.2 | SearchClient class | ✅ Pass | Query returned 22,526 chars of results |
+| 11.3 | source.listFiles() | ✅ Pass | Listed 54 files with path info |
+| 11.4 | source.readFile() | ✅ Pass | Read 6,796 characters from `core/indexer.ts` |
+| 11.5 | store.list() | ✅ Pass | Found 1 index (`api-test`) |
+| 11.6 | createMCPServer() | ✅ Pass | MCP server instance created |
+
+### Bug Fixes Applied
+
+#### 1. Missing `./clients` Export in package.json
+
+The package.json was missing the export path for the clients module, causing:
+```
+Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './clients' is not defined by "exports"
+```
+
+**Fix:** Added export to package.json:
+```json
+"./clients": {
+  "types": "./dist/clients/index.d.ts",
+  "import": "./dist/clients/index.js"
+}
+```
+
+#### 2. Missing MCP Exports in clients/index.ts
+
+The `createMCPServer` and `runMCPServer` functions were not exported from the clients module index.
+
+**Fix:** Added exports to `src/clients/index.ts`:
+```typescript
+export {
+  createMCPServer,
+  runMCPServer,
+  type MCPServerConfig,
+} from "./mcp-server.js";
+```
+
+### API Usage Patterns
+
+#### Indexer Class
+```javascript
+import { Indexer } from "@augmentcode/context-connectors";
+import { FilesystemSource } from "@augmentcode/context-connectors/sources";
+import { MemoryStore } from "@augmentcode/context-connectors/stores";
+
+const indexer = new Indexer();
+const source = new FilesystemSource({ rootPath: "./src" });
+const store = new MemoryStore();
+
+const result = await indexer.index(source, store, "my-key");
+// result: { type: "full"|"incremental"|"unchanged", filesIndexed, filesRemoved, duration }
+```
+
+#### SearchClient Class
+```javascript
+import { SearchClient } from "@augmentcode/context-connectors/clients";
+
+const client = new SearchClient({ store, source, key: "my-key" });
+await client.initialize();  // Required before use!
+
+const { results, query } = await client.search("query text");
+// results: string (formatted search results)
+```
+
+#### Source Methods
+```javascript
+// listFiles() returns FileInfo[]
+const files = await source.listFiles();
+// files: [{ path: "bin/cmd-agent.ts" }, { path: "core/indexer.ts" }, ...]
+
+// readFile() returns string content
+const content = await source.readFile("core/indexer.ts");
+```
+
+#### Store Methods
+```javascript
+// list() returns all index keys
+const keys = await store.list();
+// keys: ["api-test", "my-project", ...]
+```
+
+#### MCP Server Creation
+```javascript
+import { createMCPServer } from "@augmentcode/context-connectors/clients";
+
+const server = await createMCPServer({ store, key: "my-key" });
+// server: MCP Server instance ready for transport connection
+```
+
+### Findings
+
+#### 1. SearchClient Requires initialize()
+
+The SearchClient must be initialized before use:
+```javascript
+const client = new SearchClient({ store, key: "my-key" });
+await client.initialize();  // Required!
+const results = await client.search("query");
+```
+
+Calling search before initialize throws: `"Client not initialized. Call initialize() first."`
+
+#### 2. Search Returns Object, Not Array
+
+The `search()` method returns `{ results: string, query: string }`, not an array of result objects.
+
+#### 3. listFiles Returns FileInfo Objects
+
+The `listFiles()` method returns `FileInfo[]` with `path` properties, not plain strings:
+```javascript
+const files = await source.listFiles();
+const paths = files.map(f => f.path);  // Extract paths
+```
+
+#### 4. Stale ./mcp Export in package.json
+
+The package.json has a `./mcp` export pointing to non-existent files:
+```json
+"./mcp": {
+  "types": "./dist/mcp/index.d.ts",   // Does not exist
+  "import": "./dist/mcp/index.js"      // Does not exist
+}
+```
+
+MCP functionality is available through `./clients` instead.
+
+### Test Gaps
+
+#### 1. Not Tested
+- MemoryStore persistence/clearing behavior
+- SearchClient with different store types (S3Store)
+- Error handling for missing indexes
+- Concurrent access patterns
+
+#### 2. Edge Cases
+- Very large search results
+- Empty indexes
+- Invalid index keys
+- Store connection failures
+
+---
+
 ## Summary
 
 ### Phases Completed
@@ -878,6 +1029,7 @@ All three tools work correctly across all tested providers:
 - ✅ Phase 8: GitHub Webhook Integration
 - ✅ Phase 9: Vercel Integration
 - ✅ Phase 10: Multi-Provider Agent Testing
+- ✅ Phase 11: Programmatic API Testing
 
 ### Issues to Address
 1. **SDK ESM fix needed** - Missing `.js` extensions in imports
@@ -886,6 +1038,9 @@ All three tools work correctly across all tested providers:
 4. **GitLab hotlinking protection** - Fixed by adding `mode: 'same-origin'` to fetch
 5. **cheerio dependency** - Required for website crawling, should be in dependencies
 6. **Express handler Buffer fix** - Fixed Buffer body handling for signature verification
+7. **Missing ./clients export** - Fixed by adding export path to package.json
+8. **Missing MCP exports** - Fixed by adding createMCPServer/runMCPServer to clients/index.ts
+9. **Stale ./mcp export** - Points to non-existent dist/mcp/ files, should be removed
 
 ### Recommendations
 1. Add `--with-source` to agent command examples in documentation
@@ -897,3 +1052,5 @@ All three tools work correctly across all tested providers:
 7. Document website source limitations (static HTML only, no JS rendering)
 8. Consider adding sitemap.xml support for better page discovery
 9. Document S3-compatible service configuration requirements (endpoint, path-style URLs)
+10. Document SearchClient.initialize() requirement in API docs
+11. Remove stale ./mcp export from package.json or create the mcp module

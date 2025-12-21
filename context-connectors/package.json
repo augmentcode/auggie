@@ -39,9 +39,9 @@
       "types": "./dist/tools/index.d.ts",
       "import": "./dist/tools/index.js"
     },
-    "./mcp": {
-      "types": "./dist/mcp/index.d.ts",
-      "import": "./dist/mcp/index.js"
+    "./clients": {
+      "types": "./dist/clients/index.d.ts",
+      "import": "./dist/clients/index.js"
     },
     "./integrations": {
       "types": "./dist/integrations/index.d.ts",
