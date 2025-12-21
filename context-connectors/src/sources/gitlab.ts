@@ -222,12 +222,53 @@ export class GitLabSource implements Source {
 
   /**
    * Check if the push was a force push (base commit not reachable from head)
+   *
+   * Force push detection cases:
+   * 1. Compare API fails - base commit no longer exists
+   * 2. Empty commits list with non-empty diffs - diverged histories
+   * 3. compare_same_ref true but different SHAs - revert to older commit
+   *
+   * GitLab Compare API returns:
+   * - commits: list of commits from base to head
+   * - diffs: list of file diffs
+   * - compare_timeout: boolean if comparison timed out
+   * - compare_same_ref: true if comparing same ref
+   *
+   * When head is behind base (force push revert), the commits array is empty
+   * but the diffs show changes because it's comparing backwards.
    */
   private async isForcePush(base: string, head: string): Promise<boolean> {
     try {
-      await this.apiRequest(
+      interface CompareResult {
+        commits: Array<{ id: string }>;
+        diffs: Array<{ new_path: string }>;
+        compare_same_ref?: boolean;
+      }
+
+      const data = await this.apiRequest<CompareResult>(
         `/projects/${this.encodedProjectId}/repository/compare?from=${encodeURIComponent(base)}&to=${encodeURIComponent(head)}`
       );
+
+      // If commits array is empty but we have diffs, it indicates diverged/behind history
+      // This happens when head is an ancestor of base (revert to older commit)
+      if (data.commits.length === 0 && data.diffs.length > 0) {
+        return true;
+      }
+
+      // If commits array is empty and no diffs, but the refs are different,
+      // this indicates head is behind base
+      if (data.commits.length === 0 && base !== head) {
+        // Double-check by comparing in reverse direction
+        const reverseData = await this.apiRequest<CompareResult>(
+          `/projects/${this.encodedProjectId}/repository/compare?from=${encodeURIComponent(head)}&to=${encodeURIComponent(base)}`
+        );
+
+        // If reverse comparison has commits, then head is behind base (force push revert)
+        if (reverseData.commits.length > 0) {
+          return true;
+        }
+      }
+
       return false;
     } catch {
       // If comparison fails, it's likely a force push

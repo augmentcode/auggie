@@ -305,16 +305,35 @@ export class GitHubSource implements Source {
 
   /**
    * Check if the push was a force push (base commit not reachable from head)
+   *
+   * Force push detection cases:
+   * 1. Compare API fails - base commit no longer exists
+   * 2. status: "diverged" - histories have diverged
+   * 3. status: "behind" - head is behind base (revert to older commit)
+   * 4. behind_by > 0 - additional indicator of non-linear history
    */
   private async isForcePush(base: string, head: string): Promise<boolean> {
     const octokit = await this.getOctokit();
     try {
-      await octokit.repos.compareCommits({
+      const { data } = await octokit.repos.compareCommits({
         owner: this.owner,
         repo: this.repo,
         base,
         head,
       });
+
+      // Check for non-linear history indicators
+      // "diverged" means histories have diverged (typical force push)
+      // "behind" means head is an ancestor of base (revert to older commit)
+      if (data.status === "diverged" || data.status === "behind") {
+        return true;
+      }
+
+      // Additional safety check: behind_by > 0 indicates head is behind base
+      if (data.behind_by > 0) {
+        return true;
+      }
+
       return false;
     } catch {
       // If comparison fails, it's likely a force push

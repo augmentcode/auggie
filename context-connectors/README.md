@@ -121,6 +121,12 @@ context-connectors mcp [options]
 | `-k, --key <name>` | Index key/name | Required |
 | `--with-source` | Enable file tools | `false` |
 
+### About `--with-source`
+
+The `--with-source` flag enables the `listFiles` and `readFile` tools in addition to `search`. Without this flag, only the `search` tool is available.
+
+When using `--with-source`, you must also provide the source path with `-p, --path` so that files can be read from disk.
+
 ## Programmatic Usage
 
 ### Basic Indexing
@@ -146,11 +152,13 @@ import { FilesystemStore } from "@augmentcode/context-connectors/stores";
 
 const store = new FilesystemStore({ basePath: ".context-connectors" });
 const client = new SearchClient({ store, key: "my-project" });
-await client.initialize();
+await client.initialize(); // Required before calling search()
 
 const result = await client.search("authentication");
 console.log(result.results);
 ```
+
+> **Important:** You must call `await client.initialize()` before calling `search()`. This loads the index state and prepares the client for queries.
 
 ### MCP Server
 
@@ -348,6 +356,34 @@ docs/api/
 # Ignore specific files
 config.local.json
 ```
+
+> **Note:** The `.augmentignore` file must be placed in the **source root directory** (the path passed to the index command), not the current working directory.
+
+## Website Source
+
+The website source crawls and indexes static HTML content.
+
+### Limitations
+
+- **JavaScript-rendered content is not supported.** Only static HTML is crawled. Single-page applications (SPAs) or pages that require JavaScript to render content will not be fully indexed.
+- Link-based crawling only - pages must be discoverable through links from the starting URL.
+
+## S3-Compatible Storage
+
+When using S3-compatible services like MinIO, DigitalOcean Spaces, or Backblaze B2:
+
+```bash
+npx context-connectors index -s filesystem -p ./project -k my-project \
+  --store s3 \
+  --bucket my-bucket \
+  --s3-endpoint http://localhost:9000 \
+  --s3-force-path-style
+```
+
+| Option | Description |
+|--------|-------------|
+| `--s3-endpoint <url>` | Custom S3 endpoint URL |
+| `--s3-force-path-style` | Use path-style URLs (required for MinIO and most S3-compatible services) |
 
 ## License
 
