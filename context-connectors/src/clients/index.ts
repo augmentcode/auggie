@@ -9,3 +9,9 @@ export {
   runMCPServer,
   type MCPServerConfig,
 } from "./mcp-server.js";
+export {
+  createMCPHttpServer,
+  runMCPHttpServer,
+  type MCPHttpServerConfig,
+  type MCPHttpServer,
+} from "./mcp-http-server.js";

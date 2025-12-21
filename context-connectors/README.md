@@ -6,7 +6,7 @@ Index any data source and make it searchable with Augment's context engine.
 
 - **Multiple Sources**: Index from GitHub, GitLab, websites, or local filesystem
 - **Flexible Storage**: Store indexes locally, in S3, or other backends
-- **Multiple Clients**: CLI search, interactive agent, MCP server
+- **Multiple Clients**: CLI search, interactive agent, MCP server (local & remote)
 - **Incremental Updates**: Only re-index what changed
 - **Smart Filtering**: Respects `.gitignore`, `.augmentignore`, and filters binary/generated files
 
@@ -121,6 +121,38 @@ context-connectors mcp [options]
 | `-k, --key <name>` | Index key/name | Required |
 | `--with-source` | Enable file tools | `false` |
 
+### `mcp-serve` - Start MCP HTTP server
+
+Start an MCP server accessible over HTTP for remote clients.
+
+```bash
+context-connectors mcp-serve [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-k, --key <name>` | Index key/name | Required |
+| `--port <number>` | Port to listen on | `3000` |
+| `--host <host>` | Host to bind to | `localhost` |
+| `--cors <origins>` | CORS origins (comma-separated or `*`) | - |
+| `--base-path <path>` | Base path for MCP endpoint | `/mcp` |
+| `--api-key <key>` | API key for authentication | - |
+| `--store <type>` | Store type: `filesystem`, `s3` | `filesystem` |
+| `--store-path <path>` | Store base path | `.context-connectors` |
+| `--search-only` | Disable file operations | `false` |
+
+Example:
+```bash
+# Start server on port 8080, allow any CORS origin
+context-connectors mcp-serve -k my-project --port 8080 --cors "*"
+
+# With authentication
+context-connectors mcp-serve -k my-project --api-key "secret-key"
+
+# Or use environment variable for the key
+MCP_API_KEY="secret-key" context-connectors mcp-serve -k my-project
+```
+
 ### About `--with-source`
 
 The `--with-source` flag enables the `listFiles` and `readFile` tools in addition to `search`. Without this flag, only the `search` tool is available.
@@ -174,6 +206,29 @@ await runMCPServer({
 });
 ```
 
+### MCP HTTP Server
+
+```typescript
+import { runMCPHttpServer } from "@augmentcode/context-connectors";
+import { FilesystemStore } from "@augmentcode/context-connectors/stores";
+
+const store = new FilesystemStore({ basePath: ".context-connectors" });
+
+const server = await runMCPHttpServer({
+  store,
+  key: "my-project",
+  port: 3000,
+  host: "0.0.0.0",
+  cors: "*",
+  apiKey: process.env.MCP_API_KEY,
+});
+
+console.log(`MCP server running at ${server.getUrl()}`);
+
+// Graceful shutdown
+process.on("SIGTERM", () => server.stop());
+```
+
 ## Claude Desktop Integration
 
 Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
@@ -191,6 +246,55 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
     }
   }
 }
+```
+
+## Remote MCP Client Integration
+
+The `mcp-serve` command exposes your indexed data over HTTP using the MCP Streamable HTTP transport. Any MCP-compatible client can connect.
+
+### Connecting with MCP SDK
+
+```typescript
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const transport = new StreamableHTTPClientTransport(
+  new URL("http://localhost:3000/mcp"),
+  {
+    requestInit: {
+      headers: {
+        "Authorization": "Bearer your-api-key"
+      }
+    }
+  }
+);
+
+const client = new Client({ name: "my-client", version: "1.0.0" });
+await client.connect(transport);
+
+// List available tools
+const tools = await client.listTools();
+console.log(tools);
+
+// Call search tool
+const result = await client.callTool("search", { query: "authentication" });
+console.log(result);
+```
+
+### Testing with curl
+
+```bash
+# List tools
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# Call search tool
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-api-key" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search","arguments":{"query":"authentication"}}}'
 ```
 
 ## GitHub Actions
@@ -334,7 +438,7 @@ Sources → Indexer → Stores → Clients
 - **Sources**: Fetch files from data sources (GitHub, Filesystem, etc.)
 - **Indexer**: Orchestrates indexing using Augment's context engine
 - **Stores**: Persist index state (Filesystem, S3)
-- **Clients**: Consume the index (CLI, Agent, MCP Server)
+- **Clients**: Consume the index (CLI, Agent, MCP Server via stdio or HTTP)
 
 ## Filtering
 

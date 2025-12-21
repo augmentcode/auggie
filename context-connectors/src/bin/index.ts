@@ -11,6 +11,7 @@ import { deleteCommand } from "./cmd-delete.js";
 import { initCommand } from "./cmd-init.js";
 import { mcpCommand } from "./cmd-mcp.js";
 import { agentCommand } from "./cmd-agent.js";
+import { mcpServeCommand } from "./cmd-mcp-serve.js";
 
 const program = new Command();
 
@@ -26,6 +27,7 @@ program.addCommand(listCommand);
 program.addCommand(deleteCommand);
 program.addCommand(initCommand);
 program.addCommand(mcpCommand);
+program.addCommand(mcpServeCommand);
 program.addCommand(agentCommand);
 
 program.parse();
