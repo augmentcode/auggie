@@ -13,8 +13,8 @@ export const mcpCommand = new Command("mcp")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
   .option("--store-path <path>", "Store base path", ".context-connectors")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
-  .option("--with-source", "Enable list_files/read_file tools")
-  .option("-p, --path <path>", "Path for filesystem source")
+  .option("--search-only", "Disable list_files/read_file tools (search only)")
+  .option("-p, --path <path>", "Path override for filesystem source")
   .action(async (options) => {
     try {
       // Create store
@@ -36,9 +36,9 @@ export const mcpCommand = new Command("mcp")
         process.exit(1);
       }
 
-      // Optionally create source
+      // Create source unless --search-only is specified
       let source;
-      if (options.withSource) {
+      if (!options.searchOnly) {
         if (state.source.type === "filesystem") {
           const path = options.path ?? state.source.identifier;
           source = new FilesystemSource({ rootPath: path });
@@ -46,6 +46,17 @@ export const mcpCommand = new Command("mcp")
           const [owner, repo] = state.source.identifier.split("/");
           const { GitHubSource } = await import("../sources/github.js");
           source = new GitHubSource({ owner, repo, ref: state.source.ref });
+        } else if (state.source.type === "gitlab") {
+          const { GitLabSource } = await import("../sources/gitlab.js");
+          source = new GitLabSource({
+            projectId: state.source.identifier,
+            ref: state.source.ref,
+          });
+        } else if (state.source.type === "website") {
+          const { WebsiteSource } = await import("../sources/website.js");
+          source = new WebsiteSource({
+            url: `https://${state.source.identifier}`,
+          });
         }
       }
 

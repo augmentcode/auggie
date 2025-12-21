@@ -19,8 +19,8 @@ export const searchCommand = new Command("search")
   .option("--s3-endpoint <url>", "S3-compatible endpoint URL (for MinIO, R2, etc.)")
   .option("--s3-force-path-style", "Use path-style S3 URLs (for some S3-compatible services)")
   .option("--max-chars <number>", "Max output characters", parseInt)
-  .option("--with-source", "Enable listFiles/readFile (requires source config)")
-  .option("-p, --path <path>", "Path for filesystem source (with --with-source)")
+  .option("--search-only", "Disable file access (search only)")
+  .option("-p, --path <path>", "Path override for filesystem source")
   .action(async (query, options) => {
     try {
       // Create store
@@ -45,16 +45,16 @@ export const searchCommand = new Command("search")
         process.exit(1);
       }
 
-      // Optionally create source
-      let source;
-      if (options.withSource) {
-        // Load state to get source metadata
-        const state = await store.load(options.key);
-        if (!state) {
-          console.error(`Index "${options.key}" not found`);
-          process.exit(1);
-        }
+      // Load state to get source metadata
+      const state = await store.load(options.key);
+      if (!state) {
+        console.error(`Index "${options.key}" not found`);
+        process.exit(1);
+      }
 
+      // Create source unless --search-only is specified
+      let source;
+      if (!options.searchOnly) {
         if (state.source.type === "filesystem") {
           const path = options.path ?? state.source.identifier;
           source = new FilesystemSource({ rootPath: path });
@@ -74,8 +74,6 @@ export const searchCommand = new Command("search")
           });
         } else if (state.source.type === "website") {
           const { WebsiteSource } = await import("../sources/website.js");
-          // For website, the identifier is the hostname, but we need the full URL
-          // Store the URL in the source metadata for re-creation
           source = new WebsiteSource({
             url: `https://${state.source.identifier}`,
           });
