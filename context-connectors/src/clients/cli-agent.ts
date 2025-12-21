@@ -97,7 +97,11 @@ async function loadModel(
     case "openai": {
       try {
         const { openai } = await import("@ai-sdk/openai");
-        return openai(modelName);
+        // Use openai.chat() instead of openai() to use the Chat Completions API
+        // rather than the Responses API. The Responses API is stateful and doesn't
+        // work with Zero Data Retention (ZDR) organizations because function call
+        // IDs (fc_...) are not persisted server-side.
+        return openai.chat(modelName);
       } catch {
         throw new Error(
           `OpenAI provider not installed. Run: npm install @ai-sdk/openai`
