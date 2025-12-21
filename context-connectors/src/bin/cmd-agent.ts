@@ -10,9 +10,9 @@ import { FilesystemStore } from "../stores/filesystem.js";
 import { FilesystemSource } from "../sources/filesystem.js";
 
 const PROVIDER_DEFAULTS: Record<Provider, string> = {
-  openai: "gpt-5.2",
-  anthropic: "claude-sonnet-4-5",
-  google: "gemini-3-pro",
+  openai: "gpt-5-mini",
+  anthropic: "claude-haiku-4-5",
+  google: "gemini-3-flash-preview",
 };
 
 export const agentCommand = new Command("agent")
