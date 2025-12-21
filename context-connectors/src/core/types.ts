@@ -32,17 +32,20 @@ export interface FileEntry {
 
 /**
  * File information returned by listFiles operations.
- * Contains path only (no contents) for efficiency.
+ * Contains path and type (no contents) for efficiency.
  *
  * @example
  * ```typescript
- * const files: FileInfo[] = await source.listFiles();
- * console.log(files.map(f => f.path));
+ * const entries: FileInfo[] = await source.listFiles();
+ * const dirs = entries.filter(e => e.type === "directory");
+ * const files = entries.filter(e => e.type === "file");
  * ```
  */
 export interface FileInfo {
-  /** Relative path to the file from the source root */
+  /** Relative path to the file or directory from the source root */
   path: string;
+  /** Whether this entry is a file or directory */
+  type: "file" | "directory";
 }
 
 /**

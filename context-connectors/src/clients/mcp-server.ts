@@ -146,14 +146,19 @@ export async function createMCPServer(
       tools.push(
         {
           name: "list_files",
-          description: "List all files in the indexed codebase",
+          description: "List files and directories in a specific directory (non-recursive). Use multiple calls to explore subdirectories.",
           inputSchema: {
             type: "object",
             properties: {
+              directory: {
+                type: "string",
+                description:
+                  "Directory to list (default: root). Only immediate children are returned.",
+              },
               pattern: {
                 type: "string",
                 description:
-                  "Optional glob pattern to filter files (e.g., '**/*.ts')",
+                  "Optional glob pattern to filter results (e.g., '*.ts')",
               },
             },
             required: [],
@@ -197,10 +202,11 @@ export async function createMCPServer(
         }
 
         case "list_files": {
-          const files = await client.listFiles({
-            pattern: args?.pattern as string,
+          const entries = await client.listFiles({
+            directory: args?.directory as string | undefined,
+            pattern: args?.pattern as string | undefined,
           });
-          const text = files.map((f) => f.path).join("\n");
+          const text = entries.map((e) => `${e.path} [${e.type}]`).join("\n");
           return {
             content: [{ type: "text", text: text || "No files found." }],
           };

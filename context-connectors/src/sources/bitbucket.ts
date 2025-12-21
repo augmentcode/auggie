@@ -474,41 +474,39 @@ export class BitBucketSource implements Source {
     };
   }
 
-  async listFiles(): Promise<FileInfo[]> {
+  async listFiles(directory: string = ""): Promise<FileInfo[]> {
     const sha = await this.resolveRefToSha();
 
-    // Use src endpoint - need to recursively traverse directories
+    // Use src endpoint for specific directory (non-recursive)
     interface SrcResponse {
       values: Array<{ path: string; type: string }>;
       next?: string;
     }
 
-    const files: FileInfo[] = [];
-    const dirsToVisit: string[] = [""]; // Start with root directory
+    const results: FileInfo[] = [];
+    let url = `/repositories/${this.workspace}/${this.repo}/src/${encodeURIComponent(sha)}/${directory}?pagelen=100`;
 
-    while (dirsToVisit.length > 0) {
-      const currentDir = dirsToVisit.pop()!;
-      let url = `/repositories/${this.workspace}/${this.repo}/src/${encodeURIComponent(sha)}/${currentDir}?pagelen=100`;
-
-      // Paginate through all items in this directory
+    try {
+      // Paginate through all items in this directory (but don't recurse into subdirectories)
       while (url) {
         const data = await this.apiRequest<SrcResponse>(url);
 
         for (const item of data.values) {
-          if (item.type === "commit_file") {
-            files.push({ path: item.path });
-          } else if (item.type === "commit_directory") {
-            // Queue directory for recursive traversal
-            dirsToVisit.push(item.path);
-          }
+          results.push({
+            path: item.path,
+            type: item.type === "commit_directory" ? "directory" as const : "file" as const,
+          });
         }
 
         // Get next page URL (relative path)
         url = data.next ? data.next.replace(this.baseUrl, "") : "";
       }
-    }
 
-    return files;
+      return results;
+    } catch {
+      // Directory doesn't exist
+      return [];
+    }
   }
 
   async readFile(path: string): Promise<string | null> {

@@ -194,21 +194,27 @@ export class SearchClient {
   }
 
   /**
-   * List files in the source.
+   * List files and directories in the source (non-recursive).
    *
    * Requires a Source to be configured (full mode).
+   * Returns only immediate children of the specified directory.
    *
-   * @param options - Optional filter options
-   * @returns Array of file info objects
+   * @param options - Optional filter options (directory and pattern)
+   * @returns Array of file/directory info objects with paths and types
    * @throws Error if no Source is configured
    *
    * @example
    * ```typescript
-   * const files = await client.listFiles({ pattern: "src/**\/*.ts" });
-   * console.log(`Found ${files.length} TypeScript files`);
+   * // List root directory
+   * const root = await client.listFiles();
+   * const dirs = root.filter(e => e.type === "directory");
+   *
+   * // List specific directory with pattern filter
+   * const tsFiles = await client.listFiles({ directory: "src", pattern: "*.ts" });
+   * console.log(`Found ${tsFiles.length} TypeScript files in src/`);
    * ```
    */
-  async listFiles(options?: { pattern?: string }) {
+  async listFiles(options?: { directory?: string; pattern?: string }) {
     return listFiles(this.getToolContext(), options);
   }
 

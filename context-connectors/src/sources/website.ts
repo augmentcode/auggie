@@ -397,13 +397,19 @@ export class WebsiteSource implements Source {
     };
   }
 
-  async listFiles(): Promise<FileInfo[]> {
+  async listFiles(directory: string = ""): Promise<FileInfo[]> {
+    // Websites don't have a directory structure - all pages are in root
+    // Only return results when querying root directory
+    if (directory !== "") {
+      return [];
+    }
+
     // If we haven't crawled yet, do a crawl
     if (this.crawledPages.length === 0) {
       await this.crawl();
     }
 
-    return this.crawledPages.map((page) => ({ path: page.path }));
+    return this.crawledPages.map((page) => ({ path: page.path, type: "file" as const }));
   }
 
   async readFile(path: string): Promise<string | null> {

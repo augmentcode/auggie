@@ -212,15 +212,16 @@ export class CLIAgent {
 
     if (hasSource) {
       const listFilesSchema = z.object({
-        pattern: z.string().optional().describe("Glob pattern to filter files (e.g., '**/*.ts', 'src/**')"),
+        directory: z.string().optional().describe("Directory to list (default: root). Only immediate children are returned."),
+        pattern: z.string().optional().describe("Glob pattern to filter results (e.g., '*.ts', '*.json')"),
       });
 
       const listFilesTool = tool({
-        description: "List all files in the codebase. Optionally filter by glob pattern.",
+        description: "List files and directories in a specific directory (non-recursive). Use multiple calls to explore subdirectories.",
         inputSchema: listFilesSchema,
-        execute: async ({ pattern }: z.infer<typeof listFilesSchema>) => {
-          const files = await client.listFiles({ pattern });
-          return files.map(f => f.path).join("\n");
+        execute: async ({ directory, pattern }: z.infer<typeof listFilesSchema>) => {
+          const entries = await client.listFiles({ directory, pattern });
+          return entries.map(e => `${e.path} [${e.type}]`).join("\n");
         },
       });
 

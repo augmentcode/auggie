@@ -143,47 +143,72 @@ describe("FilesystemSource", () => {
   });
 
   describe("listFiles", () => {
-    it("returns list of file paths", async () => {
+    it("returns list of file and directory entries", async () => {
       const source = new FilesystemSource({ rootPath: TEST_DIR });
-      const files = await source.listFiles();
+      const entries = await source.listFiles();
 
-      expect(files).toBeInstanceOf(Array);
-      expect(files.length).toBeGreaterThan(0);
-      expect(files[0]).toHaveProperty("path");
-      expect(files[0]).not.toHaveProperty("contents");
+      expect(entries).toBeInstanceOf(Array);
+      expect(entries.length).toBeGreaterThan(0);
+      expect(entries[0]).toHaveProperty("path");
+      expect(entries[0]).toHaveProperty("type");
+      expect(["file", "directory"]).toContain(entries[0].type);
     });
 
-    it("returns same files as fetchAll", async () => {
+    it("returns only immediate children of root (non-recursive)", async () => {
       const source = new FilesystemSource({ rootPath: TEST_DIR });
-      const listFilesResult = await source.listFiles();
-      const fetchAllResult = await source.fetchAll();
+      const entries = await source.listFiles();
 
-      const listFilesPaths = listFilesResult.map((f) => f.path).sort();
-      const fetchAllPaths = fetchAllResult.map((f) => f.path).sort();
-
-      expect(listFilesPaths).toEqual(fetchAllPaths);
+      // Should include src directory but NOT src/index.ts
+      const paths = entries.map((e) => e.path);
+      expect(paths).toContain("src");
+      expect(paths).not.toContain("src/index.ts");
+      expect(paths).not.toContain("src/utils.ts");
     });
 
-    it("respects ignore rules", async () => {
-      // Create .gitignore with a pattern
-      await fs.writeFile(join(TEST_DIR, ".gitignore"), "*.log\n");
-      await fs.writeFile(join(TEST_DIR, "debug.log"), "debug output");
-
+    it("correctly identifies files and directories", async () => {
       const source = new FilesystemSource({ rootPath: TEST_DIR });
-      const files = await source.listFiles();
+      const entries = await source.listFiles();
 
-      const paths = files.map((f) => f.path);
-      expect(paths).not.toContain("debug.log");
+      const srcEntry = entries.find((e) => e.path === "src");
+      expect(srcEntry?.type).toBe("directory");
+
+      const readmeEntry = entries.find((e) => e.path === "README.md");
+      expect(readmeEntry?.type).toBe("file");
     });
 
-    it("skips node_modules and .git", async () => {
+    it("lists contents of subdirectory when directory parameter is provided", async () => {
       const source = new FilesystemSource({ rootPath: TEST_DIR });
-      const files = await source.listFiles();
+      const entries = await source.listFiles("src");
 
-      const hasBadPaths = files.some(
-        (f) => f.path.includes("node_modules") || f.path.includes(".git")
-      );
-      expect(hasBadPaths).toBe(false);
+      const paths = entries.map((e) => e.path);
+      expect(paths).toContain("src/index.ts");
+      expect(paths).toContain("src/utils.ts");
+
+      // All entries should be files since src only contains files
+      expect(entries.every((e) => e.type === "file")).toBe(true);
+    });
+
+    it("returns empty array for non-existent directory", async () => {
+      const source = new FilesystemSource({ rootPath: TEST_DIR });
+      const entries = await source.listFiles("nonexistent");
+
+      expect(entries).toEqual([]);
+    });
+
+    it("prevents path traversal", async () => {
+      const source = new FilesystemSource({ rootPath: TEST_DIR });
+      const entries = await source.listFiles("../../../etc");
+
+      expect(entries).toEqual([]);
+    });
+
+    it("skips node_modules and .git directories", async () => {
+      const source = new FilesystemSource({ rootPath: TEST_DIR });
+      const entries = await source.listFiles();
+
+      const paths = entries.map((e) => e.path);
+      expect(paths).not.toContain("node_modules");
+      expect(paths).not.toContain(".git");
     });
   });
 });

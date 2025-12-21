@@ -118,14 +118,16 @@ export interface Source {
   // --- Methods for Clients ---
 
   /**
-   * List all files in the source.
+   * List files and directories in a specific directory (non-recursive).
    *
-   * Used by the `listFiles` tool to show available files.
-   * May use optimized APIs (e.g., Git Trees API) for efficiency.
+   * Used by the `listFiles` tool to show available files and directories.
+   * Returns only immediate children of the specified directory.
+   * Agents can explore subdirectories by making multiple calls.
    *
-   * @returns Array of file paths (no contents)
+   * @param directory - Directory path to list (default: root "")
+   * @returns Array of file/directory info objects with paths and types
    */
-  listFiles(): Promise<FileInfo[]>;
+  listFiles(directory?: string): Promise<FileInfo[]>;
 
   /**
    * Read a single file by path.

@@ -15,34 +15,45 @@ import type { ToolContext } from "./types.js";
  */
 export interface ListFilesOptions {
   /**
-   * Glob pattern to filter files.
+   * Directory to list (default: root "").
+   * Only immediate children of this directory are returned.
+   * @example "src", "src/utils"
+   */
+  directory?: string;
+  /**
+   * Glob pattern to filter results within the directory.
    * Uses minimatch for pattern matching.
-   * @example "**\/*.ts", "src/**", "*.json"
+   * @example "*.ts", "*.json"
    */
   pattern?: string;
 }
 
 /**
- * List files from the source with optional filtering.
+ * List files and directories from the source (non-recursive).
  *
  * This function requires a Source to be configured in the context.
  * When called in search-only mode (no Source), it throws an error.
  *
+ * Returns only immediate children of the specified directory.
+ * Each result includes a type field ("file" or "directory").
+ *
  * @param ctx - Tool context (must have source configured)
  * @param options - Optional filter options
- * @returns Array of file info objects with paths
+ * @returns Array of file/directory info objects
  * @throws Error if no Source is configured
  *
  * @example
  * ```typescript
- * // List all files
- * const allFiles = await listFiles(ctx);
+ * // List root directory
+ * const root = await listFiles(ctx);
+ * // Returns: [{ path: "src", type: "directory" }, { path: "README.md", type: "file" }]
  *
- * // List only TypeScript files
- * const tsFiles = await listFiles(ctx, { pattern: "**\/*.ts" });
+ * // List specific directory
+ * const srcFiles = await listFiles(ctx, { directory: "src" });
+ * // Returns: [{ path: "src/index.ts", type: "file" }, { path: "src/utils", type: "directory" }]
  *
- * // List files in src directory
- * const srcFiles = await listFiles(ctx, { pattern: "src/**" });
+ * // Filter by pattern
+ * const tsFiles = await listFiles(ctx, { directory: "src", pattern: "*.ts" });
  * ```
  */
 export async function listFiles(
@@ -53,14 +64,15 @@ export async function listFiles(
     throw new Error("Source not configured. Cannot list files in search-only mode.");
   }
 
-  let files = await ctx.source.listFiles();
+  let entries = await ctx.source.listFiles(options?.directory);
 
-  // Optional: filter by pattern using minimatch
+  // Optional: filter by pattern using minimatch (applies to filename only within directory)
   if (options?.pattern) {
     const { minimatch } = await import("minimatch");
-    files = files.filter((f) => minimatch(f.path, options.pattern!));
+    const { basename } = await import("node:path");
+    entries = entries.filter((f) => minimatch(basename(f.path), options.pattern!));
   }
 
-  return files;
+  return entries;
 }
 

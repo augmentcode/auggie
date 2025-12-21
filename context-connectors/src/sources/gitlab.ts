@@ -417,17 +417,27 @@ export class GitLabSource implements Source {
     };
   }
 
-  async listFiles(): Promise<FileInfo[]> {
+  async listFiles(directory: string = ""): Promise<FileInfo[]> {
     const sha = await this.resolveRefToSha();
 
-    // Use recursive tree API with pagination
-    const data = await this.apiRequestPaginated<{ path: string; type: string }>(
-      `/projects/${this.encodedProjectId}/repository/tree?ref=${encodeURIComponent(sha)}&recursive=true`
-    );
+    // Use tree API without recursive=true for non-recursive listing
+    // Add path parameter to list specific directory
+    let url = `/projects/${this.encodedProjectId}/repository/tree?ref=${encodeURIComponent(sha)}`;
+    if (directory) {
+      url += `&path=${encodeURIComponent(directory)}`;
+    }
 
-    return data
-      .filter((item) => item.type === "blob")
-      .map((item) => ({ path: item.path }));
+    try {
+      const data = await this.apiRequestPaginated<{ path: string; type: string }>(url);
+
+      return data.map((item) => ({
+        path: item.path,
+        type: item.type === "tree" ? "directory" as const : "file" as const,
+      }));
+    } catch {
+      // Directory doesn't exist
+      return [];
+    }
   }
 
   async readFile(path: string): Promise<string | null> {

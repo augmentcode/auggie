@@ -452,30 +452,33 @@ export class GitHubSource implements Source {
     };
   }
 
-  async listFiles(): Promise<FileInfo[]> {
-    // Use Git Trees API for efficiency (no need to download tarball)
+  async listFiles(directory: string = ""): Promise<FileInfo[]> {
+    // Use getContent API for specific directory (non-recursive)
     const octokit = await this.getOctokit();
     const sha = await this.resolveRefToSha();
 
-    const { data } = await octokit.git.getTree({
-      owner: this.owner,
-      repo: this.repo,
-      tree_sha: sha,
-      recursive: "true",
-    });
+    try {
+      const { data } = await octokit.repos.getContent({
+        owner: this.owner,
+        repo: this.repo,
+        path: directory,
+        ref: sha,
+      });
 
-    // GitHub's recursive tree API is truncated at 100,000 entries
-    // Log a warning if this happens
-    if (data.truncated) {
-      console.warn(
-        `Warning: GitHub tree response was truncated for ${this.owner}/${this.repo}. ` +
-        `Some files may be missing from listFiles() results.`
-      );
+      // getContent returns an array for directories, single object for files
+      if (!Array.isArray(data)) {
+        // This is a file, not a directory - return empty
+        return [];
+      }
+
+      return data.map((item: { path: string; type: string }) => ({
+        path: item.path,
+        type: item.type === "dir" ? "directory" as const : "file" as const,
+      }));
+    } catch {
+      // Directory doesn't exist
+      return [];
     }
-
-    return data.tree
-      .filter((item: { type: string }) => item.type === "blob")
-      .map((item: { path: string }) => ({ path: item.path }));
   }
 
   async readFile(path: string): Promise<string | null> {

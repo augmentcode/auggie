@@ -7,13 +7,18 @@ import type { DirectContext } from "@augmentcode/auggie-sdk";
 import type { Source } from "../sources/types.js";
 import type { ToolContext } from "./types.js";
 import { listFiles } from "./list-files.js";
+import type { FileInfo } from "../core/types.js";
 
 describe("listFiles tool", () => {
-  // Create mock Source
-  const createMockSource = (files: Array<{ path: string }>) => {
+  // Create mock Source with file/directory entries
+  const createMockSource = (entries: FileInfo[], directoryHandler?: (dir?: string) => FileInfo[]) => {
+    const listFilesFn = directoryHandler
+      ? vi.fn().mockImplementation((dir?: string) => Promise.resolve(directoryHandler(dir)))
+      : vi.fn().mockResolvedValue(entries);
+
     return {
       type: "filesystem" as const,
-      listFiles: vi.fn().mockResolvedValue(files),
+      listFiles: listFilesFn,
       readFile: vi.fn(),
       fetchAll: vi.fn(),
       fetchChanges: vi.fn(),
@@ -50,58 +55,80 @@ describe("listFiles tool", () => {
     );
   });
 
-  it("returns file list from source", async () => {
+  it("returns file and directory entries from source", async () => {
     const mockSource = createMockSource([
-      { path: "src/index.ts" },
-      { path: "README.md" },
+      { path: "src", type: "directory" },
+      { path: "README.md", type: "file" },
     ]);
     const ctx = createToolContext(mockSource);
 
-    const files = await listFiles(ctx);
+    const entries = await listFiles(ctx);
 
-    expect(files).toHaveLength(2);
-    expect(files[0].path).toBe("src/index.ts");
-    expect(files[1].path).toBe("README.md");
+    expect(entries).toHaveLength(2);
+    expect(entries[0]).toEqual({ path: "src", type: "directory" });
+    expect(entries[1]).toEqual({ path: "README.md", type: "file" });
     expect(mockSource.listFiles).toHaveBeenCalled();
   });
 
-  it("filters by pattern when provided", async () => {
-    const mockSource = createMockSource([
-      { path: "src/index.ts" },
-      { path: "src/utils.ts" },
-      { path: "README.md" },
-    ]);
+  it("passes directory parameter to source", async () => {
+    const mockSource = createMockSource([], (dir?: string) => {
+      if (dir === "src") {
+        return [
+          { path: "src/index.ts", type: "file" },
+          { path: "src/utils.ts", type: "file" },
+        ];
+      }
+      return [
+        { path: "src", type: "directory" },
+        { path: "README.md", type: "file" },
+      ];
+    });
     const ctx = createToolContext(mockSource);
 
-    const files = await listFiles(ctx, { pattern: "**/*.ts" });
+    const entries = await listFiles(ctx, { directory: "src" });
 
-    expect(files).toHaveLength(2);
-    expect(files.every((f) => f.path.endsWith(".ts"))).toBe(true);
+    expect(entries).toHaveLength(2);
+    expect(entries[0].path).toBe("src/index.ts");
+    expect(mockSource.listFiles).toHaveBeenCalledWith("src");
   });
 
-  it("returns empty array when no files match pattern", async () => {
+  it("filters by pattern (matches filename only)", async () => {
     const mockSource = createMockSource([
-      { path: "src/index.ts" },
-      { path: "README.md" },
+      { path: "src/index.ts", type: "file" },
+      { path: "src/utils.ts", type: "file" },
+      { path: "src/helpers", type: "directory" },
     ]);
     const ctx = createToolContext(mockSource);
 
-    const files = await listFiles(ctx, { pattern: "**/*.py" });
+    const entries = await listFiles(ctx, { pattern: "*.ts" });
 
-    expect(files).toHaveLength(0);
+    expect(entries).toHaveLength(2);
+    expect(entries.every((e) => e.path.endsWith(".ts"))).toBe(true);
   });
 
-  it("returns all files when pattern is not provided", async () => {
+  it("returns empty array when no entries match pattern", async () => {
     const mockSource = createMockSource([
-      { path: "src/index.ts" },
-      { path: "README.md" },
-      { path: "package.json" },
+      { path: "src/index.ts", type: "file" },
+      { path: "README.md", type: "file" },
     ]);
     const ctx = createToolContext(mockSource);
 
-    const files = await listFiles(ctx);
+    const entries = await listFiles(ctx, { pattern: "*.py" });
 
-    expect(files).toHaveLength(3);
+    expect(entries).toHaveLength(0);
+  });
+
+  it("returns all entries when pattern is not provided", async () => {
+    const mockSource = createMockSource([
+      { path: "src", type: "directory" },
+      { path: "README.md", type: "file" },
+      { path: "package.json", type: "file" },
+    ]);
+    const ctx = createToolContext(mockSource);
+
+    const entries = await listFiles(ctx);
+
+    expect(entries).toHaveLength(3);
   });
 });
 

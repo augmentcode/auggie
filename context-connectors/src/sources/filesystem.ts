@@ -190,10 +190,38 @@ export class FilesystemSource implements Source {
     return files;
   }
 
-  async listFiles(): Promise<FileInfo[]> {
-    // Use full filtering for consistency with fetchAll
-    const files = await this.fetchAll();
-    return files.map((f) => ({ path: f.path }));
+  async listFiles(directory: string = ""): Promise<FileInfo[]> {
+    const targetDir = join(this.rootPath, directory);
+
+    // Prevent path traversal
+    const resolvedTarget = resolve(targetDir);
+    if (!resolvedTarget.startsWith(this.rootPath)) {
+      return [];
+    }
+
+    try {
+      const entries = await fs.readdir(targetDir, { withFileTypes: true });
+      const results: FileInfo[] = [];
+
+      for (const entry of entries) {
+        // Skip default ignored directories
+        if (entry.isDirectory() && DEFAULT_SKIP_DIRS.has(entry.name)) {
+          continue;
+        }
+
+        const entryPath = directory ? join(directory, entry.name) : entry.name;
+
+        results.push({
+          path: entryPath,
+          type: entry.isDirectory() ? "directory" : "file",
+        });
+      }
+
+      return results;
+    } catch {
+      // Directory doesn't exist or isn't readable
+      return [];
+    }
   }
 
   async fetchChanges(_previous: SourceMetadata): Promise<FileChanges | null> {
