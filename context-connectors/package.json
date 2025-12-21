@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "vitest",
+    "test": "vitest run",
     "cli": "tsx src/bin/index.ts",
     "cli:index": "tsx src/bin/index.ts index",
     "cli:search": "tsx src/bin/index.ts search"

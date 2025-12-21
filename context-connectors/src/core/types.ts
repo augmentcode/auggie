@@ -65,10 +65,10 @@ export interface FileInfo {
  */
 export interface SourceMetadata {
   /** The type of data source */
-  type: "github" | "gitlab" | "website" | "filesystem";
+  type: "github" | "gitlab" | "bitbucket" | "website" | "filesystem";
   /**
    * Source-specific identifier:
-   * - GitHub/GitLab: "owner/repo"
+   * - GitHub/GitLab/BitBucket: "owner/repo" or "workspace/repo"
    * - Website: base URL
    * - Filesystem: absolute path
    */

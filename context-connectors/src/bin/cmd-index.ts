@@ -9,15 +9,18 @@ import { FilesystemStore } from "../stores/filesystem.js";
 
 export const indexCommand = new Command("index")
   .description("Index a data source")
-  .requiredOption("-s, --source <type>", "Source type (filesystem, github, gitlab, website)")
+  .requiredOption("-s, --source <type>", "Source type (filesystem, github, gitlab, bitbucket, website)")
   .requiredOption("-k, --key <name>", "Index key/name")
   .option("-p, --path <path>", "Path for filesystem source", ".")
   .option("--owner <owner>", "GitHub repository owner")
-  .option("--repo <repo>", "GitHub repository name")
-  .option("--ref <ref>", "GitHub/GitLab ref (branch/tag/commit)", "HEAD")
+  .option("--repo <repo>", "GitHub/BitBucket repository name")
+  .option("--ref <ref>", "GitHub/GitLab/BitBucket ref (branch/tag/commit)", "HEAD")
   // GitLab options
   .option("--gitlab-url <url>", "GitLab base URL (for self-hosted)", "https://gitlab.com")
   .option("--project <id>", "GitLab project ID or path (e.g., group/project)")
+  // BitBucket options
+  .option("--workspace <slug>", "BitBucket workspace slug")
+  .option("--bitbucket-url <url>", "BitBucket base URL (for Server/Data Center)", "https://api.bitbucket.org/2.0")
   // Website options
   .option("--url <url>", "Website URL to crawl")
   .option("--max-depth <n>", "Maximum crawl depth (website)", (v) => parseInt(v, 10), 3)
@@ -58,6 +61,18 @@ export const indexCommand = new Command("index")
         source = new GitLabSource({
           baseUrl: options.gitlabUrl,
           projectId: options.project,
+          ref: options.ref,
+        });
+      } else if (options.source === "bitbucket") {
+        if (!options.workspace || !options.repo) {
+          console.error("BitBucket source requires --workspace and --repo options");
+          process.exit(1);
+        }
+        const { BitBucketSource } = await import("../sources/bitbucket.js");
+        source = new BitBucketSource({
+          baseUrl: options.bitbucketUrl,
+          workspace: options.workspace,
+          repo: options.repo,
           ref: options.ref,
         });
       } else if (options.source === "website") {

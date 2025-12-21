@@ -4,7 +4,7 @@ Index any data source and make it searchable with Augment's context engine.
 
 ## Features
 
-- **Multiple Sources**: Index from GitHub, GitLab, websites, or local filesystem
+- **Multiple Sources**: Index from GitHub, GitLab, BitBucket, websites, or local filesystem
 - **Flexible Storage**: Store indexes locally, in S3, or other backends
 - **Multiple Clients**: CLI search, interactive agent, MCP server (local & remote)
 - **Incremental Updates**: Only re-index what changed
@@ -44,6 +44,10 @@ npx context-connectors index -s filesystem -p /path/to/project -k my-project
 # Index a GitHub repository
 export GITHUB_TOKEN='your-github-token'
 npx context-connectors index -s github --owner myorg --repo myrepo -k my-project
+
+# Index a BitBucket repository
+export BITBUCKET_TOKEN='your-bitbucket-token'
+npx context-connectors index -s bitbucket --workspace myworkspace --repo myrepo -k my-project
 ```
 
 ### 2. Search
@@ -72,12 +76,14 @@ context-connectors index [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-s, --source <type>` | Source type: `filesystem`, `github` | Required |
+| `-s, --source <type>` | Source type: `filesystem`, `github`, `gitlab`, `bitbucket`, `website` | Required |
 | `-k, --key <name>` | Index key/name | Required |
 | `-p, --path <path>` | Path for filesystem source | `.` |
 | `--owner <owner>` | GitHub repository owner | - |
-| `--repo <repo>` | GitHub repository name | - |
+| `--repo <repo>` | GitHub/BitBucket repository name | - |
 | `--ref <ref>` | Git ref (branch/tag/commit) | `HEAD` |
+| `--workspace <slug>` | BitBucket workspace slug | - |
+| `--bitbucket-url <url>` | BitBucket base URL (for Server/Data Center) | `https://api.bitbucket.org/2.0` |
 | `--store <type>` | Store type: `filesystem`, `s3` | `filesystem` |
 | `--store-path <path>` | Filesystem store path | `.context-connectors` |
 | `--bucket <name>` | S3 bucket name | - |
@@ -424,6 +430,8 @@ async function handleRequest(req: Request) {
 | `AUGMENT_API_TOKEN` | Augment API token | All operations |
 | `AUGMENT_API_URL` | Augment API URL | All operations |
 | `GITHUB_TOKEN` | GitHub access token | GitHub source |
+| `GITLAB_TOKEN` | GitLab access token | GitLab source |
+| `BITBUCKET_TOKEN` | BitBucket access token | BitBucket source |
 | `GITHUB_WEBHOOK_SECRET` | Webhook signature secret | Webhook integration |
 | `OPENAI_API_KEY` | OpenAI API key | Agent |
 | `AWS_ACCESS_KEY_ID` | AWS access key | S3 store |

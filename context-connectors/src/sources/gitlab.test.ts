@@ -109,14 +109,19 @@ describe("GitLabSource", () => {
     });
   });
 
-  // Integration tests - only run if GITLAB_TOKEN is available
-  const hasToken = !!process.env.GITLAB_TOKEN && process.env.GITLAB_TOKEN !== "test-token";
+  // Integration tests - only run if GITLAB_TOKEN is available (use originalEnv captured before beforeEach)
+  const hasToken = !!originalEnv;
 
   describe.skipIf(!hasToken)("integration", () => {
+    // Use gitlab-runner to test pagination (has many files)
+    const testProject = "gitlab-org/gitlab-runner";
+    const testRef = "main";
+
     it("indexes a public GitLab project", async () => {
       const source = new GitLabSource({
-        projectId: "gitlab-org/gitlab-runner", // A well-known public project
-        ref: "main",
+        token: originalEnv,
+        projectId: testProject,
+        ref: testRef,
       });
 
       const files = await source.fetchAll();
@@ -125,8 +130,9 @@ describe("GitLabSource", () => {
 
     it("lists files from a public project", async () => {
       const source = new GitLabSource({
-        projectId: "gitlab-org/gitlab-runner",
-        ref: "main",
+        token: originalEnv,
+        projectId: testProject,
+        ref: testRef,
       });
 
       const files = await source.listFiles();
@@ -136,8 +142,9 @@ describe("GitLabSource", () => {
 
     it("reads a single file from a public project", async () => {
       const source = new GitLabSource({
-        projectId: "gitlab-org/gitlab-runner",
-        ref: "main",
+        token: originalEnv,
+        projectId: testProject,
+        ref: testRef,
       });
 
       const content = await source.readFile("README.md");
@@ -146,8 +153,9 @@ describe("GitLabSource", () => {
 
     it("returns null for missing file", async () => {
       const source = new GitLabSource({
-        projectId: "gitlab-org/gitlab-runner",
-        ref: "main",
+        token: originalEnv,
+        projectId: testProject,
+        ref: testRef,
       });
 
       const content = await source.readFile("nonexistent-file-12345.txt");
@@ -156,13 +164,14 @@ describe("GitLabSource", () => {
 
     it("gets correct metadata", async () => {
       const source = new GitLabSource({
-        projectId: "gitlab-org/gitlab-runner",
-        ref: "main",
+        token: originalEnv,
+        projectId: testProject,
+        ref: testRef,
       });
 
       const metadata = await source.getMetadata();
       expect(metadata.type).toBe("gitlab");
-      expect(metadata.identifier).toBe("gitlab-org/gitlab-runner");
+      expect(metadata.identifier).toBe(testProject);
       expect(metadata.ref).toBeDefined();
       expect(metadata.syncedAt).toBeDefined();
     });

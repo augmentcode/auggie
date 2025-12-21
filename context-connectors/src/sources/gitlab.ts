@@ -69,6 +69,44 @@ export class GitLabSource implements Source {
   }
 
   /**
+   * Make a paginated API request to GitLab, fetching all pages.
+   * Uses x-next-page header to determine if more pages exist.
+   */
+  private async apiRequestPaginated<T>(basePath: string): Promise<T[]> {
+    const results: T[] = [];
+    let page = 1;
+    const perPage = 100;
+
+    while (true) {
+      const separator = basePath.includes("?") ? "&" : "?";
+      const url = `${this.baseUrl}/api/v4${basePath}${separator}per_page=${perPage}&page=${page}`;
+
+      const response = await fetch(url, {
+        headers: {
+          "PRIVATE-TOKEN": this.token,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`GitLab API error: ${response.status} ${response.statusText} for ${basePath}`);
+      }
+
+      const data = (await response.json()) as T[];
+      results.push(...data);
+
+      // Check if there are more pages using x-next-page header
+      const nextPage = response.headers.get("x-next-page");
+      if (!nextPage || nextPage === "") {
+        break;
+      }
+
+      page = parseInt(nextPage, 10);
+    }
+
+    return results;
+  }
+
+  /**
    * Resolve ref (branch/tag/HEAD) to commit SHA
    */
   private async resolveRefToSha(): Promise<string> {
@@ -382,9 +420,9 @@ export class GitLabSource implements Source {
   async listFiles(): Promise<FileInfo[]> {
     const sha = await this.resolveRefToSha();
 
-    // Use recursive tree API
-    const data = await this.apiRequest<Array<{ path: string; type: string }>>(
-      `/projects/${this.encodedProjectId}/repository/tree?ref=${encodeURIComponent(sha)}&recursive=true&per_page=100`
+    // Use recursive tree API with pagination
+    const data = await this.apiRequestPaginated<{ path: string; type: string }>(
+      `/projects/${this.encodedProjectId}/repository/tree?ref=${encodeURIComponent(sha)}&recursive=true`
     );
 
     return data

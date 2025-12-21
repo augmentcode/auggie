@@ -89,12 +89,13 @@ describe("GitHubSource", () => {
     });
   });
 
-  // Integration tests - only run if GITHUB_TOKEN is available
-  const hasToken = !!process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN !== "test-token";
+  // Integration tests - only run if GITHUB_TOKEN is available (use originalEnv captured before beforeEach)
+  const hasToken = !!originalEnv;
 
   describe.skipIf(!hasToken)("integration", () => {
     it("indexes a public repo", async () => {
       const source = new GitHubSource({
+        token: originalEnv,
         owner: "octocat",
         repo: "Hello-World",
         ref: "master",
@@ -106,6 +107,7 @@ describe("GitHubSource", () => {
 
     it("lists files from a public repo", async () => {
       const source = new GitHubSource({
+        token: originalEnv,
         owner: "octocat",
         repo: "Hello-World",
         ref: "master",
@@ -118,6 +120,7 @@ describe("GitHubSource", () => {
 
     it("reads a single file from a public repo", async () => {
       const source = new GitHubSource({
+        token: originalEnv,
         owner: "octocat",
         repo: "Hello-World",
         ref: "master",
@@ -129,6 +132,7 @@ describe("GitHubSource", () => {
 
     it("returns null for missing file", async () => {
       const source = new GitHubSource({
+        token: originalEnv,
         owner: "octocat",
         repo: "Hello-World",
         ref: "master",
@@ -140,6 +144,7 @@ describe("GitHubSource", () => {
 
     it("gets correct metadata", async () => {
       const source = new GitHubSource({
+        token: originalEnv,
         owner: "octocat",
         repo: "Hello-World",
         ref: "master",

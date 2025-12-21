@@ -464,6 +464,15 @@ export class GitHubSource implements Source {
       recursive: "true",
     });
 
+    // GitHub's recursive tree API is truncated at 100,000 entries
+    // Log a warning if this happens
+    if (data.truncated) {
+      console.warn(
+        `Warning: GitHub tree response was truncated for ${this.owner}/${this.repo}. ` +
+        `Some files may be missing from listFiles() results.`
+      );
+    }
+
     return data.tree
       .filter((item: { type: string }) => item.type === "blob")
       .map((item: { path: string }) => ({ path: item.path }));

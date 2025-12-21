@@ -34,8 +34,12 @@ const TEST_SOURCE_DIR = "/tmp/context-connectors-test-indexer-source";
 const TEST_STORE_DIR = "/tmp/context-connectors-test-indexer-store";
 
 // Check if API credentials are available for integration tests
+// Note: AUGMENT_API_URL must be a valid URL (not "null" or empty)
 const hasApiCredentials = !!(
-  process.env.AUGMENT_API_TOKEN && process.env.AUGMENT_API_URL
+  process.env.AUGMENT_API_TOKEN &&
+  process.env.AUGMENT_API_URL &&
+  process.env.AUGMENT_API_URL !== "null" &&
+  process.env.AUGMENT_API_URL.startsWith("http")
 );
 
 // Skip all tests if SDK failed to load
