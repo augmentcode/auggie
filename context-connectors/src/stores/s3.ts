@@ -1,0 +1,238 @@
+/**
+ * S3 Store - Persists index state to S3-compatible object storage.
+ *
+ * Enables cloud-based index storage for:
+ * - Sharing indexes across machines
+ * - CI/CD pipelines (index in CI, use in production)
+ * - Serverless deployments
+ *
+ * Supports:
+ * - AWS S3
+ * - MinIO
+ * - Cloudflare R2
+ * - DigitalOcean Spaces
+ * - Any S3-compatible storage
+ *
+ * Requires @aws-sdk/client-s3 as a peer dependency.
+ *
+ * @module stores/s3
+ *
+ * @example
+ * ```typescript
+ * import { S3Store } from "@augmentcode/context-connectors/stores";
+ *
+ * // AWS S3
+ * const awsStore = new S3Store({
+ *   bucket: "my-indexes",
+ *   prefix: "context-connectors/",
+ *   region: "us-west-2",
+ * });
+ *
+ * // MinIO or other S3-compatible
+ * const minioStore = new S3Store({
+ *   bucket: "indexes",
+ *   endpoint: "http://localhost:9000",
+ *   forcePathStyle: true,
+ * });
+ * ```
+ */
+
+import type { IndexState } from "../core/types.js";
+import type { IndexStore } from "./types.js";
+
+/**
+ * Configuration for S3Store.
+ */
+export interface S3StoreConfig {
+  /** S3 bucket name */
+  bucket: string;
+  /**
+   * Key prefix for all stored indexes.
+   * @default "context-connectors/"
+   */
+  prefix?: string;
+  /**
+   * AWS region.
+   * @default process.env.AWS_REGION or "us-east-1"
+   */
+  region?: string;
+  /**
+   * Custom endpoint URL for S3-compatible services.
+   * Required for MinIO, R2, DigitalOcean Spaces, etc.
+   */
+  endpoint?: string;
+  /**
+   * Force path-style URLs instead of virtual-hosted-style.
+   * Required for some S3-compatible services.
+   * @default false
+   */
+  forcePathStyle?: boolean;
+}
+
+const DEFAULT_PREFIX = "context-connectors/";
+const STATE_FILENAME = "state.json";
+
+/** Type for the S3 client (imported dynamically) */
+type S3ClientType = import("@aws-sdk/client-s3").S3Client;
+type GetObjectCommandType = typeof import("@aws-sdk/client-s3").GetObjectCommand;
+type PutObjectCommandType = typeof import("@aws-sdk/client-s3").PutObjectCommand;
+type DeleteObjectCommandType = typeof import("@aws-sdk/client-s3").DeleteObjectCommand;
+type ListObjectsV2CommandType = typeof import("@aws-sdk/client-s3").ListObjectsV2Command;
+
+/**
+ * Store implementation that persists to S3-compatible object storage.
+ *
+ * Creates an object structure:
+ * ```
+ * {prefix}{key}/
+ *   state.json     - Index metadata and file list
+ *   context.bin    - DirectContext binary data
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const store = new S3Store({ bucket: "my-indexes" });
+ *
+ * // Check if index exists
+ * if (await store.exists("my-project")) {
+ *   const { state, contextData } = await store.load("my-project");
+ * }
+ * ```
+ */
+export class S3Store implements IndexStore {
+  private readonly bucket: string;
+  private readonly prefix: string;
+  private readonly region: string;
+  private readonly endpoint?: string;
+  private readonly forcePathStyle: boolean;
+  private client: S3ClientType | null = null;
+  private commands: {
+    GetObjectCommand: GetObjectCommandType;
+    PutObjectCommand: PutObjectCommandType;
+    DeleteObjectCommand: DeleteObjectCommandType;
+    ListObjectsV2Command: ListObjectsV2CommandType;
+  } | null = null;
+
+  /**
+   * Create a new S3Store.
+   *
+   * @param config - Store configuration
+   */
+  constructor(config: S3StoreConfig) {
+    this.bucket = config.bucket;
+    this.prefix = config.prefix ?? DEFAULT_PREFIX;
+    this.region = config.region ?? process.env.AWS_REGION ?? "us-east-1";
+    this.endpoint = config.endpoint;
+    this.forcePathStyle = config.forcePathStyle ?? false;
+  }
+
+  private async getClient(): Promise<S3ClientType> {
+    if (this.client) return this.client;
+
+    try {
+      const s3Module = await import("@aws-sdk/client-s3");
+      const { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = s3Module;
+
+      this.client = new S3Client({
+        region: this.region,
+        endpoint: this.endpoint,
+        forcePathStyle: this.forcePathStyle,
+      });
+
+      this.commands = {
+        GetObjectCommand,
+        PutObjectCommand,
+        DeleteObjectCommand,
+        ListObjectsV2Command,
+      };
+
+      return this.client;
+    } catch {
+      throw new Error(
+        "S3Store requires @aws-sdk/client-s3. Install it with: npm install @aws-sdk/client-s3"
+      );
+    }
+  }
+
+  private getStateKey(key: string): string {
+    return `${this.prefix}${key}/${STATE_FILENAME}`;
+  }
+
+  async load(key: string): Promise<IndexState | null> {
+    const client = await this.getClient();
+    const stateKey = this.getStateKey(key);
+
+    try {
+      const command = new this.commands!.GetObjectCommand({
+        Bucket: this.bucket,
+        Key: stateKey,
+      });
+      const response = await client.send(command);
+      const body = await response.Body?.transformToString();
+      if (!body) return null;
+      return JSON.parse(body) as IndexState;
+    } catch (error: unknown) {
+      const err = error as { name?: string };
+      if (err.name === "NoSuchKey") {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async save(key: string, state: IndexState): Promise<void> {
+    const client = await this.getClient();
+    const stateKey = this.getStateKey(key);
+
+    const command = new this.commands!.PutObjectCommand({
+      Bucket: this.bucket,
+      Key: stateKey,
+      Body: JSON.stringify(state, null, 2),
+      ContentType: "application/json",
+    });
+    await client.send(command);
+  }
+
+  async delete(key: string): Promise<void> {
+    const client = await this.getClient();
+    const stateKey = this.getStateKey(key);
+
+    const command = new this.commands!.DeleteObjectCommand({
+      Bucket: this.bucket,
+      Key: stateKey,
+    });
+    await client.send(command);
+  }
+
+  async list(): Promise<string[]> {
+    const client = await this.getClient();
+    const keys: string[] = [];
+
+    let continuationToken: string | undefined;
+    do {
+      const command = new this.commands!.ListObjectsV2Command({
+        Bucket: this.bucket,
+        Prefix: this.prefix,
+        Delimiter: "/",
+        ContinuationToken: continuationToken,
+      });
+      const response = await client.send(command);
+
+      // CommonPrefixes contains the "directories"
+      for (const prefix of response.CommonPrefixes ?? []) {
+        if (prefix.Prefix) {
+          // Extract key name from prefix (remove base prefix and trailing slash)
+          const keyName = prefix.Prefix
+            .slice(this.prefix.length)
+            .replace(/\/$/, "");
+          if (keyName) keys.push(keyName);
+        }
+      }
+
+      continuationToken = response.NextContinuationToken;
+    } while (continuationToken);
+
+    return keys;
+  }
+}
+
