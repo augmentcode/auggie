@@ -10,9 +10,9 @@ import { FilesystemSource } from "../sources/filesystem.js";
 export const searchCommand = new Command("search")
   .description("Search indexed content")
   .argument("<query>", "Search query")
-  .requiredOption("-k, --key <name>", "Index key/name")
+  .requiredOption("-n, --name <name>", "Index name")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path", ".context-connectors")
+  .option("--store-path <path>", "Store base path")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
   .option("--s3-region <region>", "S3 region")
@@ -46,9 +46,9 @@ export const searchCommand = new Command("search")
       }
 
       // Load state to get source metadata
-      const state = await store.load(options.key);
+      const state = await store.load(options.name);
       if (!state) {
-        console.error(`Index "${options.key}" not found`);
+        console.error(`Index "${options.name}" not found`);
         process.exit(1);
       }
 
@@ -84,13 +84,13 @@ export const searchCommand = new Command("search")
       const client = new SearchClient({
         store,
         source,
-        key: options.key,
+        key: options.name,
       });
 
       await client.initialize();
 
       const meta = client.getMetadata();
-      console.log(`Searching index: ${options.key}`);
+      console.log(`Searching index: ${options.name}`);
       console.log(`Source: ${meta.type}://${meta.identifier}`);
       console.log(`Last synced: ${meta.syncedAt}\n`);
 

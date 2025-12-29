@@ -39,31 +39,31 @@ export AUGMENT_API_TOKEN='your-token'
 export AUGMENT_API_URL='https://your-tenant.api.augmentcode.com/'
 
 # Index a local directory
-npx context-connectors index -s filesystem -p /path/to/project -k my-project
+npx context-connectors index -s filesystem -p /path/to/project -n my-project
 
 # Index a GitHub repository
 export GITHUB_TOKEN='your-github-token'
-npx context-connectors index -s github --owner myorg --repo myrepo -k my-project
+npx context-connectors index -s github --owner myorg --repo myrepo -n my-project
 
 # Index a BitBucket repository
 export BITBUCKET_TOKEN='your-bitbucket-token'
-npx context-connectors index -s bitbucket --workspace myworkspace --repo myrepo -k my-project
+npx context-connectors index -s bitbucket --workspace myworkspace --repo myrepo -n my-project
 ```
 
 ### 2. Search
 
 ```bash
 # Simple search
-npx context-connectors search "authentication logic" -k my-project
+npx context-connectors search "authentication logic" -n my-project
 
 # With file reading capabilities
-npx context-connectors search "API routes" -k my-project --with-source -p /path/to/project
+npx context-connectors search "API routes" -n my-project --with-source -p /path/to/project
 ```
 
 ### 3. Interactive Agent
 
 ```bash
-npx context-connectors agent -k my-project --with-source -p /path/to/project
+npx context-connectors agent -n my-project --with-source -p /path/to/project
 ```
 
 ## CLI Commands
@@ -77,7 +77,7 @@ context-connectors index [options]
 | Option | Description | Default |
 |--------|-------------|---------|
 | `-s, --source <type>` | Source type: `filesystem`, `github`, `gitlab`, `bitbucket`, `website` | Required |
-| `-k, --key <name>` | Index key/name | Required |
+| `-n, --name <name>` | Index name | Required |
 | `-p, --path <path>` | Path for filesystem source | `.` |
 | `--owner <owner>` | GitHub repository owner | - |
 | `--repo <repo>` | GitHub/BitBucket repository name | - |
@@ -85,7 +85,7 @@ context-connectors index [options]
 | `--workspace <slug>` | BitBucket workspace slug | - |
 | `--bitbucket-url <url>` | BitBucket base URL (for Server/Data Center) | `https://api.bitbucket.org/2.0` |
 | `--store <type>` | Store type: `filesystem`, `s3` | `filesystem` |
-| `--store-path <path>` | Filesystem store path | `.context-connectors` |
+| `--store-path <path>` | Filesystem store path | Platform-specific |
 | `--bucket <name>` | S3 bucket name | - |
 
 ### `search` - Search indexed content
@@ -96,7 +96,7 @@ context-connectors search <query> [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-k, --key <name>` | Index key/name | Required |
+| `-n, --name <name>` | Index name | Required |
 | `--max-chars <n>` | Max output characters | - |
 | `--with-source` | Enable file operations | `false` |
 | `-p, --path <path>` | Source path (with --with-source) | - |
@@ -109,7 +109,7 @@ context-connectors agent [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-k, --key <name>` | Index key/name | Required |
+| `-n, --name <name>` | Index name | Required |
 | `--model <name>` | OpenAI model | `gpt-4o` |
 | `--max-steps <n>` | Max agent steps | `10` |
 | `-v, --verbose` | Show tool calls | `false` |
@@ -124,7 +124,7 @@ context-connectors mcp [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-k, --key <name>` | Index key/name | Required |
+| `-n, --name <name>` | Index name | Required |
 | `--with-source` | Enable file tools | `false` |
 
 ### `mcp-serve` - Start MCP HTTP server
@@ -137,26 +137,26 @@ context-connectors mcp-serve [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-k, --key <name>` | Index key/name | Required |
+| `-n, --name <name>` | Index name | Required |
 | `--port <number>` | Port to listen on | `3000` |
 | `--host <host>` | Host to bind to | `localhost` |
 | `--cors <origins>` | CORS origins (comma-separated or `*`) | - |
 | `--base-path <path>` | Base path for MCP endpoint | `/mcp` |
 | `--api-key <key>` | API key for authentication | - |
 | `--store <type>` | Store type: `filesystem`, `s3` | `filesystem` |
-| `--store-path <path>` | Store base path | `.context-connectors` |
+| `--store-path <path>` | Store base path | Platform-specific |
 | `--search-only` | Disable file operations | `false` |
 
 Example:
 ```bash
 # Start server on port 8080, allow any CORS origin
-context-connectors mcp-serve -k my-project --port 8080 --cors "*"
+context-connectors mcp-serve -n my-project --port 8080 --cors "*"
 
 # With authentication
-context-connectors mcp-serve -k my-project --api-key "secret-key"
+context-connectors mcp-serve -n my-project --api-key "secret-key"
 
 # Or use environment variable for the key
-MCP_API_KEY="secret-key" context-connectors mcp-serve -k my-project
+MCP_API_KEY="secret-key" context-connectors mcp-serve -n my-project
 ```
 
 ### About `--with-source`
@@ -244,7 +244,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "my-project": {
       "command": "npx",
-      "args": ["context-connectors", "mcp", "-k", "my-project", "--with-source", "-p", "/path/to/project"],
+      "args": ["context-connectors", "mcp", "-n", "my-project", "--with-source", "-p", "/path/to/project"],
       "env": {
         "AUGMENT_API_TOKEN": "your-token",
         "AUGMENT_API_URL": "https://your-tenant.api.augmentcode.com/"
@@ -330,7 +330,7 @@ jobs:
             --owner ${{ github.repository_owner }} \
             --repo ${{ github.event.repository.name }} \
             --ref ${{ github.sha }} \
-            -k ${{ github.ref_name }}
+            -n ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AUGMENT_API_TOKEN: ${{ secrets.AUGMENT_API_TOKEN }}
@@ -436,6 +436,17 @@ async function handleRequest(req: Request) {
 | `OPENAI_API_KEY` | OpenAI API key | Agent |
 | `AWS_ACCESS_KEY_ID` | AWS access key | S3 store |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key | S3 store |
+| `CONTEXT_CONNECTORS_STORE_PATH` | Override default store location | Optional |
+
+## Data Storage
+
+By default, indexes are stored in a platform-specific location:
+
+- **Linux**: `~/.local/share/context-connectors`
+- **macOS**: `~/Library/Application Support/context-connectors`
+- **Windows**: `%LOCALAPPDATA%\context-connectors`
+
+Override with `--store-path` or the `CONTEXT_CONNECTORS_STORE_PATH` environment variable.
 
 ## Architecture
 
@@ -485,7 +496,7 @@ The website source crawls and indexes static HTML content.
 When using S3-compatible services like MinIO, DigitalOcean Spaces, or Backblaze B2:
 
 ```bash
-npx context-connectors index -s filesystem -p ./project -k my-project \
+npx context-connectors index -s filesystem -p ./project -n my-project \
   --store s3 \
   --bucket my-bucket \
   --s3-endpoint http://localhost:9000 \

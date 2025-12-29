@@ -10,7 +10,7 @@ import { FilesystemStore } from "../stores/filesystem.js";
 export const indexCommand = new Command("index")
   .description("Index a data source")
   .requiredOption("-s, --source <type>", "Source type (filesystem, github, gitlab, bitbucket, website)")
-  .requiredOption("-k, --key <name>", "Index key/name")
+  .requiredOption("-n, --name <name>", "Index name")
   .option("-p, --path <path>", "Path for filesystem source", ".")
   .option("--owner <owner>", "GitHub repository owner")
   .option("--repo <repo>", "GitHub/BitBucket repository name")
@@ -29,7 +29,7 @@ export const indexCommand = new Command("index")
   .option("--exclude <patterns...>", "URL path patterns to exclude (website, glob)")
   // Store options
   .option("--store <type>", "Store type (filesystem, memory, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path (for filesystem store)", ".context-connectors")
+  .option("--store-path <path>", "Store base path (for filesystem store)")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
   .option("--s3-region <region>", "S3 region")
@@ -122,7 +122,7 @@ export const indexCommand = new Command("index")
       // Run indexer
       console.log(`Indexing ${options.source} source...`);
       const indexer = new Indexer();
-      const result = await indexer.index(source, store, options.key);
+      const result = await indexer.index(source, store, options.name);
 
       console.log(`\nIndexing complete!`);
       console.log(`  Type: ${result.type}`);

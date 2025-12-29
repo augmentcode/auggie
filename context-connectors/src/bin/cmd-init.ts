@@ -114,7 +114,7 @@ jobs:
             --owner ${owner} \\
             --repo ${repo} \\
             --ref \${{ github.sha }} \\
-            -k ${indexKey}
+            -n ${indexKey}
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           AUGMENT_API_TOKEN: \${{ secrets.AUGMENT_API_TOKEN }}
@@ -140,7 +140,7 @@ async function runInit(options: {
 
   const { owner, repo, defaultBranch } = gitInfo;
   const branch = options.branch || defaultBranch;
-  const indexKey = options.key || `${owner}/${repo}`;
+  const indexKey = options.name || `${owner}/${repo}`;
 
   console.log(colorize("cyan", "Detected repository:"));
   console.log(`  Owner: ${owner}`);
@@ -190,7 +190,7 @@ async function runInit(options: {
   console.log('   export AUGMENT_API_TOKEN="your-token"');
   console.log('   export AUGMENT_API_URL="https://your-tenant.api.augmentcode.com/"');
   console.log('   export GITHUB_TOKEN="your-github-token"');
-  console.log(`   npx @augmentcode/context-connectors index -s github --owner ${owner} --repo ${repo} -k ${indexKey}\n`);
+  console.log(`   npx @augmentcode/context-connectors index -s github --owner ${owner} --repo ${repo} -n ${indexKey}\n`);
 
   console.log(
     colorize("green", "The workflow will automatically run on pushes to the " + branch + " branch!")
@@ -200,7 +200,7 @@ async function runInit(options: {
 export const initCommand = new Command("init")
   .description("Initialize GitHub Actions workflow for repository indexing")
   .option("-b, --branch <branch>", "Branch to index (default: auto-detect)")
-  .option("-k, --key <key>", "Index key (default: owner/repo)")
+  .option("-n, --name <name>", "Index name (default: owner/repo)")
   .option("-f, --force", "Overwrite existing workflow file")
   .action(runInit);
 

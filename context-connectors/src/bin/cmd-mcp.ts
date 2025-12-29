@@ -9,9 +9,9 @@ import { runMCPServer } from "../clients/mcp-server.js";
 
 export const mcpCommand = new Command("mcp")
   .description("Start MCP server for Claude Desktop integration")
-  .requiredOption("-k, --key <name>", "Index key/name")
+  .requiredOption("-n, --name <name>", "Index name")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path", ".context-connectors")
+  .option("--store-path <path>", "Store base path")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .option("-p, --path <path>", "Path override for filesystem source")
@@ -30,9 +30,9 @@ export const mcpCommand = new Command("mcp")
       }
 
       // Load state to determine source type
-      const state = await store.load(options.key);
+      const state = await store.load(options.name);
       if (!state) {
-        console.error(`Index "${options.key}" not found`);
+        console.error(`Index "${options.name}" not found`);
         process.exit(1);
       }
 
@@ -64,7 +64,7 @@ export const mcpCommand = new Command("mcp")
       await runMCPServer({
         store,
         source,
-        key: options.key,
+        key: options.name,
       });
     } catch (error) {
       // Write errors to stderr (stdout is for MCP protocol)

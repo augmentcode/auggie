@@ -9,13 +9,13 @@ import { runMCPHttpServer } from "../clients/mcp-http-server.js";
 
 export const mcpServeCommand = new Command("mcp-serve")
   .description("Start MCP HTTP server for remote client access")
-  .requiredOption("-k, --key <name>", "Index key/name")
+  .requiredOption("-n, --name <name>", "Index name")
   .option("--port <number>", "Port to listen on", "3000")
   .option("--host <host>", "Host to bind to", "localhost")
   .option("--cors <origins>", "CORS origins (comma-separated, or '*' for any)")
   .option("--base-path <path>", "Base path for MCP endpoint", "/mcp")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path", ".context-connectors")
+  .option("--store-path <path>", "Store base path")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .option("-p, --path <path>", "Path override for filesystem source")
@@ -38,9 +38,9 @@ export const mcpServeCommand = new Command("mcp-serve")
       }
 
       // Load state to determine source type
-      const state = await store.load(options.key);
+      const state = await store.load(options.name);
       if (!state) {
-        console.error(`Index "${options.key}" not found`);
+        console.error(`Index "${options.name}" not found`);
         process.exit(1);
       }
 
@@ -84,7 +84,7 @@ export const mcpServeCommand = new Command("mcp-serve")
       const server = await runMCPHttpServer({
         store,
         source,
-        key: options.key,
+        key: options.name,
         port: parseInt(options.port, 10),
         host: options.host,
         cors,

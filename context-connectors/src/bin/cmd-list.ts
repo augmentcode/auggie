@@ -6,9 +6,9 @@ import { Command } from "commander";
 import { FilesystemStore } from "../stores/filesystem.js";
 
 export const listCommand = new Command("list")
-  .description("List all indexed keys in a store")
+  .description("List all indexes in a store")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path", ".context-connectors")
+  .option("--store-path <path>", "Store base path")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
   .option("--s3-region <region>", "S3 region")

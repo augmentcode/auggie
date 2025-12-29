@@ -29,6 +29,7 @@
  */
 
 import { promises as fs } from "node:fs";
+import { homedir, platform } from "node:os";
 import { join } from "node:path";
 import { sanitizeKey } from "../core/utils.js";
 import type { IndexState } from "../core/types.js";
@@ -40,13 +41,47 @@ import type { IndexStore } from "./types.js";
 export interface FilesystemStoreConfig {
   /**
    * Directory to store index files.
-   * @default ".context-connectors"
+   * @default Platform-specific (see getDefaultStorePath)
    */
   basePath?: string;
 }
 
+/**
+ * Get the default store path based on platform.
+ *
+ * Priority order:
+ * 1. CONTEXT_CONNECTORS_STORE_PATH environment variable
+ * 2. Platform-specific default:
+ *    - Linux: ~/.local/share/context-connectors (or $XDG_DATA_HOME/context-connectors)
+ *    - macOS: ~/Library/Application Support/context-connectors
+ *    - Windows: %LOCALAPPDATA%\context-connectors
+ */
+function getDefaultStorePath(): string {
+  // Environment variable takes precedence
+  if (process.env.CONTEXT_CONNECTORS_STORE_PATH) {
+    return process.env.CONTEXT_CONNECTORS_STORE_PATH;
+  }
+
+  const home = homedir();
+
+  switch (platform()) {
+    case "darwin":
+      return join(home, "Library", "Application Support", "context-connectors");
+    case "win32":
+      return join(
+        process.env.LOCALAPPDATA || join(home, "AppData", "Local"),
+        "context-connectors"
+      );
+    default:
+      // Linux and others: follow XDG Base Directory spec
+      const xdgData =
+        process.env.XDG_DATA_HOME || join(home, ".local", "share");
+      return join(xdgData, "context-connectors");
+  }
+}
+
 /** Default base path for storing index files */
-const DEFAULT_BASE_PATH = ".context-connectors";
+const DEFAULT_BASE_PATH = getDefaultStorePath();
 
 /** State filename within each index directory */
 const STATE_FILENAME = "state.json";

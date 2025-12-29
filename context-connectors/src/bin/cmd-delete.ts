@@ -7,15 +7,15 @@ import { FilesystemStore } from "../stores/filesystem.js";
 
 export const deleteCommand = new Command("delete")
   .description("Delete an index from a store")
-  .argument("<key>", "Index key/name to delete")
+  .argument("<name>", "Index name to delete")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path", ".context-connectors")
+  .option("--store-path <path>", "Store base path")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
   .option("--s3-region <region>", "S3 region")
   .option("--s3-endpoint <url>", "S3-compatible endpoint URL (for MinIO, R2, etc.)")
   .option("--s3-force-path-style", "Use path-style S3 URLs (for some S3-compatible services)")
-  .action(async (key, options) => {
+  .action(async (name, options) => {
     try {
       // Create store
       let store;
@@ -40,14 +40,14 @@ export const deleteCommand = new Command("delete")
       }
 
       // Check if index exists
-      const state = await store.load(key);
+      const state = await store.load(name);
       if (!state) {
-        console.error(`Index "${key}" not found.`);
+        console.error(`Index "${name}" not found.`);
         process.exit(1);
       }
 
-      await store.delete(key);
-      console.log(`Index "${key}" deleted successfully.`);
+      await store.delete(name);
+      console.log(`Index "${name}" deleted successfully.`);
     } catch (error) {
       console.error("Delete failed:", error);
       process.exit(1);

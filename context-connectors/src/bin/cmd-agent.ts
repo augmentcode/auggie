@@ -17,13 +17,13 @@ const PROVIDER_DEFAULTS: Record<Provider, string> = {
 
 export const agentCommand = new Command("agent")
   .description("Interactive AI agent for codebase Q&A")
-  .requiredOption("-k, --key <name>", "Index key/name")
+  .requiredOption("-n, --name <name>", "Index name")
   .requiredOption(
     "--provider <name>",
     "LLM provider (openai, anthropic, google)"
   )
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path", ".context-connectors")
+  .option("--store-path <path>", "Store base path")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--search-only", "Disable listFiles/readFile tools (search only)")
   .option("-p, --path <path>", "Path override for filesystem source")
@@ -58,9 +58,9 @@ export const agentCommand = new Command("agent")
       }
 
       // Load state for source type detection
-      const state = await store.load(options.key);
+      const state = await store.load(options.name);
       if (!state) {
-        console.error(`Index "${options.key}" not found`);
+        console.error(`Index "${options.name}" not found`);
         process.exit(1);
       }
 
@@ -89,7 +89,7 @@ export const agentCommand = new Command("agent")
       }
 
       // Create client
-      const client = new SearchClient({ store, source, key: options.key });
+      const client = new SearchClient({ store, source, key: options.name });
       await client.initialize();
 
       const meta = client.getMetadata();
