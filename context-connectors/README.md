@@ -1,11 +1,11 @@
 # Context Connectors
 
-Index any data source and make it searchable with Augment's context engine.
+An open-source library built on the Context Engine SDK that makes diverse sources searchable across agents and apps.
 
 ## Features
 
-- **Multiple Sources**: Index from GitHub, GitLab, BitBucket, websites, or local filesystem
-- **Flexible Storage**: Store indexes locally, in S3, or other backends
+- **Multiple Sources**: Index code, documentation, runbooks, schemas, and configs from GitHub, GitLab, BitBucket, websites, or local filesystem
+- **Flexible Storage**: Store indexes locally or in S3 for persistent storage in production apps
 - **Multiple Clients**: CLI search, interactive agent, MCP server (local & remote)
 - **Incremental Updates**: Only re-index what changed
 - **Smart Filtering**: Respects `.gitignore`, `.augmentignore`, and filters binary/generated files
