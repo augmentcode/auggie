@@ -124,7 +124,7 @@ jobs:
 
 async function runInit(options: {
   branch?: string;
-  key?: string;
+  name?: string;
   force?: boolean;
 }): Promise<void> {
   console.log(colorize("bright", "\n🚀 Augment Context Connectors - GitHub Setup\n"));
