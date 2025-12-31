@@ -23,7 +23,6 @@
  * ```
  */
 
-import { promises as fs } from "node:fs";
 import { DirectContext } from "@augmentcode/auggie-sdk";
 import type { FileEntry, IndexResult, IndexState } from "./types.js";
 import type { FileChanges, Source } from "../sources/types.js";
@@ -193,19 +192,11 @@ export class Indexer {
     changes: FileChanges,
     startTime: number
   ): Promise<IndexResult> {
-    // Import previous context state via temp file
-    const tempStateFile = `/tmp/context-connectors-${Date.now()}.json`;
-    await fs.writeFile(tempStateFile, JSON.stringify(previousState.contextState, null, 2));
-
-    let context: DirectContext;
-    try {
-      context = await DirectContext.importFromFile(tempStateFile, {
-        apiKey: this.apiKey,
-        apiUrl: this.apiUrl,
-      });
-    } finally {
-      await fs.unlink(tempStateFile).catch(() => {}); // Clean up temp file
-    }
+    // Import previous context state
+    const context = await DirectContext.import(previousState.contextState, {
+      apiKey: this.apiKey,
+      apiUrl: this.apiUrl,
+    });
 
     // Remove deleted files
     if (changes.removed.length > 0) {

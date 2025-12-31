@@ -33,7 +33,6 @@
  * ```
  */
 
-import { promises as fs } from "node:fs";
 import { DirectContext } from "@augmentcode/auggie-sdk";
 import type { IndexStoreReader } from "../stores/types.js";
 import type { Source } from "../sources/types.js";
@@ -159,14 +158,11 @@ export class SearchClient {
       // Note: identifier check could be relaxed (paths may differ slightly)
     }
 
-    // Import DirectContext from state (write to temp file, import, delete)
-    const tempFile = `/tmp/cc-state-${Date.now()}.json`;
-    await fs.writeFile(tempFile, JSON.stringify(this.state.contextState));
-    this.context = await DirectContext.importFromFile(tempFile, {
+    // Import DirectContext from saved state
+    this.context = await DirectContext.import(this.state.contextState, {
       apiKey: this.apiKey,
       apiUrl: this.apiUrl,
     });
-    await fs.unlink(tempFile);
   }
 
   private getToolContext(): ToolContext {

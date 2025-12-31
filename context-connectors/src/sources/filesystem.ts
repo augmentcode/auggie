@@ -55,6 +55,14 @@ export interface FilesystemSourceConfig {
 const DEFAULT_SKIP_DIRS = new Set([".git", "node_modules", "__pycache__", ".venv", "venv"]);
 
 /**
+ * Normalize path separators to forward slashes for cross-platform consistency.
+ * This ensures paths are consistent regardless of OS (Windows uses \, Unix uses /).
+ */
+function normalizePath(path: string): string {
+  return path.replace(/\\/g, "/");
+}
+
+/**
  * Source implementation for local filesystem directories.
  *
  * Walks the directory tree, applying filters in this order:
@@ -134,7 +142,8 @@ export class FilesystemSource implements Source {
 
     for (const entry of entries) {
       const fullPath = join(dir, entry.name);
-      const relativePath = relative(this.rootPath, fullPath);
+      // Normalize to forward slashes for cross-platform consistency
+      const relativePath = normalizePath(relative(this.rootPath, fullPath));
 
       // Skip default ignored directories
       if (entry.isDirectory() && DEFAULT_SKIP_DIRS.has(entry.name)) {
@@ -209,7 +218,8 @@ export class FilesystemSource implements Source {
           continue;
         }
 
-        const entryPath = directory ? join(directory, entry.name) : entry.name;
+        // Normalize to forward slashes for cross-platform consistency
+        const entryPath = directory ? normalizePath(join(directory, entry.name)) : entry.name;
 
         results.push({
           path: entryPath,

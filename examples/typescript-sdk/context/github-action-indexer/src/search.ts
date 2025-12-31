@@ -107,15 +107,8 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    // Create a temporary file with the context state for import
-    const tempStateFile = `/tmp/github-indexer-state-${Date.now()}.json`;
-    await fs.writeFile(tempStateFile, JSON.stringify(state.contextState, null, 2));
-
-    // Import state using DirectContext.importFromFile
-    const context = await DirectContext.importFromFile(tempStateFile, { apiKey: apiToken, apiUrl });
-
-    // Clean up temporary file
-    await fs.unlink(tempStateFile);
+    // Import state using DirectContext.import
+    const context = await DirectContext.import(state.contextState, { apiKey: apiToken, apiUrl });
 
     const fileCount = state.contextState.blobs
       ? state.contextState.blobs.length
