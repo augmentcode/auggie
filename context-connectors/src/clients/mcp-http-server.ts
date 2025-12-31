@@ -14,7 +14,7 @@
  *
  * const server = await runMCPHttpServer({
  *   store: new FilesystemStore(),
- *   key: "my-project",
+ *   indexName: "my-project",
  *   port: 3000,
  * });
  *
@@ -417,7 +417,7 @@ export async function createMCPHttpServer(
  * ```typescript
  * const server = await runMCPHttpServer({
  *   store: new FilesystemStore(),
- *   key: "my-project",
+ *   indexName: "my-project",
  *   port: 3000,
  *   cors: "*",
  * });

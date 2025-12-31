@@ -89,7 +89,7 @@ export const agentCommand = new Command("agent")
       }
 
       // Create client
-      const client = new SearchClient({ store, source, key: options.name });
+      const client = new SearchClient({ store, source, indexName: options.name });
       await client.initialize();
 
       const meta = client.getMetadata();

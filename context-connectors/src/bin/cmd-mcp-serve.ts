@@ -84,7 +84,7 @@ export const mcpServeCommand = new Command("mcp-serve")
       const server = await runMCPHttpServer({
         store,
         source,
-        key: options.name,
+        indexName: options.name,
         port: parseInt(options.port, 10),
         host: options.host,
         cors,

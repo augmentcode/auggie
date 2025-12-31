@@ -67,7 +67,7 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
       const store = createMockStore(createMockState());
       const client = new SearchClient({
         store,
-        key: "test-key",
+        indexName: "test-key",
       });
       expect(client).toBeDefined();
     });
@@ -78,7 +78,7 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
       const client = new SearchClient({
         store,
         source,
-        key: "test-key",
+        indexName: "test-key",
       });
       expect(client).toBeDefined();
     });
@@ -89,7 +89,7 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
       const store = createMockStore(null);
       const client = new SearchClient({
         store,
-        key: "missing-key",
+        indexName: "missing-key",
       });
 
       await expect(client.initialize()).rejects.toThrow(
@@ -113,7 +113,7 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
       const client = new SearchClient({
         store,
         source,
-        key: "test-key",
+        indexName: "test-key",
       });
 
       await expect(client.initialize()).rejects.toThrow("Source type mismatch");
@@ -125,7 +125,7 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
       const store = createMockStore(createMockState());
       const client = new SearchClient({
         store,
-        key: "test-key",
+        indexName: "test-key",
       });
 
       expect(() => client.getMetadata()).toThrow("Client not initialized");
@@ -139,7 +139,7 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
       const store = createMockStore(createMockState());
       const client = new SearchClient({
         store,
-        key: "test-key",
+        indexName: "test-key",
       });
 
       // Can't call listFiles without initializing first

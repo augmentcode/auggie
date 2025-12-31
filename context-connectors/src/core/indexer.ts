@@ -28,6 +28,9 @@ import type { FileEntry, IndexResult, IndexState } from "./types.js";
 import type { FileChanges, Source } from "../sources/types.js";
 import type { IndexStore } from "../stores/types.js";
 
+/** Batch size for indexing with progress updates */
+const INDEX_BATCH_SIZE = 50;
+
 /**
  * Configuration options for the Indexer.
  */
@@ -80,6 +83,26 @@ export class Indexer {
   constructor(config: IndexerConfig = {}) {
     this.apiKey = config.apiKey ?? process.env.AUGMENT_API_TOKEN;
     this.apiUrl = config.apiUrl ?? process.env.AUGMENT_API_URL;
+  }
+
+  /**
+   * Add files to index in batches with progress reporting.
+   * Uses carriage return to update the same line in-place.
+   */
+  private async addToIndexWithProgress(context: DirectContext, files: FileEntry[]): Promise<void> {
+    const total = files.length;
+    let indexed = 0;
+
+    for (let i = 0; i < files.length; i += INDEX_BATCH_SIZE) {
+      const batch = files.slice(i, i + INDEX_BATCH_SIZE);
+      await context.addToIndex(batch);
+      indexed += batch.length;
+      const percent = Math.round((indexed / total) * 100);
+      // Use \r to overwrite the same line, clear to end of line with spaces
+      process.stdout.write(`\rIndexing... ${percent}% (${indexed}/${total} files)   `);
+    }
+    // Print newline when done
+    process.stdout.write("\n");
   }
 
   /**
@@ -159,7 +182,7 @@ export class Indexer {
 
     // Add files to index
     if (files.length > 0) {
-      await context.addToIndex(files);
+      await this.addToIndexWithProgress(context, files);
     }
 
     // Get source metadata
@@ -200,13 +223,14 @@ export class Indexer {
 
     // Remove deleted files
     if (changes.removed.length > 0) {
+      console.log(`Removing ${changes.removed.length} files from index...`);
       await context.removeFromIndex(changes.removed);
     }
 
     // Add new and modified files
     const filesToAdd: FileEntry[] = [...changes.added, ...changes.modified];
     if (filesToAdd.length > 0) {
-      await context.addToIndex(filesToAdd);
+      await this.addToIndexWithProgress(context, filesToAdd);
     }
 
     // Get updated source metadata

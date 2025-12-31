@@ -84,7 +84,7 @@ export const searchCommand = new Command("search")
       const client = new SearchClient({
         store,
         source,
-        key: options.name,
+        indexName: options.name,
       });
 
       await client.initialize();

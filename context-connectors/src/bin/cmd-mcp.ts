@@ -64,7 +64,7 @@ export const mcpCommand = new Command("mcp")
       await runMCPServer({
         store,
         source,
-        key: options.name,
+        indexName: options.name,
       });
     } catch (error) {
       // Write errors to stderr (stdout is for MCP protocol)

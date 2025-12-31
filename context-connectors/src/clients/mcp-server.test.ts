@@ -77,7 +77,7 @@ describe.skipIf(sdkLoadError !== null || !hasApiCredentials)(
         const store = createMockStore(createMockState());
         const server = await createMCPServer({
           store,
-          key: "test-key",
+          indexName: "test-key",
         });
 
         expect(server).toBeDefined();
@@ -90,19 +90,19 @@ describe.skipIf(sdkLoadError !== null || !hasApiCredentials)(
         const server = await createMCPServer({
           store,
           source,
-          key: "test-key",
+          indexName: "test-key",
         });
 
         expect(server).toBeDefined();
       });
 
-      it("uses custom name and version", async () => {
+      it("uses custom serverName and version", async () => {
         const store = createMockStore(createMockState());
 
         const server = await createMCPServer({
           store,
-          key: "test-key",
-          name: "custom-server",
+          indexName: "test-key",
+          serverName: "custom-server",
           version: "2.0.0",
         });
 
@@ -115,7 +115,7 @@ describe.skipIf(sdkLoadError !== null || !hasApiCredentials)(
         await expect(
           createMCPServer({
             store,
-            key: "missing-key",
+            indexName: "missing-key",
           })
         ).rejects.toThrow('Index "missing-key" not found');
       });

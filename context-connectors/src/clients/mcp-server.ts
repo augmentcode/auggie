@@ -20,7 +20,7 @@
  *
  * await runMCPServer({
  *   store: new FilesystemStore(),
- *   key: "my-project",
+ *   indexName: "my-project",
  * });
  * ```
  */
@@ -46,13 +46,13 @@ export interface MCPServerConfig {
    * When provided, enables list_files and read_file tools.
    */
   source?: Source;
-  /** Index key/name to serve */
-  key: string;
+  /** Index name to serve */
+  indexName: string;
   /**
    * Server name reported to MCP clients.
    * @default "context-connectors"
    */
-  name?: string;
+  serverName?: string;
   /**
    * Server version reported to MCP clients.
    * @default "0.1.0"
@@ -73,7 +73,7 @@ export interface MCPServerConfig {
  * ```typescript
  * const server = await createMCPServer({
  *   store: new FilesystemStore(),
- *   key: "my-project",
+ *   indexName: "my-project",
  * });
  *
  * // Connect with custom transport
@@ -87,7 +87,7 @@ export async function createMCPServer(
   const client = new SearchClient({
     store: config.store,
     source: config.source,
-    key: config.key,
+    indexName: config.indexName,
   });
   await client.initialize();
 
@@ -97,7 +97,7 @@ export async function createMCPServer(
   // Create MCP server
   const server = new Server(
     {
-      name: config.name ?? "context-connectors",
+      name: config.serverName ?? "context-connectors",
       version: config.version ?? "0.1.0",
     },
     {

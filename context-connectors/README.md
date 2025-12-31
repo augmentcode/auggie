@@ -53,17 +53,17 @@ npx context-connectors index -s bitbucket --workspace myworkspace --repo myrepo 
 ### 2. Search
 
 ```bash
-# Simple search
+# Search with file reading (default)
 npx context-connectors search "authentication logic" -n my-project
 
-# With file reading capabilities
-npx context-connectors search "API routes" -n my-project --with-source -p /path/to/project
+# Search only (no file operations)
+npx context-connectors search "API routes" -n my-project --search-only
 ```
 
 ### 3. Interactive Agent
 
 ```bash
-npx context-connectors agent -n my-project --with-source -p /path/to/project
+npx context-connectors agent -n my-project
 ```
 
 ## CLI Commands
@@ -98,8 +98,8 @@ context-connectors search <query> [options]
 |--------|-------------|---------|
 | `-n, --name <name>` | Index name | Required |
 | `--max-chars <n>` | Max output characters | - |
-| `--with-source` | Enable file operations | `false` |
-| `-p, --path <path>` | Source path (with --with-source) | - |
+| `--search-only` | Disable file operations | `false` |
+| `-p, --path <path>` | Path override for filesystem source | - |
 
 ### `agent` - Interactive AI agent
 
@@ -114,7 +114,8 @@ context-connectors agent [options]
 | `--max-steps <n>` | Max agent steps | `10` |
 | `-v, --verbose` | Show tool calls | `false` |
 | `-q, --query <query>` | Single query (non-interactive) | - |
-| `--with-source` | Enable file operations | `false` |
+| `--search-only` | Disable file operations | `false` |
+| `-p, --path <path>` | Path override for filesystem source | - |
 
 ### `mcp` - Start MCP server
 
@@ -125,7 +126,8 @@ context-connectors mcp [options]
 | Option | Description | Default |
 |--------|-------------|---------|
 | `-n, --name <name>` | Index name | Required |
-| `--with-source` | Enable file tools | `false` |
+| `--search-only` | Disable file operations | `false` |
+| `-p, --path <path>` | Path override for filesystem source | - |
 
 ### `mcp-serve` - Start MCP HTTP server
 
@@ -159,11 +161,11 @@ context-connectors mcp-serve -n my-project --api-key "secret-key"
 MCP_API_KEY="secret-key" context-connectors mcp-serve -n my-project
 ```
 
-### About `--with-source`
+### About `--search-only`
 
-The `--with-source` flag enables the `listFiles` and `readFile` tools in addition to `search`. Without this flag, only the `search` tool is available.
+By default, all commands provide the `list_files` and `read_file` tools in addition to `search`. Use `--search-only` to disable file operations and provide only the `search` tool.
 
-When using `--with-source`, you must also provide the source path with `-p, --path` so that files can be read from disk.
+For filesystem sources, you can use `-p, --path` to override the source path if it differs from when the index was created.
 
 ## Programmatic Usage
 
@@ -189,7 +191,7 @@ import { SearchClient } from "@augmentcode/context-connectors";
 import { FilesystemStore } from "@augmentcode/context-connectors/stores";
 
 const store = new FilesystemStore({ basePath: ".context-connectors" });
-const client = new SearchClient({ store, key: "my-project" });
+const client = new SearchClient({ store, indexName: "my-project" });
 await client.initialize(); // Required before calling search()
 
 const result = await client.search("authentication");
@@ -208,7 +210,7 @@ const store = new FilesystemStore({ basePath: ".context-connectors" });
 
 await runMCPServer({
   store,
-  key: "my-project",
+  indexName: "my-project",
 });
 ```
 
@@ -222,7 +224,7 @@ const store = new FilesystemStore({ basePath: ".context-connectors" });
 
 const server = await runMCPHttpServer({
   store,
-  key: "my-project",
+  indexName: "my-project",
   port: 3000,
   host: "0.0.0.0",
   cors: "*",
@@ -244,7 +246,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "my-project": {
       "command": "npx",
-      "args": ["context-connectors", "mcp", "-n", "my-project", "--with-source", "-p", "/path/to/project"],
+      "args": ["context-connectors", "mcp", "-n", "my-project", "-p", "/path/to/project"],
       "env": {
         "AUGMENT_API_TOKEN": "your-token",
         "AUGMENT_API_URL": "https://your-tenant.api.augmentcode.com/"

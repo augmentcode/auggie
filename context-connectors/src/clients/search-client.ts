@@ -17,7 +17,7 @@
  * // Search-only mode (no file operations)
  * const client = new SearchClient({
  *   store: new FilesystemStore(),
- *   key: "my-project",
+ *   indexName: "my-project",
  * });
  * await client.initialize();
  * const results = await client.search("authentication");
@@ -26,7 +26,7 @@
  * const fullClient = new SearchClient({
  *   store: new FilesystemStore(),
  *   source: new FilesystemSource({ rootPath: "./my-project" }),
- *   key: "my-project",
+ *   indexName: "my-project",
  * });
  * await fullClient.initialize();
  * const files = await fullClient.listFiles({ pattern: "**\/*.ts" });
@@ -54,8 +54,8 @@ export interface SearchClientConfig {
    * When omitted, client operates in search-only mode.
    */
   source?: Source;
-  /** Index key/name to load */
-  key: string;
+  /** Index name to load */
+  indexName: string;
   /**
    * Augment API key.
    * @default process.env.AUGMENT_API_TOKEN
@@ -86,7 +86,7 @@ export interface SearchClientConfig {
  * const client = new SearchClient({
  *   store: new FilesystemStore(),
  *   source: new FilesystemSource({ rootPath: "." }),
- *   key: "my-project",
+ *   indexName: "my-project",
  * });
  *
  * await client.initialize();
@@ -103,7 +103,7 @@ export interface SearchClientConfig {
 export class SearchClient {
   private store: IndexStoreReader;
   private source: Source | null;
-  private key: string;
+  private indexName: string;
   private apiKey: string;
   private apiUrl: string;
 
@@ -120,7 +120,7 @@ export class SearchClient {
   constructor(config: SearchClientConfig) {
     this.store = config.store;
     this.source = config.source ?? null;
-    this.key = config.key;
+    this.indexName = config.indexName;
     this.apiKey = config.apiKey ?? process.env.AUGMENT_API_TOKEN ?? "";
     this.apiUrl = config.apiUrl ?? process.env.AUGMENT_API_URL ?? "";
   }
@@ -135,16 +135,16 @@ export class SearchClient {
    *
    * @example
    * ```typescript
-   * const client = new SearchClient({ store, key: "my-project" });
+   * const client = new SearchClient({ store, indexName: "my-project" });
    * await client.initialize(); // Required!
    * const results = await client.search("query");
    * ```
    */
   async initialize(): Promise<void> {
     // Load state from store
-    this.state = await this.store.load(this.key);
+    this.state = await this.store.load(this.indexName);
     if (!this.state) {
-      throw new Error(`Index "${this.key}" not found`);
+      throw new Error(`Index "${this.indexName}" not found`);
     }
 
     // Validate source matches if provided
