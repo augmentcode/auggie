@@ -73,24 +73,24 @@ describe.skipIf(sdkLoadError !== null || !hasApiCredentials)(
   "MCP Server",
   () => {
     describe("createMCPServer", () => {
-      it("creates server with search tool only when no source", async () => {
+      it("creates server with search tool only when searchOnly is true", async () => {
         const store = createMockStore(createMockState());
         const server = await createMCPServer({
           store,
-          indexName: "test-key",
+          indexNames: ["test-key"],
+          searchOnly: true,
         });
 
         expect(server).toBeDefined();
       });
 
-      it("creates server with file tools when source provided", async () => {
+      it("creates server with file tools when searchOnly is false", async () => {
         const store = createMockStore(createMockState());
-        const source = createMockSource();
 
         const server = await createMCPServer({
           store,
-          source,
-          indexName: "test-key",
+          indexNames: ["test-key"],
+          searchOnly: false,
         });
 
         expect(server).toBeDefined();
@@ -101,7 +101,7 @@ describe.skipIf(sdkLoadError !== null || !hasApiCredentials)(
 
         const server = await createMCPServer({
           store,
-          indexName: "test-key",
+          indexNames: ["test-key"],
           serverName: "custom-server",
           version: "2.0.0",
         });
@@ -115,9 +115,9 @@ describe.skipIf(sdkLoadError !== null || !hasApiCredentials)(
         await expect(
           createMCPServer({
             store,
-            indexName: "missing-key",
+            indexNames: ["missing-key"],
           })
-        ).rejects.toThrow('Index "missing-key" not found');
+        ).rejects.toThrow("Indexes not found: missing-key");
       });
     });
   }

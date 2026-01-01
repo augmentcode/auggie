@@ -4,12 +4,11 @@
 
 import { Command } from "commander";
 import { FilesystemStore } from "../stores/filesystem.js";
-import { FilesystemSource } from "../sources/filesystem.js";
 import { runMCPHttpServer } from "../clients/mcp-http-server.js";
 
 export const mcpServeCommand = new Command("mcp-serve")
   .description("Start MCP HTTP server for remote client access")
-  .requiredOption("-n, --name <name>", "Index name")
+  .option("-n, --name <names...>", "Index name(s) to expose (default: all)")
   .option("--port <number>", "Port to listen on", "3000")
   .option("--host <host>", "Host to bind to", "localhost")
   .option("--cors <origins>", "CORS origins (comma-separated, or '*' for any)")
@@ -18,7 +17,6 @@ export const mcpServeCommand = new Command("mcp-serve")
   .option("--store-path <path>", "Store base path")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
-  .option("-p, --path <path>", "Path override for filesystem source")
   .option(
     "--api-key <key>",
     "API key for authentication (or set MCP_API_KEY env var)"
@@ -37,37 +35,6 @@ export const mcpServeCommand = new Command("mcp-serve")
         process.exit(1);
       }
 
-      // Load state to determine source type
-      const state = await store.load(options.name);
-      if (!state) {
-        console.error(`Index "${options.name}" not found`);
-        process.exit(1);
-      }
-
-      // Create source unless --search-only is specified
-      let source;
-      if (!options.searchOnly) {
-        if (state.source.type === "filesystem") {
-          const path = options.path ?? state.source.identifier;
-          source = new FilesystemSource({ rootPath: path });
-        } else if (state.source.type === "github") {
-          const [owner, repo] = state.source.identifier.split("/");
-          const { GitHubSource } = await import("../sources/github.js");
-          source = new GitHubSource({ owner, repo, ref: state.source.ref });
-        } else if (state.source.type === "gitlab") {
-          const { GitLabSource } = await import("../sources/gitlab.js");
-          source = new GitLabSource({
-            projectId: state.source.identifier,
-            ref: state.source.ref,
-          });
-        } else if (state.source.type === "website") {
-          const { WebsiteSource } = await import("../sources/website.js");
-          source = new WebsiteSource({
-            url: `https://${state.source.identifier}`,
-          });
-        }
-      }
-
       // Parse CORS option
       let cors: string | string[] | undefined;
       if (options.cors) {
@@ -83,8 +50,8 @@ export const mcpServeCommand = new Command("mcp-serve")
       // Start HTTP server
       const server = await runMCPHttpServer({
         store,
-        source,
-        indexName: options.name,
+        indexNames: options.name, // undefined means all
+        searchOnly: options.searchOnly,
         port: parseInt(options.port, 10),
         host: options.host,
         cors,
