@@ -28,9 +28,6 @@ import type { FileEntry, IndexResult, IndexState } from "./types.js";
 import type { FileChanges, Source } from "../sources/types.js";
 import type { IndexStore } from "../stores/types.js";
 
-/** Batch size for indexing with progress updates */
-const INDEX_BATCH_SIZE = 50;
-
 /**
  * Configuration options for the Indexer.
  */
@@ -86,22 +83,17 @@ export class Indexer {
   }
 
   /**
-   * Add files to index in batches with progress reporting.
+   * Add files to index with progress reporting.
    * Uses carriage return to update the same line in-place.
    */
   private async addToIndexWithProgress(context: DirectContext, files: FileEntry[]): Promise<void> {
     const total = files.length;
-    let indexed = 0;
 
-    for (let i = 0; i < files.length; i += INDEX_BATCH_SIZE) {
-      const batch = files.slice(i, i + INDEX_BATCH_SIZE);
-      await context.addToIndex(batch);
-      indexed += batch.length;
-      const percent = Math.round((indexed / total) * 100);
-      // Use \r to overwrite the same line, clear to end of line with spaces
-      process.stdout.write(`\rIndexing... ${percent}% (${indexed}/${total} files)   `);
+    for (let i = 0; i < total; i++) {
+      await context.addToIndex([files[i]]);
+      const percent = Math.round(((i + 1) / total) * 100);
+      process.stdout.write(`\rIndexing... ${percent}% (${i + 1}/${total} files)   `);
     }
-    // Print newline when done
     process.stdout.write("\n");
   }
 
