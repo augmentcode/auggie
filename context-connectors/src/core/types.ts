@@ -139,36 +139,10 @@ export type SourceMetadata =
 export type SourceType = SourceMetadata["type"];
 
 /**
- * Legacy source metadata format (for backward compatibility).
- * Old indexes stored identifier directly instead of config.
- */
-interface LegacySourceMetadata {
-  type: string;
-  identifier: string;
-  ref?: string;
-  syncedAt: string;
-}
-
-/** Check if metadata is in legacy format */
-function isLegacyFormat(
-  meta: SourceMetadata | LegacySourceMetadata
-): meta is LegacySourceMetadata {
-  return "identifier" in meta && !("config" in meta);
-}
-
-/**
  * Get a human-readable identifier from source metadata.
  * Returns owner/repo for VCS, URL for website, path for filesystem.
- * Handles both new and legacy formats for backward compatibility.
  */
-export function getSourceIdentifier(
-  meta: SourceMetadata | LegacySourceMetadata
-): string {
-  // Handle legacy format
-  if (isLegacyFormat(meta)) {
-    return meta.identifier;
-  }
-
+export function getSourceIdentifier(meta: SourceMetadata): string {
   switch (meta.type) {
     case "github":
       return `${meta.config.owner}/${meta.config.repo}`;
@@ -186,16 +160,8 @@ export function getSourceIdentifier(
 /**
  * Get the resolved ref (commit SHA) from source metadata.
  * Returns undefined for sources without versioning.
- * Handles both new and legacy formats for backward compatibility.
  */
-export function getResolvedRef(
-  meta: SourceMetadata | LegacySourceMetadata
-): string | undefined {
-  // Handle legacy format
-  if (isLegacyFormat(meta)) {
-    return meta.ref;
-  }
-
+export function getResolvedRef(meta: SourceMetadata): string | undefined {
   if ("resolvedRef" in meta) {
     return meta.resolvedRef;
   }

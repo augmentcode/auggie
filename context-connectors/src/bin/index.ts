@@ -5,6 +5,7 @@
 
 import { Command } from "commander";
 import { indexCommand } from "./cmd-index.js";
+import { syncCommand } from "./cmd-sync.js";
 import { searchCommand } from "./cmd-search.js";
 import { listCommand } from "./cmd-list.js";
 import { deleteCommand } from "./cmd-delete.js";
@@ -22,6 +23,7 @@ program
 
 // Add subcommands
 program.addCommand(indexCommand);
+program.addCommand(syncCommand);
 program.addCommand(searchCommand);
 program.addCommand(listCommand);
 program.addCommand(deleteCommand);

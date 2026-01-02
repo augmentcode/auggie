@@ -81,7 +81,7 @@ interface IndexInfo {
 }
 
 /** Create a Source from index state metadata */
-async function createSourceFromState(state: IndexState): Promise<Source | null> {
+async function createSourceFromState(state: IndexState): Promise<Source> {
   const meta = state.source;
   if (meta.type === "filesystem") {
     return new FilesystemSource(meta.config);
@@ -98,7 +98,7 @@ async function createSourceFromState(state: IndexState): Promise<Source | null> 
     const { WebsiteSource } = await import("../sources/website.js");
     return new WebsiteSource(meta.config);
   }
-  return null;
+  throw new Error(`Unknown source type: ${(meta as { type: string }).type}`);
 }
 
 /**
@@ -169,7 +169,7 @@ export async function createMCPServer(
       const source = searchOnly ? undefined : await createSourceFromState(state);
       client = new SearchClient({
         store,
-        source: source ?? undefined,
+        source,
         indexName,
       });
       await client.initialize();

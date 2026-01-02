@@ -39,15 +39,15 @@ export AUGMENT_API_TOKEN='your-token'
 export AUGMENT_API_URL='https://your-tenant.api.augmentcode.com/'
 
 # Index a local directory
-npx context-connectors index -s filesystem -p /path/to/project -n my-project
+npx context-connectors index filesystem -p /path/to/project -n my-project
 
 # Index a GitHub repository
 export GITHUB_TOKEN='your-github-token'
-npx context-connectors index -s github --owner myorg --repo myrepo -n my-project
+npx context-connectors index github --owner myorg --repo myrepo -n my-project
 
 # Index a BitBucket repository
 export BITBUCKET_TOKEN='your-bitbucket-token'
-npx context-connectors index -s bitbucket --workspace myworkspace --repo myrepo -n my-project
+npx context-connectors index bitbucket --workspace myworkspace --repo myrepo -n my-project
 ```
 
 ### 2. Search
@@ -71,22 +71,38 @@ npx context-connectors agent -n my-project
 ### `index` - Index a data source
 
 ```bash
-context-connectors index [options]
+context-connectors index <source> [options]
+```
+
+| Source | Description |
+|--------|-------------|
+| `filesystem` (alias: `fs`) | Index local filesystem |
+| `github` | Index a GitHub repository |
+| `gitlab` | Index a GitLab project |
+| `bitbucket` | Index a Bitbucket repository |
+| `website` | Crawl and index a website |
+
+Common options for all sources:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-n, --name <name>` | Index name | Required |
+| `--store <type>` | Store type: `filesystem`, `s3` | `filesystem` |
+| `--store-path <path>` | Filesystem store path | Platform-specific |
+| `--bucket <name>` | S3 bucket name | - |
+
+### `sync` - Update existing indexes
+
+```bash
+context-connectors sync [name] [options]
 ```
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-s, --source <type>` | Source type: `filesystem`, `github`, `gitlab`, `bitbucket`, `website` | Required |
-| `-n, --name <name>` | Index name | Required |
-| `-p, --path <path>` | Path for filesystem source | `.` |
-| `--owner <owner>` | GitHub repository owner | - |
-| `--repo <repo>` | GitHub/BitBucket repository name | - |
-| `--ref <ref>` | Git ref (branch/tag/commit) | `HEAD` |
-| `--workspace <slug>` | BitBucket workspace slug | - |
-| `--bitbucket-url <url>` | BitBucket base URL (for Server/Data Center) | `https://api.bitbucket.org/2.0` |
-| `--store <type>` | Store type: `filesystem`, `s3` | `filesystem` |
-| `--store-path <path>` | Filesystem store path | Platform-specific |
-| `--bucket <name>` | S3 bucket name | - |
+| `[name]` | Index name to sync | - |
+| `-a, --all` | Sync all indexes | `false` |
+
+The `sync` command re-indexes using the stored configuration, fetching the latest content from the source.
 
 ### `search` - Search indexed content
 
@@ -327,8 +343,7 @@ jobs:
 
       - name: Index repository
         run: |
-          npx @augmentcode/context-connectors index \
-            -s github \
+          npx @augmentcode/context-connectors index github \
             --owner ${{ github.repository_owner }} \
             --repo ${{ github.event.repository.name }} \
             --ref ${{ github.sha }} \
@@ -482,7 +497,7 @@ docs/api/
 config.local.json
 ```
 
-> **Note:** The `.augmentignore` file must be placed in the **source root directory** (the path passed to the index command), not the current working directory.
+> **Note:** The `.augmentignore` file must be placed in the **source root directory** (the path passed to the add command), not the current working directory.
 
 ## Website Source
 
@@ -498,7 +513,7 @@ The website source crawls and indexes static HTML content.
 When using S3-compatible services like MinIO, DigitalOcean Spaces, or Backblaze B2:
 
 ```bash
-npx context-connectors index -s filesystem -p ./project -n my-project \
+npx context-connectors index filesystem -p ./project -n my-project \
   --store s3 \
   --bucket my-bucket \
   --s3-endpoint http://localhost:9000 \
