@@ -8,7 +8,7 @@
  *
  * These tools are used by:
  * - SearchClient (programmatic access)
- * - MCP Server (Claude Desktop)
+ * - MCP Server (Claude Desktop, Claude Code, Cursor, etc.)
  * - AI SDK Tools (Vercel AI SDK)
  *
  * @module tools/types

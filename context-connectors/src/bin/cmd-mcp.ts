@@ -1,5 +1,5 @@
 /**
- * MCP command - Start MCP server for Claude Desktop integration
+ * MCP command - Run as MCP server
  */
 
 import { Command } from "commander";
@@ -7,7 +7,7 @@ import { FilesystemStore } from "../stores/filesystem.js";
 import { runMCPServer } from "../clients/mcp-server.js";
 
 export const mcpCommand = new Command("mcp")
-  .description("Start MCP server for Claude Desktop integration")
+  .description("Run as MCP server")
   .option("-n, --name <names...>", "Index name(s) to expose (default: all)")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
   .option("--store-path <path>", "Store base path")

@@ -485,7 +485,7 @@ NOT supported: \\d, \\s, \\w (use [0-9], [ \\t], [a-zA-Z_] instead)`;
  *
  * This is the main entry point for running the MCP server.
  * It creates the server and connects it to stdin/stdout for
- * communication with the MCP client (e.g., Claude Desktop).
+ * communication with the MCP client.
  *
  * This function does not return until the server is stopped.
  *
