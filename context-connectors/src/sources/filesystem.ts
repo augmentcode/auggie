@@ -243,7 +243,10 @@ export class FilesystemSource implements Source {
   async getMetadata(): Promise<SourceMetadata> {
     return {
       type: "filesystem",
-      identifier: this.rootPath,
+      config: {
+        rootPath: this.rootPath,
+        ignorePatterns: this.ignorePatterns.length > 0 ? this.ignorePatterns : undefined,
+      },
       syncedAt: isoTimestamp(),
     };
   }

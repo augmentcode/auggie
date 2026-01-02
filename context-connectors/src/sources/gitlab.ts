@@ -341,33 +341,40 @@ export class GitLabSource implements Source {
   }
 
   async fetchChanges(previous: SourceMetadata): Promise<FileChanges | null> {
-    // Need previous ref to compute changes
-    if (!previous.ref) {
+    // Need previous resolved ref to compute changes
+    const previousRef =
+      previous.type === "github" ||
+      previous.type === "gitlab" ||
+      previous.type === "bitbucket"
+        ? previous.resolvedRef
+        : undefined;
+
+    if (!previousRef) {
       return null;
     }
 
     const currentRef = await this.resolveRefToSha();
 
     // Same commit, no changes
-    if (previous.ref === currentRef) {
+    if (previousRef === currentRef) {
       return { added: [], modified: [], removed: [] };
     }
 
     // Check for force push
-    if (await this.isForcePush(previous.ref, currentRef)) {
+    if (await this.isForcePush(previousRef, currentRef)) {
       console.log("Force push detected, triggering full re-index");
       return null;
     }
 
     // Check if ignore files changed
-    if (await this.ignoreFilesChanged(previous.ref, currentRef)) {
+    if (await this.ignoreFilesChanged(previousRef, currentRef)) {
       console.log("Ignore files changed, triggering full re-index");
       return null;
     }
 
     // Get changed files via compare API
     const data = await this.apiRequest<{ diffs: Array<{ new_path: string; old_path: string; new_file: boolean; deleted_file: boolean; renamed_file: boolean }> }>(
-      `/projects/${this.encodedProjectId}/repository/compare?from=${encodeURIComponent(previous.ref)}&to=${encodeURIComponent(currentRef)}`
+      `/projects/${this.encodedProjectId}/repository/compare?from=${encodeURIComponent(previousRef)}&to=${encodeURIComponent(currentRef)}`
     );
 
     const changedFiles = data.diffs || [];
@@ -408,11 +415,15 @@ export class GitLabSource implements Source {
   }
 
   async getMetadata(): Promise<SourceMetadata> {
-    const ref = await this.resolveRefToSha();
+    const resolvedRef = await this.resolveRefToSha();
     return {
       type: "gitlab",
-      identifier: this.projectId,
-      ref,
+      config: {
+        projectId: this.projectId,
+        baseUrl: this.baseUrl !== "https://gitlab.com" ? this.baseUrl : undefined,
+        ref: this.ref,
+      },
+      resolvedRef,
       syncedAt: isoTimestamp(),
     };
   }

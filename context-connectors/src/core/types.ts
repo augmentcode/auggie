@@ -49,37 +49,157 @@ export interface FileInfo {
 }
 
 /**
+ * Source-specific configuration types (without secrets).
+ * These are stored alongside the index to enable re-indexing.
+ */
+
+/** GitHub source config (without token) */
+export interface GitHubSourceStoredConfig {
+  owner: string;
+  repo: string;
+  ref?: string;
+}
+
+/** GitLab source config (without token) */
+export interface GitLabSourceStoredConfig {
+  projectId: string;
+  baseUrl?: string;
+  ref?: string;
+}
+
+/** BitBucket source config (without token) */
+export interface BitBucketSourceStoredConfig {
+  workspace: string;
+  repo: string;
+  baseUrl?: string;
+  ref?: string;
+}
+
+/** Website source config */
+export interface WebsiteSourceStoredConfig {
+  url: string;
+  maxDepth?: number;
+  maxPages?: number;
+  includePaths?: string[];
+  excludePaths?: string[];
+  respectRobotsTxt?: boolean;
+  userAgent?: string;
+  delayMs?: number;
+}
+
+/** Filesystem source config */
+export interface FilesystemSourceStoredConfig {
+  rootPath: string;
+  ignorePatterns?: string[];
+}
+
+/**
  * Metadata about a data source, stored alongside the index state.
+ * Uses a discriminated union to store source-specific configuration.
  *
  * Used to:
  * - Identify the source type and location
- * - Track the indexed version/ref for VCS sources
+ * - Store configuration for re-indexing
+ * - Track the resolved version for VCS sources
  * - Record when the index was last synced
- *
- * @example
- * ```typescript
- * const metadata: SourceMetadata = {
- *   type: "github",
- *   identifier: "microsoft/vscode",
- *   ref: "a1b2c3d4e5f6",
- *   syncedAt: "2024-01-15T10:30:00Z"
- * };
- * ```
  */
-export interface SourceMetadata {
-  /** The type of data source */
-  type: "github" | "gitlab" | "bitbucket" | "website" | "filesystem";
-  /**
-   * Source-specific identifier:
-   * - GitHub/GitLab/BitBucket: "owner/repo" or "workspace/repo"
-   * - Website: base URL
-   * - Filesystem: absolute path
-   */
+export type SourceMetadata =
+  | {
+      type: "github";
+      config: GitHubSourceStoredConfig;
+      /** Resolved commit SHA that was indexed */
+      resolvedRef?: string;
+      /** ISO 8601 timestamp of when the index was last synced */
+      syncedAt: string;
+    }
+  | {
+      type: "gitlab";
+      config: GitLabSourceStoredConfig;
+      resolvedRef?: string;
+      syncedAt: string;
+    }
+  | {
+      type: "bitbucket";
+      config: BitBucketSourceStoredConfig;
+      resolvedRef?: string;
+      syncedAt: string;
+    }
+  | {
+      type: "website";
+      config: WebsiteSourceStoredConfig;
+      syncedAt: string;
+    }
+  | {
+      type: "filesystem";
+      config: FilesystemSourceStoredConfig;
+      syncedAt: string;
+    };
+
+/** Helper type to extract source type */
+export type SourceType = SourceMetadata["type"];
+
+/**
+ * Legacy source metadata format (for backward compatibility).
+ * Old indexes stored identifier directly instead of config.
+ */
+interface LegacySourceMetadata {
+  type: string;
   identifier: string;
-  /** Git ref (commit SHA) for VCS sources. Used for incremental updates. */
   ref?: string;
-  /** ISO 8601 timestamp of when the index was last synced */
   syncedAt: string;
+}
+
+/** Check if metadata is in legacy format */
+function isLegacyFormat(
+  meta: SourceMetadata | LegacySourceMetadata
+): meta is LegacySourceMetadata {
+  return "identifier" in meta && !("config" in meta);
+}
+
+/**
+ * Get a human-readable identifier from source metadata.
+ * Returns owner/repo for VCS, URL for website, path for filesystem.
+ * Handles both new and legacy formats for backward compatibility.
+ */
+export function getSourceIdentifier(
+  meta: SourceMetadata | LegacySourceMetadata
+): string {
+  // Handle legacy format
+  if (isLegacyFormat(meta)) {
+    return meta.identifier;
+  }
+
+  switch (meta.type) {
+    case "github":
+      return `${meta.config.owner}/${meta.config.repo}`;
+    case "gitlab":
+      return meta.config.projectId;
+    case "bitbucket":
+      return `${meta.config.workspace}/${meta.config.repo}`;
+    case "website":
+      return new URL(meta.config.url).hostname;
+    case "filesystem":
+      return meta.config.rootPath;
+  }
+}
+
+/**
+ * Get the resolved ref (commit SHA) from source metadata.
+ * Returns undefined for sources without versioning.
+ * Handles both new and legacy formats for backward compatibility.
+ */
+export function getResolvedRef(
+  meta: SourceMetadata | LegacySourceMetadata
+): string | undefined {
+  // Handle legacy format
+  if (isLegacyFormat(meta)) {
+    return meta.ref;
+  }
+
+  if ("resolvedRef" in meta) {
+    return meta.resolvedRef;
+  }
+  return undefined;
 }
 
 /**

@@ -5,6 +5,7 @@
 import { Command } from "commander";
 import { FilesystemStore } from "../stores/filesystem.js";
 import type { IndexStore } from "../stores/types.js";
+import { getSourceIdentifier } from "../core/types.js";
 
 /** Format a relative time string (e.g., "2h ago", "5d ago") */
 function formatRelativeTime(isoDate: string): string {
@@ -76,7 +77,7 @@ export const listCommand = new Command("list")
           indexes.push({
             name: key,
             type: state.source.type,
-            identifier: state.source.identifier,
+            identifier: getSourceIdentifier(state.source),
             syncedAt: state.source.syncedAt,
           });
         }

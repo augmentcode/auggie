@@ -83,18 +83,11 @@ export class Indexer {
   }
 
   /**
-   * Add files to index with progress reporting.
-   * Uses carriage return to update the same line in-place.
+   * Add files to index.
    */
-  private async addToIndexWithProgress(context: DirectContext, files: FileEntry[]): Promise<void> {
-    const total = files.length;
-
-    for (let i = 0; i < total; i++) {
-      await context.addToIndex([files[i]]);
-      const percent = Math.round(((i + 1) / total) * 100);
-      process.stdout.write(`\rIndexing... ${percent}% (${i + 1}/${total} files)   `);
-    }
-    process.stdout.write("\n");
+  private async addToIndex(context: DirectContext, files: FileEntry[]): Promise<void> {
+    console.log(`Indexing ${files.length} files...`);
+    await context.addToIndex(files);
   }
 
   /**
@@ -174,7 +167,7 @@ export class Indexer {
 
     // Add files to index
     if (files.length > 0) {
-      await this.addToIndexWithProgress(context, files);
+      await this.addToIndex(context, files);
     }
 
     // Get source metadata
@@ -222,7 +215,7 @@ export class Indexer {
     // Add new and modified files
     const filesToAdd: FileEntry[] = [...changes.added, ...changes.modified];
     if (filesToAdd.length > 0) {
-      await this.addToIndexWithProgress(context, filesToAdd);
+      await this.addToIndex(context, filesToAdd);
     }
 
     // Get updated source metadata

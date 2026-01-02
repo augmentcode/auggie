@@ -18,7 +18,7 @@ describe("MemoryStore", () => {
     },
     source: {
       type: "filesystem",
-      identifier: `/test/${id}`,
+      config: { rootPath: `/test/${id}` },
       syncedAt: new Date().toISOString(),
     },
   });
@@ -57,20 +57,28 @@ describe("MemoryStore", () => {
       await store.save("key", state);
 
       const loaded = await store.load("key");
-      loaded!.source.identifier = "modified";
+      if (loaded!.source.type === "filesystem") {
+        loaded!.source.config.rootPath = "modified";
+      }
 
       const loadedAgain = await store.load("key");
-      expect(loadedAgain!.source.identifier).toBe("/test/1");
+      if (loadedAgain!.source.type === "filesystem") {
+        expect(loadedAgain!.source.config.rootPath).toBe("/test/1");
+      }
     });
 
     it("should store deep copy on save", async () => {
       const state = createTestState("1");
       await store.save("key", state);
 
-      state.source.identifier = "modified";
+      if (state.source.type === "filesystem") {
+        state.source.config.rootPath = "modified";
+      }
 
       const loaded = await store.load("key");
-      expect(loaded!.source.identifier).toBe("/test/1");
+      if (loaded!.source.type === "filesystem") {
+        expect(loaded!.source.config.rootPath).toBe("/test/1");
+      }
     });
   });
 
@@ -142,7 +150,9 @@ describe("MemoryStore", () => {
 
       expect(storeWithData.has("existing")).toBe(true);
       const loaded = await storeWithData.load("existing");
-      expect(loaded!.source.identifier).toBe("/test/existing");
+      if (loaded!.source.type === "filesystem") {
+        expect(loaded!.source.config.rootPath).toBe("/test/existing");
+      }
     });
   });
 });

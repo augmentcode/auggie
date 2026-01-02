@@ -171,8 +171,11 @@ describe("BitBucketSource", () => {
 
       const metadata = await source.getMetadata();
       expect(metadata.type).toBe("bitbucket");
-      expect(metadata.identifier).toBe(`${integrationWorkspace}/${integrationRepo}`);
-      expect(metadata.ref).toBeDefined();
+      if (metadata.type === "bitbucket") {
+        expect(metadata.config.workspace).toBe(integrationWorkspace);
+        expect(metadata.config.repo).toBe(integrationRepo);
+        expect(metadata.resolvedRef).toBeDefined();
+      }
       expect(metadata.syncedAt).toBeDefined();
     });
   });

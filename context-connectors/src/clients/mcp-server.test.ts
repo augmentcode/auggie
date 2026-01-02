@@ -26,7 +26,7 @@ const createMockState = (): IndexState => ({
   } as any,
   source: {
     type: "filesystem",
-    identifier: "/test/path",
+    config: { rootPath: "/test/path" },
     syncedAt: new Date().toISOString(),
   },
 });

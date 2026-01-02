@@ -40,6 +40,7 @@ import {
 import type { IndexStoreReader } from "../stores/types.js";
 import type { Source } from "../sources/types.js";
 import type { IndexState } from "../core/types.js";
+import { getSourceIdentifier, getResolvedRef } from "../core/types.js";
 import { SearchClient } from "./search-client.js";
 import { FilesystemSource } from "../sources/filesystem.js";
 
@@ -83,21 +84,19 @@ interface IndexInfo {
 async function createSourceFromState(state: IndexState): Promise<Source | null> {
   const meta = state.source;
   if (meta.type === "filesystem") {
-    return new FilesystemSource({ rootPath: meta.identifier });
+    return new FilesystemSource(meta.config);
   } else if (meta.type === "github") {
-    const [owner, repo] = meta.identifier.split("/");
     const { GitHubSource } = await import("../sources/github.js");
-    return new GitHubSource({ owner, repo, ref: meta.ref });
+    return new GitHubSource(meta.config);
   } else if (meta.type === "gitlab") {
     const { GitLabSource } = await import("../sources/gitlab.js");
-    return new GitLabSource({ projectId: meta.identifier, ref: meta.ref });
+    return new GitLabSource(meta.config);
   } else if (meta.type === "bitbucket") {
-    const [workspace, repo] = meta.identifier.split("/");
     const { BitBucketSource } = await import("../sources/bitbucket.js");
-    return new BitBucketSource({ workspace, repo, ref: meta.ref });
+    return new BitBucketSource(meta.config);
   } else if (meta.type === "website") {
     const { WebsiteSource } = await import("../sources/website.js");
-    return new WebsiteSource({ url: `https://${meta.identifier}` });
+    return new WebsiteSource(meta.config);
   }
   return null;
 }
@@ -149,8 +148,8 @@ export async function createMCPServer(
       indexes.push({
         name,
         type: state.source.type,
-        identifier: state.source.identifier,
-        ref: state.source.ref,
+        identifier: getSourceIdentifier(state.source),
+        ref: getResolvedRef(state.source),
         syncedAt: state.source.syncedAt,
       });
     }

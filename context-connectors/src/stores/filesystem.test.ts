@@ -21,7 +21,7 @@ function createMockState(): IndexState {
     },
     source: {
       type: "filesystem",
-      identifier: "/path/to/project",
+      config: { rootPath: "/path/to/project" },
       syncedAt: new Date().toISOString(),
     },
   };
@@ -77,7 +77,9 @@ describe("FilesystemStore", () => {
 
       expect(loadedState).not.toBeNull();
       expect(loadedState!.contextState.checkpointId).toBe("test-checkpoint-123");
-      expect(loadedState!.source.identifier).toBe("/path/to/project");
+      if (loadedState!.source.type === "filesystem") {
+        expect(loadedState!.source.config.rootPath).toBe("/path/to/project");
+      }
     });
 
     it("returns null for missing key", async () => {

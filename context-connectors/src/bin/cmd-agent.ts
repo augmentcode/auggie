@@ -8,6 +8,8 @@ import { SearchClient } from "../clients/search-client.js";
 import { CLIAgent, type Provider } from "../clients/cli-agent.js";
 import { FilesystemStore } from "../stores/filesystem.js";
 import { FilesystemSource } from "../sources/filesystem.js";
+import { getSourceIdentifier } from "../core/types.js";
+import type { Source } from "../sources/types.js";
 
 const PROVIDER_DEFAULTS: Record<Provider, string> = {
   openai: "gpt-5-mini",
@@ -65,26 +67,27 @@ export const agentCommand = new Command("agent")
       }
 
       // Create source unless --search-only is specified
-      let source;
+      let source: Source | undefined;
       if (!options.searchOnly) {
-        if (state.source.type === "filesystem") {
-          const path = options.path ?? state.source.identifier;
-          source = new FilesystemSource({ rootPath: path });
-        } else if (state.source.type === "github") {
-          const [owner, repo] = state.source.identifier.split("/");
+        const meta = state.source;
+        if (meta.type === "filesystem") {
+          // Allow override via --path option
+          const config = options.path
+            ? { ...meta.config, rootPath: options.path }
+            : meta.config;
+          source = new FilesystemSource(config);
+        } else if (meta.type === "github") {
           const { GitHubSource } = await import("../sources/github.js");
-          source = new GitHubSource({ owner, repo, ref: state.source.ref });
-        } else if (state.source.type === "gitlab") {
+          source = new GitHubSource(meta.config);
+        } else if (meta.type === "gitlab") {
           const { GitLabSource } = await import("../sources/gitlab.js");
-          source = new GitLabSource({
-            projectId: state.source.identifier,
-            ref: state.source.ref,
-          });
-        } else if (state.source.type === "website") {
+          source = new GitLabSource(meta.config);
+        } else if (meta.type === "bitbucket") {
+          const { BitBucketSource } = await import("../sources/bitbucket.js");
+          source = new BitBucketSource(meta.config);
+        } else if (meta.type === "website") {
           const { WebsiteSource } = await import("../sources/website.js");
-          source = new WebsiteSource({
-            url: `https://${state.source.identifier}`,
-          });
+          source = new WebsiteSource(meta.config);
         }
       }
 
@@ -92,10 +95,10 @@ export const agentCommand = new Command("agent")
       const client = new SearchClient({ store, source, indexName: options.name });
       await client.initialize();
 
-      const meta = client.getMetadata();
-      console.log(`\x1b[36mConnected to: ${meta.type}://${meta.identifier}\x1b[0m`);
+      const clientMeta = client.getMetadata();
+      console.log(`\x1b[36mConnected to: ${clientMeta.type}://${getSourceIdentifier(clientMeta)}\x1b[0m`);
       console.log(`\x1b[36mUsing: ${provider}/${model}\x1b[0m`);
-      console.log(`\x1b[36mLast synced: ${meta.syncedAt}\x1b[0m\n`);
+      console.log(`\x1b[36mLast synced: ${clientMeta.syncedAt}\x1b[0m\n`);
 
       // Create and initialize agent
       const agent = new CLIAgent({

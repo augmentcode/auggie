@@ -36,7 +36,7 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
     } as any,
     source: {
       type: "filesystem",
-      identifier: "/test/path",
+      config: { rootPath: "/test/path" },
       syncedAt: new Date().toISOString(),
     },
   });

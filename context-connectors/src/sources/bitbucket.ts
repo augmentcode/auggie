@@ -385,26 +385,33 @@ export class BitBucketSource implements Source {
   }
 
   async fetchChanges(previous: SourceMetadata): Promise<FileChanges | null> {
-    // Need previous ref to compute changes
-    if (!previous.ref) {
+    // Need previous resolved ref to compute changes
+    const previousRef =
+      previous.type === "github" ||
+      previous.type === "gitlab" ||
+      previous.type === "bitbucket"
+        ? previous.resolvedRef
+        : undefined;
+
+    if (!previousRef) {
       return null;
     }
 
     const currentRef = await this.resolveRefToSha();
 
     // Same commit, no changes
-    if (previous.ref === currentRef) {
+    if (previousRef === currentRef) {
       return { added: [], modified: [], removed: [] };
     }
 
     // Check for force push
-    if (await this.isForcePush(previous.ref, currentRef)) {
+    if (await this.isForcePush(previousRef, currentRef)) {
       console.log("Force push detected, triggering full re-index");
       return null;
     }
 
     // Check if ignore files changed
-    if (await this.ignoreFilesChanged(previous.ref, currentRef)) {
+    if (await this.ignoreFilesChanged(previousRef, currentRef)) {
       console.log("Ignore files changed, triggering full re-index");
       return null;
     }
@@ -419,7 +426,7 @@ export class BitBucketSource implements Source {
     }
 
     const data = await this.apiRequest<DiffStatResponse>(
-      `/repositories/${this.workspace}/${this.repo}/diffstat/${encodeURIComponent(previous.ref)}..${encodeURIComponent(currentRef)}`
+      `/repositories/${this.workspace}/${this.repo}/diffstat/${encodeURIComponent(previousRef)}..${encodeURIComponent(currentRef)}`
     );
 
     const changedFiles = data.values || [];
@@ -465,11 +472,16 @@ export class BitBucketSource implements Source {
   }
 
   async getMetadata(): Promise<SourceMetadata> {
-    const ref = await this.resolveRefToSha();
+    const resolvedRef = await this.resolveRefToSha();
     return {
       type: "bitbucket",
-      identifier: `${this.workspace}/${this.repo}`,
-      ref,
+      config: {
+        workspace: this.workspace,
+        repo: this.repo,
+        baseUrl: this.baseUrl !== "https://api.bitbucket.org/2.0" ? this.baseUrl : undefined,
+        ref: this.ref,
+      },
+      resolvedRef,
       syncedAt: isoTimestamp(),
     };
   }

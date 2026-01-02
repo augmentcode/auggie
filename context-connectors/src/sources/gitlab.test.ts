@@ -171,8 +171,10 @@ describe("GitLabSource", () => {
 
       const metadata = await source.getMetadata();
       expect(metadata.type).toBe("gitlab");
-      expect(metadata.identifier).toBe(testProject);
-      expect(metadata.ref).toBeDefined();
+      if (metadata.type === "gitlab") {
+        expect(metadata.config.projectId).toBe(testProject);
+        expect(metadata.resolvedRef).toBeDefined();
+      }
       expect(metadata.syncedAt).toBeDefined();
     });
   });

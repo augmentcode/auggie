@@ -152,8 +152,11 @@ describe("GitHubSource", () => {
 
       const metadata = await source.getMetadata();
       expect(metadata.type).toBe("github");
-      expect(metadata.identifier).toBe("octocat/Hello-World");
-      expect(metadata.ref).toBeDefined();
+      if (metadata.type === "github") {
+        expect(metadata.config.owner).toBe("octocat");
+        expect(metadata.config.repo).toBe("Hello-World");
+        expect(metadata.resolvedRef).toBeDefined();
+      }
       expect(metadata.syncedAt).toBeDefined();
     });
   });

@@ -23,7 +23,7 @@ describe("search tool", () => {
       contextState: {} as any,
       source: {
         type: "filesystem",
-        identifier: "/test",
+        config: { rootPath: "/test" },
         syncedAt: new Date().toISOString(),
       },
     },
@@ -71,7 +71,7 @@ describe("search tool", () => {
         contextState: {} as any,
         source: {
           type: "filesystem",
-          identifier: "/test",
+          config: { rootPath: "/test" },
           syncedAt: new Date().toISOString(),
         },
       },

@@ -100,8 +100,9 @@ describe("WebsiteSource", () => {
 
       const metadata = await source.getMetadata();
       expect(metadata.type).toBe("website");
-      expect(metadata.identifier).toBe("example.com");
-      expect(metadata.ref).toBeDefined();
+      if (metadata.type === "website") {
+        expect(metadata.config.url).toBe("https://example.com/docs");
+      }
       expect(metadata.syncedAt).toBeDefined();
     });
   });
@@ -114,7 +115,7 @@ describe("WebsiteSource", () => {
 
       const changes = await source.fetchChanges({
         type: "website",
-        identifier: "example.com",
+        config: { url: "https://example.com" },
         syncedAt: new Date().toISOString(),
       });
 

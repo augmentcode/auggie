@@ -6,6 +6,8 @@ import { Command } from "commander";
 import { SearchClient } from "../clients/search-client.js";
 import { FilesystemStore } from "../stores/filesystem.js";
 import { FilesystemSource } from "../sources/filesystem.js";
+import { getSourceIdentifier } from "../core/types.js";
+import type { Source } from "../sources/types.js";
 
 export const searchCommand = new Command("search")
   .description("Search indexed content")
@@ -53,30 +55,27 @@ export const searchCommand = new Command("search")
       }
 
       // Create source unless --search-only is specified
-      let source;
+      let source: Source | undefined;
       if (!options.searchOnly) {
-        if (state.source.type === "filesystem") {
-          const path = options.path ?? state.source.identifier;
-          source = new FilesystemSource({ rootPath: path });
-        } else if (state.source.type === "github") {
-          const [owner, repo] = state.source.identifier.split("/");
+        const meta = state.source;
+        if (meta.type === "filesystem") {
+          // Allow override via --path option
+          const config = options.path
+            ? { ...meta.config, rootPath: options.path }
+            : meta.config;
+          source = new FilesystemSource(config);
+        } else if (meta.type === "github") {
           const { GitHubSource } = await import("../sources/github.js");
-          source = new GitHubSource({
-            owner,
-            repo,
-            ref: state.source.ref,
-          });
-        } else if (state.source.type === "gitlab") {
+          source = new GitHubSource(meta.config);
+        } else if (meta.type === "gitlab") {
           const { GitLabSource } = await import("../sources/gitlab.js");
-          source = new GitLabSource({
-            projectId: state.source.identifier,
-            ref: state.source.ref,
-          });
-        } else if (state.source.type === "website") {
+          source = new GitLabSource(meta.config);
+        } else if (meta.type === "bitbucket") {
+          const { BitBucketSource } = await import("../sources/bitbucket.js");
+          source = new BitBucketSource(meta.config);
+        } else if (meta.type === "website") {
           const { WebsiteSource } = await import("../sources/website.js");
-          source = new WebsiteSource({
-            url: `https://${state.source.identifier}`,
-          });
+          source = new WebsiteSource(meta.config);
         }
       }
 
@@ -89,10 +88,10 @@ export const searchCommand = new Command("search")
 
       await client.initialize();
 
-      const meta = client.getMetadata();
+      const clientMeta = client.getMetadata();
       console.log(`Searching index: ${options.name}`);
-      console.log(`Source: ${meta.type}://${meta.identifier}`);
-      console.log(`Last synced: ${meta.syncedAt}\n`);
+      console.log(`Source: ${clientMeta.type}://${getSourceIdentifier(clientMeta)}`);
+      console.log(`Last synced: ${clientMeta.syncedAt}\n`);
 
       const result = await client.search(query, {
         maxOutputLength: options.maxChars,

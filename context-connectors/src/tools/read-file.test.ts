@@ -38,7 +38,7 @@ describe("readFile tool", () => {
       contextState: {} as any,
       source: {
         type: "filesystem",
-        identifier: "/test",
+        config: { rootPath: "/test" },
         syncedAt: new Date().toISOString(),
       },
     },

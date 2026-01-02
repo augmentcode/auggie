@@ -119,12 +119,14 @@ describe("FilesystemSource", () => {
   });
 
   describe("getMetadata", () => {
-    it("returns correct type and identifier", async () => {
+    it("returns correct type and config", async () => {
       const source = new FilesystemSource({ rootPath: TEST_DIR });
       const metadata = await source.getMetadata();
 
       expect(metadata.type).toBe("filesystem");
-      expect(metadata.identifier).toBe(TEST_DIR);
+      if (metadata.type === "filesystem") {
+        expect(metadata.config.rootPath).toBe(TEST_DIR);
+      }
       expect(metadata.syncedAt).toBeDefined();
     });
   });
@@ -134,7 +136,7 @@ describe("FilesystemSource", () => {
       const source = new FilesystemSource({ rootPath: TEST_DIR });
       const changes = await source.fetchChanges({
         type: "filesystem",
-        identifier: TEST_DIR,
+        config: { rootPath: TEST_DIR },
         syncedAt: new Date().toISOString(),
       });
 

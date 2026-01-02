@@ -391,8 +391,16 @@ export class WebsiteSource implements Source {
   async getMetadata(): Promise<SourceMetadata> {
     return {
       type: "website",
-      identifier: this.startUrl.hostname,
-      ref: isoTimestamp(), // Use timestamp as "ref" since websites don't have versions
+      config: {
+        url: this.startUrl.toString(),
+        maxDepth: this.maxDepth,
+        maxPages: this.maxPages,
+        includePaths: this.includePaths.length > 0 ? this.includePaths : undefined,
+        excludePaths: this.excludePaths.length > 0 ? this.excludePaths : undefined,
+        respectRobotsTxt: this.respectRobotsTxt,
+        userAgent: this.userAgent !== "ContextConnectors/1.0" ? this.userAgent : undefined,
+        delayMs: this.delayMs !== 100 ? this.delayMs : undefined,
+      },
       syncedAt: isoTimestamp(),
     };
   }

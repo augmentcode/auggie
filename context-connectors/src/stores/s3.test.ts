@@ -31,7 +31,7 @@ describe("S3Store", () => {
     },
     source: {
       type: "filesystem",
-      identifier: `/test/${id}`,
+      config: { rootPath: `/test/${id}` },
       syncedAt: new Date().toISOString(),
     },
   });
