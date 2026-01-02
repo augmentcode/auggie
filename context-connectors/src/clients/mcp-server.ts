@@ -211,41 +211,63 @@ export async function createMCPServer(
   };
 
   // Tool descriptions with available indexes
-  const searchDescription = `Search indexed content using natural language.
-Returns relevant snippets organized by file path with line numbers.
+  const searchDescription = `Search indexed content using natural language to find relevant code snippets.
 
 Available indexes:
 ${indexListStr}
 
-Features:
-- Takes a natural language description of what you're looking for
-- Returns snippets ranked by relevance
-- Works across different file types`;
+Parameters:
+- index_name (required): Which codebase to search
+- query (required): Natural language description ("authentication logic", "error handling")
+- maxChars (optional): Max characters in response (default: reasonable limit)
 
-  const listFilesDescription = `List files and directories with type annotations.
+Returns: Snippets with file paths (relative to repo root) and line numbers.
+Example output:
+Path: src/auth/login.ts
+    15: function authenticateUser(username, password) {
+    16:   return validateCredentials(username, password);
 
-Available indexes:
-${indexListStr}
+Path format: Paths are relative to repository root
+✅ "src/auth/login.ts"  ❌ "/repo/src/auth/login.ts"`;
 
-Options:
-* \`directory\` is a path relative to the source root
-* Lists files and subdirectories up to 2 levels deep by default
-* Hidden files (starting with \`.\`) are excluded by default
-* Supports glob pattern filtering (e.g., \`*.ts\`, \`src/*.json\`)`;
-
-  const readFileDescription = `Read file contents with line numbers (cat -n format).
+  const listFilesDescription = `List files and directories to explore codebase structure.
 
 Available indexes:
 ${indexListStr}
 
-Options:
-* \`path\` is a file path relative to the source root
-* Use \`startLine\` and \`endLine\` to read a specific range (1-based, inclusive)
-* Use \`searchPattern\` for regex search - only matching lines and context will be shown
+Parameters:
+- index_name (required): Which codebase to list
+- directory (optional): Path relative to repo root (default: "" for root)
+- depth (optional): Recursion depth (default: 2, max recommended: 5)
+- pattern (optional): Glob filter ("*.ts", "src/**/*.test.js")
+- showHidden (optional): Include hidden files (default: false)
 
-Regex search:
-* Supported: \`.\`, \`[abc]\`, \`[a-z]\`, \`^\`, \`$\`, \`*\`, \`+\`, \`?\`, \`{n,m}\`, \`|\`, \`\\t\`
-* Not supported: \`\\n\`, \`\\d\`, \`\\s\`, \`\\w\`, look-ahead/behind, back-references`;
+Returns: Directory tree structure with files and subdirectories
+
+Path format: Relative to repository root
+✅ "src/components", ""  ❌ "/repo/src", "./src"`;
+
+  const readFileDescription = `Read file contents with line numbers, optionally filtered by line range or regex pattern.
+
+Available indexes:
+${indexListStr}
+
+Parameters:
+- index_name (required): Which codebase
+- path (required): File path relative to repo root
+- startLine (optional): First line to read (1-based, default: 1)
+- endLine (optional): Last line to read (-1 for end, default: -1)
+- searchPattern (optional): Regex filter - returns only matching lines with context
+- contextLinesBefore/After (optional): Context lines around matches (default: 5)
+- includeLineNumbers (optional): Show line numbers (default: true)
+
+Returns: File contents with line numbers
+
+Path format: Relative to repository root
+✅ "src/main.ts", "package.json"  ❌ "/repo/src/main.ts"
+
+Regex: Supports basic patterns (., [abc], *, +, ?, ^, $, |)
+NOT supported: \\d, \\s, \\w (use [0-9], [ \\t], [a-zA-Z_] instead)`;
 
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
