@@ -12,7 +12,7 @@
  * ```typescript
  * import { FilesystemStore } from "@augmentcode/context-connectors/stores";
  *
- * // Default location: .context-connectors
+ * // Default location: ~/.augment/context-connectors
  * const store = new FilesystemStore();
  *
  * // Custom location
@@ -29,7 +29,7 @@
  */
 
 import { promises as fs } from "node:fs";
-import { homedir, platform } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { sanitizeKey } from "../core/utils.js";
 import type { IndexState } from "../core/types.js";
@@ -47,14 +47,18 @@ export interface FilesystemStoreConfig {
 }
 
 /**
- * Get the default store path based on platform.
+ * Get the default store path.
  *
  * Priority order:
  * 1. CONTEXT_CONNECTORS_STORE_PATH environment variable
- * 2. Platform-specific default:
- *    - Linux: ~/.local/share/context-connectors (or $XDG_DATA_HOME/context-connectors)
- *    - macOS: ~/Library/Application Support/context-connectors
- *    - Windows: %LOCALAPPDATA%\context-connectors
+ * 2. ~/.augment/context-connectors (unified across all platforms)
+ *
+ * This aligns with other Augment CLI state storage:
+ * - ~/.augment/session.json - authentication
+ * - ~/.augment/settings.json - user settings
+ * - ~/.augment/rules/ - user rules
+ * - ~/.augment/agents/ - user-defined agents
+ * - ~/.augment/commands/ - custom commands
  */
 function getDefaultStorePath(): string {
   // Environment variable takes precedence
@@ -62,22 +66,8 @@ function getDefaultStorePath(): string {
     return process.env.CONTEXT_CONNECTORS_STORE_PATH;
   }
 
-  const home = homedir();
-
-  switch (platform()) {
-    case "darwin":
-      return join(home, "Library", "Application Support", "context-connectors");
-    case "win32":
-      return join(
-        process.env.LOCALAPPDATA || join(home, "AppData", "Local"),
-        "context-connectors"
-      );
-    default:
-      // Linux and others: follow XDG Base Directory spec
-      const xdgData =
-        process.env.XDG_DATA_HOME || join(home, ".local", "share");
-      return join(xdgData, "context-connectors");
-  }
+  // Default to ~/.augment/context-connectors for all platforms
+  return join(homedir(), ".augment", "context-connectors");
 }
 
 /** Default base path for storing index files */

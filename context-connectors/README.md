@@ -457,11 +457,14 @@ async function handleRequest(req: Request) {
 
 ## Data Storage
 
-By default, indexes are stored in a platform-specific location:
+By default, indexes are stored in `~/.augment/context-connectors/` on all platforms.
 
-- **Linux**: `~/.local/share/context-connectors`
-- **macOS**: `~/Library/Application Support/context-connectors`
-- **Windows**: `%LOCALAPPDATA%\context-connectors`
+This location aligns with other Augment CLI state:
+- `~/.augment/session.json` - authentication
+- `~/.augment/settings.json` - user settings
+- `~/.augment/rules/` - user rules
+- `~/.augment/agents/` - user-defined agents
+- `~/.augment/commands/` - custom commands
 
 Override with `--store-path` or the `CONTEXT_CONNECTORS_STORE_PATH` environment variable.
 
