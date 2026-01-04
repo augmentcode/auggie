@@ -8,13 +8,19 @@ import { runMCPServer } from "../clients/mcp-server.js";
 
 export const mcpCommand = new Command("mcp")
   .description("Run as MCP server")
-  .option("-n, --name <names...>", "Index name(s) to expose (default: all)")
+  .option("-i, --index <names...>", "Index name(s) to expose (loads from {store-path}/{name}/)")
+  .option("-n, --name <names...>", "Alias for --index")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path")
+  .option("--store-path <path>", "Store base path (loads directly from {store-path}/search.json if no --index)")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .action(async (options) => {
     try {
+      // --index and --name are aliases, prefer --index
+      const indexNames: string[] | undefined = options.index || options.name;
+      // Use "." as key if no --index, so files are loaded directly from store-path
+      const indexKeys = indexNames || ["."];
+
       // Create store
       let store;
       if (options.store === "filesystem") {
@@ -30,7 +36,7 @@ export const mcpCommand = new Command("mcp")
       // Start MCP server (writes to stdout, reads from stdin)
       await runMCPServer({
         store,
-        indexNames: options.name, // undefined means all
+        indexNames: indexKeys,
         searchOnly: options.searchOnly,
       });
     } catch (error) {

@@ -12,9 +12,10 @@ import type { Source } from "../sources/types.js";
 export const searchCommand = new Command("search")
   .description("Search indexed content")
   .argument("<query>", "Search query")
-  .requiredOption("-n, --name <name>", "Index name")
+  .option("-i, --index <name>", "Index name (loads from {store-path}/{name}/search.json)")
+  .option("-n, --name <name>", "Alias for --index")
   .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path")
+  .option("--store-path <path>", "Store base path (loads directly from {store-path}/search.json if no --index)")
   .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
   .option("--s3-region <region>", "S3 region")
@@ -25,6 +26,11 @@ export const searchCommand = new Command("search")
   .option("-p, --path <path>", "Path override for filesystem source")
   .action(async (query, options) => {
     try {
+      // --index and --name are aliases, prefer --index
+      const indexName = options.index || options.name;
+      // Use "." as key if no --index, so files are loaded directly from store-path
+      const indexKey = indexName || ".";
+
       // Create store
       let store;
       if (options.store === "filesystem") {
@@ -48,9 +54,12 @@ export const searchCommand = new Command("search")
       }
 
       // Load state to get source metadata
-      const state = await store.loadSearch(options.name);
+      const state = await store.loadSearch(indexKey);
       if (!state) {
-        console.error(`Index "${options.name}" not found`);
+        const location = indexName
+          ? `index "${indexName}"`
+          : `store path "${options.storePath}"`;
+        console.error(`Index not found at ${location}`);
         process.exit(1);
       }
 
@@ -83,13 +92,14 @@ export const searchCommand = new Command("search")
       const client = new SearchClient({
         store,
         source,
-        indexName: options.name,
+        indexName: indexKey,
       });
 
       await client.initialize();
 
       const clientMeta = client.getMetadata();
-      console.log(`Searching index: ${options.name}`);
+      const displayName = indexName || getSourceIdentifier(clientMeta);
+      console.log(`Searching index: ${displayName}`);
       console.log(`Source: ${clientMeta.type}://${getSourceIdentifier(clientMeta)}`);
       console.log(`Last synced: ${clientMeta.syncedAt}\n`);
 

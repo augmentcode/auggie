@@ -49,8 +49,8 @@ describe("FilesystemStore", () => {
 
       await store.save("my-project", state);
 
-      // Verify file was created
-      const statePath = join(TEST_DIR, "my-project", "state.json");
+      // Verify file was created in indexes subdirectory
+      const statePath = join(TEST_DIR, "indexes", "my-project", "state.json");
       const data = await fs.readFile(statePath, "utf-8");
       const savedState = JSON.parse(data);
 
@@ -64,9 +64,9 @@ describe("FilesystemStore", () => {
 
       await store.save("owner/repo@main", state);
 
-      // Key should be sanitized
+      // Key should be sanitized and stored in indexes subdirectory
       const sanitizedKey = "owner_repo_main";
-      const statePath = join(TEST_DIR, sanitizedKey, "state.json");
+      const statePath = join(TEST_DIR, "indexes", sanitizedKey, "state.json");
       await expect(fs.access(statePath)).resolves.toBeUndefined();
     });
   });
