@@ -10,6 +10,7 @@ import { FilesystemStore } from "../stores/filesystem.js";
 
 // Shared store options
 interface StoreOptions {
+  name?: string;
   store: string;
   storePath?: string;
   bucket?: string;
@@ -21,8 +22,9 @@ interface StoreOptions {
 
 function addStoreOptions(cmd: Command): Command {
   return cmd
+    .option("-n, --name <name>", "Index name (subdirectory within store path)")
     .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-    .option("--store-path <path>", "Store base path")
+    .option("--store-path <path>", "Store base path (files stored directly here if no --name)")
     .option("--bucket <name>", "S3 bucket name (required for s3 store)")
     .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
     .option("--s3-region <region>", "S3 region")
@@ -30,6 +32,9 @@ function addStoreOptions(cmd: Command): Command {
     .option("--s3-force-path-style", "Use path-style S3 URLs");
 }
 
+/**
+ * Create a store based on options.
+ */
 async function createStore(options: StoreOptions) {
   if (options.store === "filesystem") {
     return new FilesystemStore({ basePath: options.storePath });
@@ -73,14 +78,15 @@ async function runIndex(
 const filesystemCommand = new Command("filesystem")
   .alias("fs")
   .description("Index local filesystem")
-  .requiredOption("-n, --name <name>", "Index name")
   .option("-p, --path <path>", "Path to index", ".");
 addStoreOptions(filesystemCommand);
 filesystemCommand.action(async (options) => {
   try {
     const source = new FilesystemSource({ rootPath: options.path });
     const store = await createStore(options);
-    await runIndex(source, store, options.name, "filesystem");
+    // Use "." as key if no --name, so files go directly in store-path
+    const indexName = options.name || ".";
+    await runIndex(source, store, indexName, "filesystem");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -90,7 +96,6 @@ filesystemCommand.action(async (options) => {
 // GitHub subcommand
 const githubCommand = new Command("github")
   .description("Index a GitHub repository")
-  .requiredOption("-n, --name <name>", "Index name")
   .requiredOption("--owner <owner>", "Repository owner")
   .requiredOption("--repo <repo>", "Repository name")
   .option("--ref <ref>", "Branch, tag, or commit", "HEAD");
@@ -103,8 +108,10 @@ githubCommand.action(async (options) => {
       repo: options.repo,
       ref: options.ref,
     });
+
     const store = await createStore(options);
-    await runIndex(source, store, options.name, "github");
+    const indexName = options.name || ".";
+    await runIndex(source, store, indexName, "github");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -114,7 +121,6 @@ githubCommand.action(async (options) => {
 // GitLab subcommand
 const gitlabCommand = new Command("gitlab")
   .description("Index a GitLab project")
-  .requiredOption("-n, --name <name>", "Index name")
   .requiredOption("--project <id>", "Project ID or path (e.g., group/project)")
   .option("--ref <ref>", "Branch, tag, or commit", "HEAD")
   .option("--gitlab-url <url>", "GitLab base URL (for self-hosted)", "https://gitlab.com");
@@ -128,7 +134,8 @@ gitlabCommand.action(async (options) => {
       ref: options.ref,
     });
     const store = await createStore(options);
-    await runIndex(source, store, options.name, "gitlab");
+    const indexName = options.name || ".";
+    await runIndex(source, store, indexName, "gitlab");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -138,7 +145,6 @@ gitlabCommand.action(async (options) => {
 // BitBucket subcommand
 const bitbucketCommand = new Command("bitbucket")
   .description("Index a Bitbucket repository")
-  .requiredOption("-n, --name <name>", "Index name")
   .requiredOption("--workspace <slug>", "Workspace slug")
   .requiredOption("--repo <repo>", "Repository name")
   .option("--ref <ref>", "Branch, tag, or commit", "HEAD")
@@ -154,7 +160,8 @@ bitbucketCommand.action(async (options) => {
       ref: options.ref,
     });
     const store = await createStore(options);
-    await runIndex(source, store, options.name, "bitbucket");
+    const indexName = options.name || ".";
+    await runIndex(source, store, indexName, "bitbucket");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -164,7 +171,6 @@ bitbucketCommand.action(async (options) => {
 // Website subcommand
 const websiteCommand = new Command("website")
   .description("Crawl and index a website")
-  .requiredOption("-n, --name <name>", "Index name")
   .requiredOption("--url <url>", "Website URL to crawl")
   .option("--max-depth <n>", "Maximum crawl depth", (v) => parseInt(v, 10), 3)
   .option("--max-pages <n>", "Maximum pages to crawl", (v) => parseInt(v, 10), 100)
@@ -182,7 +188,8 @@ websiteCommand.action(async (options) => {
       excludePaths: options.exclude,
     });
     const store = await createStore(options);
-    await runIndex(source, store, options.name, "website");
+    const indexName = options.name || ".";
+    await runIndex(source, store, indexName, "website");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
