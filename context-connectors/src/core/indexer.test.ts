@@ -94,7 +94,7 @@ describe.skipIf(sdkLoadError !== null)("Indexer", () => {
       expect(result.duration).toBeGreaterThan(0);
 
       // Verify state was saved
-      const state = await store.load("test-project");
+      const state = await store.loadState("test-project");
       expect(state).not.toBeNull();
       expect(state!.source.type).toBe("filesystem");
       expect(state!.contextState).toBeDefined();

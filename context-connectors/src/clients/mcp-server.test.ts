@@ -20,6 +20,7 @@ try {
 
 // Create mock IndexState
 const createMockState = (): IndexState => ({
+  version: 1,
   contextState: {
     blobs: [],
     version: 1,

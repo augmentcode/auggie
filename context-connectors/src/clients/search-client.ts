@@ -141,8 +141,8 @@ export class SearchClient {
    * ```
    */
   async initialize(): Promise<void> {
-    // Load state from store
-    this.state = await this.store.load(this.indexName);
+    // Load search-optimized state from store
+    this.state = await this.store.loadSearch(this.indexName);
     if (!this.state) {
       throw new Error(`Index "${this.indexName}" not found`);
     }

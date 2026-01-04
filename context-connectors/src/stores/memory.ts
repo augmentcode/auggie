@@ -25,9 +25,26 @@ export class MemoryStore implements IndexStore {
       : new Map();
   }
 
-  async load(key: string): Promise<IndexState | null> {
+  async loadState(key: string): Promise<IndexState | null> {
+    const state = this.data.get(key);
+    if (!state) return null;
+
+    // Validate that this is a full state with blobs
+    if (!state.contextState.blobs) {
+      throw new Error(
+        `Invalid state for key "${key}": missing blobs field. ` +
+        `Use loadSearch() instead for search operations.`
+      );
+    }
+
+    // Return a deep copy to prevent external mutation
+    return JSON.parse(JSON.stringify(state));
+  }
+
+  async loadSearch(key: string): Promise<IndexState | null> {
     const state = this.data.get(key);
     // Return a deep copy to prevent external mutation
+    // Note: MemoryStore stores full state, but loadSearch() can work with it
     return state ? JSON.parse(JSON.stringify(state)) : null;
   }
 

@@ -24,18 +24,37 @@ import type { IndexState } from "../core/types.js";
  * @example
  * ```typescript
  * const store: IndexStoreReader = new FilesystemStore();
- * const state = await store.load("my-project");
+ * // For search operations, load the search-optimized file
+ * const state = await store.loadSearch("my-project");
+ * // For incremental indexing, load the full state
+ * const fullState = await store.loadState("my-project");
  * const keys = await store.list();
  * ```
  */
 export interface IndexStoreReader {
   /**
-   * Load index state by key.
+   * Load full index state for incremental indexing operations.
+   *
+   * Loads state.json which contains the complete DirectContextState
+   * including the blobs array with file paths needed for incremental builds.
    *
    * @param key - The index key/name
-   * @returns The stored IndexState, or null if not found
+   * @returns The stored IndexState with full blobs, or null if not found
+   * @throws Error if the loaded state is missing the blobs field (e.g., search.json was loaded)
    */
-  load(key: string): Promise<IndexState | null>;
+  loadState(key: string): Promise<IndexState | null>;
+
+  /**
+   * Load search-optimized index state for search operations.
+   *
+   * Loads search.json which contains a minimal DirectContextState
+   * with checkpointId, addedBlobs, and deletedBlobs, but without
+   * the blobs array (which is only needed for incremental indexing).
+   *
+   * @param key - The index key/name
+   * @returns The stored IndexState (without blobs), or null if not found
+   */
+  loadSearch(key: string): Promise<IndexState | null>;
 
   /**
    * List all available index keys.

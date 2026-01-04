@@ -23,6 +23,7 @@ vi.mock("@aws-sdk/client-s3", () => {
 
 describe("S3Store", () => {
   const createTestState = (id: string): IndexState => ({
+    version: 1,
     contextState: {
       checkpointId: `checkpoint-${id}`,
       addedBlobs: [],
@@ -57,7 +58,7 @@ describe("S3Store", () => {
       mockSend.mockResolvedValueOnce({
         Body: { transformToString: () => Promise.resolve(null) },
       });
-      await store.load("test");
+      await store.loadState("test");
 
       const { S3Client } = await import("@aws-sdk/client-s3");
       expect(S3Client).toHaveBeenCalledWith({
@@ -80,7 +81,7 @@ describe("S3Store", () => {
       mockSend.mockResolvedValueOnce({
         Body: { transformToString: () => Promise.resolve(null) },
       });
-      await store.load("test");
+      await store.loadState("test");
 
       const { S3Client } = await import("@aws-sdk/client-s3");
       expect(S3Client).toHaveBeenCalledWith({
@@ -91,7 +92,7 @@ describe("S3Store", () => {
     });
   });
 
-  describe("load", () => {
+  describe("loadState", () => {
     it("should load state from S3", async () => {
       const { S3Store } = await import("./s3.js");
       const store = new S3Store({ bucket: "test-bucket" });
@@ -101,7 +102,7 @@ describe("S3Store", () => {
         Body: { transformToString: () => Promise.resolve(JSON.stringify(state)) },
       });
 
-      const loaded = await store.load("test-key");
+      const loaded = await store.loadState("test-key");
       expect(loaded).toEqual(state);
     });
 
@@ -109,9 +110,10 @@ describe("S3Store", () => {
       const { S3Store } = await import("./s3.js");
       const store = new S3Store({ bucket: "test-bucket" });
 
+      // Mock file as not found
       mockSend.mockRejectedValueOnce({ name: "NoSuchKey" });
 
-      const loaded = await store.load("non-existent");
+      const loaded = await store.loadState("non-existent");
       expect(loaded).toBeNull();
     });
   });

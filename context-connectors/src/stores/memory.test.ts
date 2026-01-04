@@ -10,6 +10,7 @@ describe("MemoryStore", () => {
   let store: MemoryStore;
 
   const createTestState = (id: string): IndexState => ({
+    version: 1,
     contextState: {
       checkpointId: `checkpoint-${id}`,
       addedBlobs: [],
@@ -32,12 +33,12 @@ describe("MemoryStore", () => {
       const state = createTestState("1");
       await store.save("test-key", state);
 
-      const loaded = await store.load("test-key");
+      const loaded = await store.loadState("test-key");
       expect(loaded).toEqual(state);
     });
 
     it("should return null for non-existent key", async () => {
-      const loaded = await store.load("non-existent");
+      const loaded = await store.loadState("non-existent");
       expect(loaded).toBeNull();
     });
 
@@ -48,7 +49,7 @@ describe("MemoryStore", () => {
       await store.save("key", state1);
       await store.save("key", state2);
 
-      const loaded = await store.load("key");
+      const loaded = await store.loadState("key");
       expect(loaded).toEqual(state2);
     });
 
@@ -56,12 +57,12 @@ describe("MemoryStore", () => {
       const state = createTestState("1");
       await store.save("key", state);
 
-      const loaded = await store.load("key");
+      const loaded = await store.loadState("key");
       if (loaded!.source.type === "filesystem") {
         loaded!.source.config.rootPath = "modified";
       }
 
-      const loadedAgain = await store.load("key");
+      const loadedAgain = await store.loadState("key");
       if (loadedAgain!.source.type === "filesystem") {
         expect(loadedAgain!.source.config.rootPath).toBe("/test/1");
       }
@@ -75,7 +76,7 @@ describe("MemoryStore", () => {
         state.source.config.rootPath = "modified";
       }
 
-      const loaded = await store.load("key");
+      const loaded = await store.loadState("key");
       if (loaded!.source.type === "filesystem") {
         expect(loaded!.source.config.rootPath).toBe("/test/1");
       }
@@ -149,7 +150,7 @@ describe("MemoryStore", () => {
       const storeWithData = new MemoryStore({ initialData });
 
       expect(storeWithData.has("existing")).toBe(true);
-      const loaded = await storeWithData.load("existing");
+      const loaded = await storeWithData.loadState("existing");
       if (loaded!.source.type === "filesystem") {
         expect(loaded!.source.config.rootPath).toBe("/test/existing");
       }

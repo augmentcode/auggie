@@ -30,6 +30,7 @@ const TEST_STORE_DIR = "/tmp/context-connectors-test-search-client";
 describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
   // Create mock IndexState
   const createMockState = (): IndexState => ({
+    version: 1,
     contextState: {
       blobs: [],
       version: 1,
@@ -43,7 +44,8 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
 
   // Create mock Store
   const createMockStore = (state: IndexState | null): IndexStoreReader => ({
-    load: vi.fn().mockResolvedValue(state),
+    loadState: vi.fn().mockResolvedValue(state),
+    loadSearch: vi.fn().mockResolvedValue(state),
     list: vi.fn().mockResolvedValue(state ? ["test-key"] : []),
   });
 

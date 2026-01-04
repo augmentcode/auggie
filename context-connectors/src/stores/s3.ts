@@ -71,6 +71,7 @@ export interface S3StoreConfig {
 
 const DEFAULT_PREFIX = "context-connectors/";
 const STATE_FILENAME = "state.json";
+const SEARCH_FILENAME = "search.json";
 
 /** Type for the S3 client (imported dynamically) */
 type S3ClientType = import("@aws-sdk/client-s3").S3Client;
@@ -85,8 +86,8 @@ type ListObjectsV2CommandType = typeof import("@aws-sdk/client-s3").ListObjectsV
  * Creates an object structure:
  * ```
  * {prefix}{key}/
- *   state.json     - Index metadata and file list
- *   context.bin    - DirectContext binary data
+ *   state.json     - Full state (for incremental builds)
+ *   search.json    - Search index (same content for now, placeholder for future)
  * ```
  *
  * @example
@@ -158,18 +159,57 @@ export class S3Store implements IndexStore {
     return `${this.prefix}${key}/${STATE_FILENAME}`;
   }
 
-  async load(key: string): Promise<IndexState | null> {
+  private getSearchKey(key: string): string {
+    return `${this.prefix}${key}/${SEARCH_FILENAME}`;
+  }
+
+  async loadState(key: string): Promise<IndexState | null> {
     const client = await this.getClient();
-    const stateKey = this.getStateKey(key);
+    const fileKey = this.getStateKey(key);
 
     try {
       const command = new this.commands!.GetObjectCommand({
         Bucket: this.bucket,
-        Key: stateKey,
+        Key: fileKey,
       });
       const response = await client.send(command);
       const body = await response.Body?.transformToString();
       if (!body) return null;
+
+      const state = JSON.parse(body) as IndexState;
+
+      // Validate that this is a full state file with blobs
+      if (!state.contextState.blobs) {
+        throw new Error(
+          `Invalid state file for key "${key}": missing blobs field. ` +
+          `This appears to be a search.json file. Use loadSearch() instead, or ` +
+          `ensure state.json exists for incremental indexing operations.`
+        );
+      }
+
+      return state;
+    } catch (error: unknown) {
+      const err = error as { name?: string };
+      if (err.name === "NoSuchKey") {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async loadSearch(key: string): Promise<IndexState | null> {
+    const client = await this.getClient();
+    const fileKey = this.getSearchKey(key);
+
+    try {
+      const command = new this.commands!.GetObjectCommand({
+        Bucket: this.bucket,
+        Key: fileKey,
+      });
+      const response = await client.send(command);
+      const body = await response.Body?.transformToString();
+      if (!body) return null;
+
       return JSON.parse(body) as IndexState;
     } catch (error: unknown) {
       const err = error as { name?: string };
@@ -183,14 +223,36 @@ export class S3Store implements IndexStore {
   async save(key: string, state: IndexState): Promise<void> {
     const client = await this.getClient();
     const stateKey = this.getStateKey(key);
+    const searchKey = this.getSearchKey(key);
 
-    const command = new this.commands!.PutObjectCommand({
-      Bucket: this.bucket,
-      Key: stateKey,
-      Body: JSON.stringify(state, null, 2),
-      ContentType: "application/json",
-    });
-    await client.send(command);
+    // Full state for incremental indexing (includes blobs with paths)
+    const stateJson = JSON.stringify(state, null, 2);
+
+    // Search-optimized state (strip blobs array, keep checkpointId, addedBlobs, deletedBlobs)
+    const searchState: IndexState = {
+      ...state,
+      contextState: {
+        ...state.contextState,
+        blobs: [], // Strip blobs for search.json
+      },
+    };
+    const searchJson = JSON.stringify(searchState, null, 2);
+
+    // Write both files
+    await Promise.all([
+      client.send(new this.commands!.PutObjectCommand({
+        Bucket: this.bucket,
+        Key: stateKey,
+        Body: stateJson,
+        ContentType: "application/json",
+      })),
+      client.send(new this.commands!.PutObjectCommand({
+        Bucket: this.bucket,
+        Key: searchKey,
+        Body: searchJson,
+        ContentType: "application/json",
+      })),
+    ]);
   }
 
   async delete(key: string): Promise<void> {

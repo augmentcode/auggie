@@ -72,7 +72,7 @@ export const listCommand = new Command("list")
       }> = [];
 
       for (const key of keys) {
-        const state = await store.load(key);
+        const state = await store.loadSearch(key);
         if (state) {
           indexes.push({
             name: key,

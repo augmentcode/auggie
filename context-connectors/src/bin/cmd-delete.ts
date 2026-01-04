@@ -39,8 +39,8 @@ export const deleteCommand = new Command("delete")
         process.exit(1);
       }
 
-      // Check if index exists
-      const state = await store.load(name);
+      // Check if index exists (use 'search' for metadata check)
+      const state = await store.loadSearch(name);
       if (!state) {
         console.error(`Index "${name}" not found.`);
         process.exit(1);

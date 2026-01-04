@@ -79,7 +79,7 @@ async function syncIndex(
   name: string,
   store: Awaited<ReturnType<typeof createStore>>
 ): Promise<boolean> {
-  const state = await store.load(name);
+  const state = await store.loadSearch(name);
   if (!state) {
     console.error(`Index "${name}" not found`);
     return false;

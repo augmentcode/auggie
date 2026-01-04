@@ -48,7 +48,7 @@ export const searchCommand = new Command("search")
       }
 
       // Load state to get source metadata
-      const state = await store.load(options.name);
+      const state = await store.loadSearch(options.name);
       if (!state) {
         console.error(`Index "${options.name}" not found`);
         process.exit(1);

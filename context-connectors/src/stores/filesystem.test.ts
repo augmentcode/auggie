@@ -13,11 +13,15 @@ const TEST_DIR = "/tmp/context-connectors-test-fs-store";
 // Create a minimal mock IndexState for testing
 function createMockState(): IndexState {
   return {
+    version: 1,
     contextState: {
       checkpointId: "test-checkpoint-123",
-      addedBlobs: [],
+      addedBlobs: ["blob-1", "blob-2"],
       deletedBlobs: [],
-      blobs: [],
+      blobs: [
+        ["blob-1", "src/file1.ts"],
+        ["blob-2", "src/file2.ts"],
+      ],
     },
     source: {
       type: "filesystem",
@@ -67,16 +71,18 @@ describe("FilesystemStore", () => {
     });
   });
 
-  describe("load", () => {
-    it("returns saved state", async () => {
+  describe("loadState", () => {
+    it("returns saved state with blobs", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
       const originalState = createMockState();
 
       await store.save("test-key", originalState);
-      const loadedState = await store.load("test-key");
+      const loadedState = await store.loadState("test-key");
 
       expect(loadedState).not.toBeNull();
       expect(loadedState!.contextState.checkpointId).toBe("test-checkpoint-123");
+      expect(loadedState!.contextState.blobs).toBeDefined();
+      expect(loadedState!.contextState.blobs.length).toBeGreaterThan(0);
       if (loadedState!.source.type === "filesystem") {
         expect(loadedState!.source.config.rootPath).toBe("/path/to/project");
       }
@@ -84,14 +90,39 @@ describe("FilesystemStore", () => {
 
     it("returns null for missing key", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const state = await store.load("nonexistent-key");
+      const state = await store.loadState("nonexistent-key");
 
       expect(state).toBeNull();
     });
 
     it("returns null when basePath does not exist", async () => {
       const store = new FilesystemStore({ basePath: "/nonexistent/path" });
-      const state = await store.load("some-key");
+      const state = await store.loadState("some-key");
+
+      expect(state).toBeNull();
+    });
+  });
+
+  describe("loadSearch", () => {
+    it("returns saved state without blobs", async () => {
+      const store = new FilesystemStore({ basePath: TEST_DIR });
+      const originalState = createMockState();
+
+      await store.save("search-test", originalState);
+      const searchLoaded = await store.loadSearch("search-test");
+
+      expect(searchLoaded).not.toBeNull();
+      expect(searchLoaded!.contextState.checkpointId).toBe("test-checkpoint-123");
+      // search.json should have empty blobs array
+      expect(searchLoaded!.contextState.blobs).toEqual([]);
+      // But should have addedBlobs and deletedBlobs
+      expect(searchLoaded!.contextState.addedBlobs).toBeDefined();
+      expect(searchLoaded!.contextState.deletedBlobs).toBeDefined();
+    });
+
+    it("returns null for missing key", async () => {
+      const store = new FilesystemStore({ basePath: TEST_DIR });
+      const state = await store.loadSearch("nonexistent-key");
 
       expect(state).toBeNull();
     });
@@ -103,10 +134,10 @@ describe("FilesystemStore", () => {
       const state = createMockState();
 
       await store.save("to-delete", state);
-      expect(await store.load("to-delete")).not.toBeNull();
+      expect(await store.loadState("to-delete")).not.toBeNull();
 
       await store.delete("to-delete");
-      expect(await store.load("to-delete")).toBeNull();
+      expect(await store.loadState("to-delete")).toBeNull();
     });
 
     it("does not throw for missing key", async () => {

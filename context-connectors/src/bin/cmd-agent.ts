@@ -60,7 +60,7 @@ export const agentCommand = new Command("agent")
       }
 
       // Load state for source type detection
-      const state = await store.load(options.name);
+      const state = await store.loadSearch(options.name);
       if (!state) {
         console.error(`Index "${options.name}" not found`);
         process.exit(1);

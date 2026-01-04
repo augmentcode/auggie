@@ -172,6 +172,7 @@ export function getResolvedRef(meta: SourceMetadata): string | undefined {
  * Complete index state that gets persisted to an IndexStore.
  *
  * Contains:
+ * - Format version for future evolution
  * - The DirectContext state (embeddings, file index)
  * - Source metadata for tracking the indexed version
  *
@@ -184,6 +185,8 @@ export function getResolvedRef(meta: SourceMetadata): string | undefined {
  * ```
  */
 export interface IndexState {
+  /** Format version for future evolution */
+  version: 1;
   /** The DirectContext state from auggie-sdk (embeddings, index data) */
   contextState: DirectContextState;
   /** Metadata about the source that was indexed */

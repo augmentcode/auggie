@@ -116,8 +116,8 @@ export class Indexer {
   async index(source: Source, store: IndexStore, key: string): Promise<IndexResult> {
     const startTime = Date.now();
 
-    // Load previous state
-    const previousState = await store.load(key);
+    // Load previous state for incremental indexing
+    const previousState = await store.loadState(key);
 
     // If no previous state, do full index
     if (!previousState) {
@@ -176,6 +176,7 @@ export class Indexer {
     // Export context state and save
     const contextState = context.export();
     const state: IndexState = {
+      version: 1,
       contextState,
       source: metadata,
     };
@@ -224,6 +225,7 @@ export class Indexer {
     // Export and save updated state
     const contextState = context.export();
     const state: IndexState = {
+      version: 1,
       contextState,
       source: metadata,
     };

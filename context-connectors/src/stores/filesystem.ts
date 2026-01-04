@@ -73,8 +73,11 @@ function getDefaultStorePath(): string {
 /** Default base path for storing index files */
 const DEFAULT_BASE_PATH = getDefaultStorePath();
 
-/** State filename within each index directory */
+/** State filename within each index directory (for incremental builds) */
 const STATE_FILENAME = "state.json";
+
+/** Search filename within each index directory (for search-only mode) */
+const SEARCH_FILENAME = "search.json";
 
 /**
  * Store implementation that persists to the local filesystem.
@@ -83,8 +86,8 @@ const STATE_FILENAME = "state.json";
  * ```
  * {basePath}/
  *   {key}/
- *     state.json     - Index metadata and file list
- *     context.bin    - DirectContext binary data
+ *     state.json     - Full state (for incremental builds)
+ *     search.json    - Search index (same content for now, placeholder for future)
  * ```
  *
  * @example
@@ -118,6 +121,14 @@ export class FilesystemStore implements IndexStore {
   }
 
   /**
+   * Get the path to the search file for a given key
+   */
+  private getSearchPath(key: string): string {
+    const sanitized = sanitizeKey(key);
+    return join(this.basePath, sanitized, SEARCH_FILENAME);
+  }
+
+  /**
    * Get the directory path for a given key
    */
   private getKeyDir(key: string): string {
@@ -125,11 +136,36 @@ export class FilesystemStore implements IndexStore {
     return join(this.basePath, sanitized);
   }
 
-  async load(key: string): Promise<IndexState | null> {
-    const statePath = this.getStatePath(key);
+  async loadState(key: string): Promise<IndexState | null> {
+    const filePath = this.getStatePath(key);
 
     try {
-      const data = await fs.readFile(statePath, "utf-8");
+      const data = await fs.readFile(filePath, "utf-8");
+      const state = JSON.parse(data) as IndexState;
+
+      // Validate that this is a full state file with blobs
+      if (!state.contextState.blobs) {
+        throw new Error(
+          `Invalid state file for key "${key}": missing blobs field. ` +
+          `This appears to be a search.json file. Use loadSearch() instead, or ` +
+          `ensure state.json exists for incremental indexing operations.`
+        );
+      }
+
+      return state;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async loadSearch(key: string): Promise<IndexState | null> {
+    const filePath = this.getSearchPath(key);
+
+    try {
+      const data = await fs.readFile(filePath, "utf-8");
       return JSON.parse(data) as IndexState;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
@@ -142,12 +178,29 @@ export class FilesystemStore implements IndexStore {
   async save(key: string, state: IndexState): Promise<void> {
     const keyDir = this.getKeyDir(key);
     const statePath = this.getStatePath(key);
+    const searchPath = this.getSearchPath(key);
 
     // Ensure directory exists
     await fs.mkdir(keyDir, { recursive: true });
 
-    // Write state with pretty-printing for debuggability
-    await fs.writeFile(statePath, JSON.stringify(state, null, 2), "utf-8");
+    // Full state for incremental indexing (includes blobs with paths)
+    const stateJson = JSON.stringify(state, null, 2);
+
+    // Search-optimized state (strip blobs array, keep checkpointId, addedBlobs, deletedBlobs)
+    const searchState: IndexState = {
+      ...state,
+      contextState: {
+        ...state.contextState,
+        blobs: [], // Strip blobs for search.json
+      },
+    };
+    const searchJson = JSON.stringify(searchState, null, 2);
+
+    // Write both files
+    await Promise.all([
+      fs.writeFile(statePath, stateJson, "utf-8"),
+      fs.writeFile(searchPath, searchJson, "utf-8"),
+    ]);
   }
 
   async delete(key: string): Promise<void> {

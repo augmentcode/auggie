@@ -143,7 +143,7 @@ export async function createMCPServer(
   // Load metadata for available indexes
   const indexes: IndexInfo[] = [];
   for (const name of indexNames) {
-    const state = await store.load(name);
+    const state = await store.loadSearch(name);
     if (state) {
       indexes.push({
         name,
@@ -162,7 +162,7 @@ export async function createMCPServer(
   async function getClient(indexName: string): Promise<SearchClient> {
     let client = clientCache.get(indexName);
     if (!client) {
-      const state = await store.load(indexName);
+      const state = await store.loadSearch(indexName);
       if (!state) {
         throw new Error(`Index "${indexName}" not found`);
       }
