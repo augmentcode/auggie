@@ -10,7 +10,7 @@ import { FilesystemStore } from "../stores/filesystem.js";
 
 // Shared store options
 interface StoreOptions {
-  name?: string;
+  index?: string;
   store: string;
   storePath?: string;
   bucket?: string;
@@ -22,9 +22,9 @@ interface StoreOptions {
 
 function addStoreOptions(cmd: Command): Command {
   return cmd
-    .option("-n, --name <name>", "Index name (subdirectory within store path)")
+    .option("-i, --index <name>", "Index name (creates named index in indexes/ subdirectory)")
     .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-    .option("--store-path <path>", "Store base path (files stored directly here if no --name)")
+    .option("--store-path <path>", "Store base path (files stored directly here if no --index)")
     .option("--bucket <name>", "S3 bucket name (required for s3 store)")
     .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
     .option("--s3-region <region>", "S3 region")
@@ -60,12 +60,12 @@ async function createStore(options: StoreOptions) {
 async function runIndex(
   source: Source,
   store: Awaited<ReturnType<typeof createStore>>,
-  name: string,
+  indexKey: string,
   sourceType: string
 ) {
   console.log(`Indexing ${sourceType} source...`);
   const indexer = new Indexer();
-  const result = await indexer.index(source, store, name);
+  const result = await indexer.index(source, store, indexKey);
 
   console.log(`\nIndexing complete!`);
   console.log(`  Type: ${result.type}`);
@@ -84,9 +84,9 @@ filesystemCommand.action(async (options) => {
   try {
     const source = new FilesystemSource({ rootPath: options.path });
     const store = await createStore(options);
-    // Use "." as key if no --name, so files go directly in store-path
-    const indexName = options.name || ".";
-    await runIndex(source, store, indexName, "filesystem");
+    // Use "." as key if no --index, so files go directly in store-path
+    const indexKey = options.index || ".";
+    await runIndex(source, store, indexKey, "filesystem");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -110,8 +110,8 @@ githubCommand.action(async (options) => {
     });
 
     const store = await createStore(options);
-    const indexName = options.name || ".";
-    await runIndex(source, store, indexName, "github");
+    const indexKey = options.index || ".";
+    await runIndex(source, store, indexKey, "github");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -133,9 +133,10 @@ gitlabCommand.action(async (options) => {
       projectId: options.project,
       ref: options.ref,
     });
+
     const store = await createStore(options);
-    const indexName = options.name || ".";
-    await runIndex(source, store, indexName, "gitlab");
+    const indexKey = options.index || ".";
+    await runIndex(source, store, indexKey, "gitlab");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -159,9 +160,10 @@ bitbucketCommand.action(async (options) => {
       repo: options.repo,
       ref: options.ref,
     });
+
     const store = await createStore(options);
-    const indexName = options.name || ".";
-    await runIndex(source, store, indexName, "bitbucket");
+    const indexKey = options.index || ".";
+    await runIndex(source, store, indexKey, "bitbucket");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);
@@ -187,9 +189,10 @@ websiteCommand.action(async (options) => {
       includePaths: options.include,
       excludePaths: options.exclude,
     });
+
     const store = await createStore(options);
-    const indexName = options.name || ".";
-    await runIndex(source, store, indexName, "website");
+    const indexKey = options.index || ".";
+    await runIndex(source, store, indexKey, "website");
   } catch (error) {
     console.error("Indexing failed:", error);
     process.exit(1);

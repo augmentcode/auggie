@@ -79,6 +79,9 @@ const STATE_FILENAME = "state.json";
 /** Search filename within each index directory (for search-only mode) */
 const SEARCH_FILENAME = "search.json";
 
+/** Subdirectory for named indexes */
+const INDEXES_SUBDIR = "indexes";
+
 /**
  * Store implementation that persists to the local filesystem.
  *
@@ -113,27 +116,33 @@ export class FilesystemStore implements IndexStore {
   }
 
   /**
+   * Get the directory path for a given key.
+   *
+   * - Empty key (from "."): files go directly in basePath
+   * - Named key: files go in {basePath}/indexes/{key}/
+   */
+  private getKeyDir(key: string): string {
+    const sanitized = sanitizeKey(key);
+    if (sanitized === "") {
+      // File-based mode: files go directly in basePath
+      return this.basePath;
+    }
+    // Named index mode: files go in indexes subdirectory
+    return join(this.basePath, INDEXES_SUBDIR, sanitized);
+  }
+
+  /**
    * Get the path to the state file for a given key
    */
   private getStatePath(key: string): string {
-    const sanitized = sanitizeKey(key);
-    return join(this.basePath, sanitized, STATE_FILENAME);
+    return join(this.getKeyDir(key), STATE_FILENAME);
   }
 
   /**
    * Get the path to the search file for a given key
    */
   private getSearchPath(key: string): string {
-    const sanitized = sanitizeKey(key);
-    return join(this.basePath, sanitized, SEARCH_FILENAME);
-  }
-
-  /**
-   * Get the directory path for a given key
-   */
-  private getKeyDir(key: string): string {
-    const sanitized = sanitizeKey(key);
-    return join(this.basePath, sanitized);
+    return join(this.getKeyDir(key), SEARCH_FILENAME);
   }
 
   /**
@@ -222,14 +231,15 @@ export class FilesystemStore implements IndexStore {
   }
 
   async list(): Promise<string[]> {
+    const indexesDir = join(this.basePath, INDEXES_SUBDIR);
     try {
-      const entries = await fs.readdir(this.basePath, { withFileTypes: true });
+      const entries = await fs.readdir(indexesDir, { withFileTypes: true });
       const keys: string[] = [];
 
       for (const entry of entries) {
         if (entry.isDirectory()) {
           // Check if this directory contains a state.json file
-          const statePath = join(this.basePath, entry.name, STATE_FILENAME);
+          const statePath = join(indexesDir, entry.name, STATE_FILENAME);
           try {
             await fs.access(statePath);
             keys.push(entry.name); // Return sanitized name
@@ -241,7 +251,7 @@ export class FilesystemStore implements IndexStore {
 
       return keys;
     } catch (error) {
-      // If basePath doesn't exist, return empty list
+      // If indexes directory doesn't exist, return empty list
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         return [];
       }
