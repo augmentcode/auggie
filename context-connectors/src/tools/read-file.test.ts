@@ -35,6 +35,7 @@ describe("readFile tool", () => {
     context: createMockContext(),
     source,
     state: {
+      version: 1,
       contextState: {} as any,
       source: {
         type: "filesystem",

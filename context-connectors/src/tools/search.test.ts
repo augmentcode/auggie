@@ -20,6 +20,7 @@ describe("search tool", () => {
     context,
     source: null,
     state: {
+      version: 1,
       contextState: {} as any,
       source: {
         type: "filesystem",
@@ -68,6 +69,7 @@ describe("search tool", () => {
       context: mockContext,
       source: null,
       state: {
+        version: 1,
         contextState: {} as any,
         source: {
           type: "filesystem",

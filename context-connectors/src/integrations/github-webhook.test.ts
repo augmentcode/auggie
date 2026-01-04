@@ -54,7 +54,8 @@ describe("createGitHubWebhookHandler", () => {
   beforeEach(() => {
     mockStore = {
       save: vi.fn().mockResolvedValue(undefined),
-      load: vi.fn().mockResolvedValue(null),
+      loadState: vi.fn().mockResolvedValue(null),
+      loadSearch: vi.fn().mockResolvedValue(null),
       delete: vi.fn().mockResolvedValue(undefined),
       list: vi.fn().mockResolvedValue([]),
     };

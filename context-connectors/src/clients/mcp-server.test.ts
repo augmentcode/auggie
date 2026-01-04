@@ -34,7 +34,8 @@ const createMockState = (): IndexState => ({
 
 // Create mock Store
 const createMockStore = (state: IndexState | null): IndexStoreReader => ({
-  load: vi.fn().mockResolvedValue(state),
+  loadState: vi.fn().mockResolvedValue(state),
+  loadSearch: vi.fn().mockResolvedValue(state),
   list: vi.fn().mockResolvedValue(state ? ["test-key"] : []),
 });
 
