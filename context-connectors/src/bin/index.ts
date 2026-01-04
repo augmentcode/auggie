@@ -5,13 +5,9 @@
 
 import { Command } from "commander";
 import { indexCommand } from "./cmd-index.js";
-import { syncCommand } from "./cmd-sync.js";
 import { searchCommand } from "./cmd-search.js";
-import { listCommand } from "./cmd-list.js";
-import { deleteCommand } from "./cmd-delete.js";
 import { mcpCommand } from "./cmd-mcp.js";
 import { agentCommand } from "./cmd-agent.js";
-import { mcpServeCommand } from "./cmd-mcp-serve.js";
 
 const program = new Command();
 
@@ -22,12 +18,8 @@ program
 
 // Add subcommands
 program.addCommand(indexCommand);
-program.addCommand(syncCommand);
 program.addCommand(searchCommand);
-program.addCommand(listCommand);
-program.addCommand(deleteCommand);
 program.addCommand(mcpCommand);
-program.addCommand(mcpServeCommand);
 program.addCommand(agentCommand);
 
 program.parse();
