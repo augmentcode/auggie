@@ -24,6 +24,7 @@ export interface WebsiteSourceConfig {
   userAgent?: string;
   /** Delay between requests in ms. Defaults to 100 */
   delayMs?: number;
+
 }
 
 // Types for dynamically imported dependencies
@@ -306,11 +307,15 @@ export class WebsiteSource implements Source {
    * Crawl the website starting from the configured URL
    */
   private async crawl(): Promise<void> {
+    // Skip if already crawled
+    if (this.crawledPages.length > 0) {
+      return;
+    }
+
     await this.loadRobotsTxt();
 
     const visited = new Set<string>();
     const queue: Array<{ url: URL; depth: number }> = [{ url: this.startUrl, depth: 0 }];
-    this.crawledPages = [];
 
     console.log(`Starting crawl from ${this.startUrl.href} (max depth: ${this.maxDepth}, max pages: ${this.maxPages})`);
 

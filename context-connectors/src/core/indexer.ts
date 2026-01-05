@@ -27,6 +27,8 @@ import { DirectContext } from "@augmentcode/auggie-sdk";
 import type {
   FullContextState,
   SearchOnlyContextState,
+  IndexingProgress,
+  IndexingResult,
 } from "@augmentcode/auggie-sdk";
 import type {
   FileEntry,
@@ -92,11 +94,35 @@ export class Indexer {
   }
 
   /**
-   * Add files to index.
+   * Add files to index with progress reporting.
+   * Returns the indexing result with counts of newly uploaded vs already cached files.
    */
-  private async addToIndex(context: DirectContext, files: FileEntry[]): Promise<void> {
+  private async addToIndex(context: DirectContext, files: FileEntry[]): Promise<IndexingResult> {
     console.log(`Indexing ${files.length} files...`);
-    await context.addToIndex(files);
+    const result = await context.addToIndex(files, {
+      onProgress: (progress: IndexingProgress) => {
+        const elapsed = Math.round((Date.now() - progress.startedAt.getTime()) / 1000);
+        if (progress.stage === "uploading") {
+          const bytes = progress.bytesUploaded ?? 0;
+          const kb = Math.round(bytes / 1024);
+          console.log(`  [${elapsed}s] Uploading: ${progress.processed}/${progress.total} new files (${kb} KB)`);
+        } else if (progress.stage === "indexing") {
+          console.log(`  [${elapsed}s] Indexing: ${progress.processed}/${progress.total} new files`);
+        } else if (progress.stage === "checkpointing") {
+          console.log(`  [${elapsed}s] Checkpointing...`);
+        }
+      },
+    });
+
+    // Log summary of what was indexed
+    if (result.alreadyUploaded.length > 0) {
+      console.log(`  ${result.alreadyUploaded.length} files unchanged (skipped)`);
+    }
+    if (result.newlyUploaded.length > 0) {
+      console.log(`  ${result.newlyUploaded.length} new files uploaded and indexed`);
+    }
+
+    return result;
   }
 
   /**
@@ -130,15 +156,16 @@ export class Indexer {
 
     // If no previous state, do full index
     if (!previousState) {
-      return this.fullIndex(source, store, key, startTime, "first_run");
+      return this.fullIndex(source, store, key, startTime, null);
     }
 
     // Try to get incremental changes
     const changes = await source.fetchChanges(previousState.source);
 
-    // If source can't provide incremental changes, do full index
+    // If source can't provide incremental changes, do a full refresh
+    // but reuse the previous context state for client-side deduplication
     if (changes === null) {
-      return this.fullIndex(source, store, key, startTime, "incremental_not_supported");
+      return this.fullIndex(source, store, key, startTime, previousState);
     }
 
     // Check if there are any changes
@@ -156,20 +183,29 @@ export class Indexer {
   }
 
   /**
-   * Perform full re-index
+   * Perform full re-index.
+   *
+   * If previousState is provided, imports it to benefit from client-side
+   * deduplication (skipping unchanged files without server round-trip).
    */
   private async fullIndex(
     source: Source,
     store: IndexStore,
     key: string,
     startTime: number,
-    _reason: string
+    previousState: IndexState | null
   ): Promise<IndexResult> {
-    // Create new DirectContext
-    const context = await DirectContext.create({
-      apiKey: this.apiKey,
-      apiUrl: this.apiUrl,
-    });
+    // Import previous context if available (for client-side deduplication),
+    // otherwise create a new one
+    const context = previousState
+      ? await DirectContext.import(previousState.contextState, {
+          apiKey: this.apiKey,
+          apiUrl: this.apiUrl,
+        })
+      : await DirectContext.create({
+          apiKey: this.apiKey,
+          apiUrl: this.apiUrl,
+        });
 
     // Fetch all files from source
     const files = await source.fetchAll();

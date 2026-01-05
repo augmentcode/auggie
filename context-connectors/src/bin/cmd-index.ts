@@ -143,7 +143,8 @@ const websiteCommand = new Command("website")
   .option("--max-depth <n>", "Maximum crawl depth", (v) => parseInt(v, 10), 3)
   .option("--max-pages <n>", "Maximum pages to crawl", (v) => parseInt(v, 10), 100)
   .option("--include <patterns...>", "URL patterns to include (glob)")
-  .option("--exclude <patterns...>", "URL patterns to exclude (glob)");
+  .option("--exclude <patterns...>", "URL patterns to exclude (glob)")
+  .option("--save-content <dir>", "[Debug] Save crawled content to directory for inspection");
 addStoreOptions(websiteCommand);
 websiteCommand.action(async (options) => {
   try {
@@ -155,6 +156,23 @@ websiteCommand.action(async (options) => {
       includePaths: options.include,
       excludePaths: options.exclude,
     });
+
+    // Save content locally if requested (this also triggers the crawl)
+    if (options.saveContent) {
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const files = await source.fetchAll();
+      const dir = options.saveContent;
+      await fs.mkdir(dir, { recursive: true });
+      for (const file of files) {
+        const filePath = path.join(dir, file.path);
+        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        await fs.writeFile(filePath, file.contents, "utf-8");
+      }
+      console.log(`Saved ${files.length} files to ${dir}`);
+      // Note: source.fetchAll() caches results internally, so subsequent calls
+      // in runIndex will reuse the crawled data
+    }
 
     const store = await createStore(options);
     const indexKey = options.index || ".";
