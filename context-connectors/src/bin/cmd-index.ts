@@ -5,31 +5,21 @@
 import { Command } from "commander";
 import { Indexer } from "../core/indexer.js";
 import { Source } from "../sources/types.js";
-import { FilesystemSource } from "../sources/filesystem.js";
 import { FilesystemStore } from "../stores/filesystem.js";
+import { getS3Config } from "../stores/s3-config.js";
 
 // Shared store options
 interface StoreOptions {
   index?: string;
   store: string;
   storePath?: string;
-  bucket?: string;
-  s3Prefix: string;
-  s3Region?: string;
-  s3Endpoint?: string;
-  s3ForcePathStyle?: boolean;
 }
 
 function addStoreOptions(cmd: Command): Command {
   return cmd
     .option("-i, --index <name>", "Index name (creates named index in indexes/ subdirectory)")
-    .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-    .option("--store-path <path>", "Store base path (files stored directly here if no --index)")
-    .option("--bucket <name>", "S3 bucket name (required for s3 store)")
-    .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
-    .option("--s3-region <region>", "S3 region")
-    .option("--s3-endpoint <url>", "S3-compatible endpoint URL")
-    .option("--s3-force-path-style", "Use path-style S3 URLs");
+    .option("--store <type>", "Store type: filesystem, s3 (S3 requires CC_S3_* env vars)", "filesystem")
+    .option("--store-path <path>", "Store base path (files stored directly here if no --index)");
 }
 
 /**
@@ -39,18 +29,13 @@ async function createStore(options: StoreOptions) {
   if (options.store === "filesystem") {
     return new FilesystemStore({ basePath: options.storePath });
   } else if (options.store === "s3") {
-    if (!options.bucket) {
-      console.error("S3 store requires --bucket option");
+    const s3Config = getS3Config();
+    if (!s3Config.bucket) {
+      console.error("S3 store requires CC_S3_BUCKET environment variable");
       process.exit(1);
     }
     const { S3Store } = await import("../stores/s3.js");
-    return new S3Store({
-      bucket: options.bucket,
-      prefix: options.s3Prefix,
-      region: options.s3Region,
-      endpoint: options.s3Endpoint,
-      forcePathStyle: options.s3ForcePathStyle,
-    });
+    return new S3Store(s3Config);
   } else {
     console.error(`Unknown store type: ${options.store}`);
     process.exit(1);
@@ -73,25 +58,6 @@ async function runIndex(
   console.log(`  Files removed: ${result.filesRemoved}`);
   console.log(`  Duration: ${result.duration}ms`);
 }
-
-// Filesystem subcommand
-const filesystemCommand = new Command("filesystem")
-  .alias("fs")
-  .description("Index local filesystem")
-  .option("-p, --path <path>", "Path to index", ".");
-addStoreOptions(filesystemCommand);
-filesystemCommand.action(async (options) => {
-  try {
-    const source = new FilesystemSource({ rootPath: options.path });
-    const store = await createStore(options);
-    // Use "." as key if no --index, so files go directly in store-path
-    const indexKey = options.index || ".";
-    await runIndex(source, store, indexKey, "filesystem");
-  } catch (error) {
-    console.error("Indexing failed:", error);
-    process.exit(1);
-  }
-});
 
 // GitHub subcommand
 const githubCommand = new Command("github")
@@ -199,130 +165,11 @@ websiteCommand.action(async (options) => {
   }
 });
 
-// List subcommand
-const listSubCommand = new Command("list")
-  .description("List all indexes in a store")
-  .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path")
-  .option("--bucket <name>", "S3 bucket name (for s3 store)")
-  .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
-  .option("--s3-region <region>", "S3 region")
-  .option("--s3-endpoint <url>", "S3-compatible endpoint URL (for MinIO, R2, etc.)")
-  .option("--s3-force-path-style", "Use path-style S3 URLs (for some S3-compatible services)")
-  .action(async (options) => {
-    try {
-      const store = await createStore(options);
-      const keys = await store.list();
-
-      if (keys.length === 0) {
-        console.log("No indexes found.");
-        return;
-      }
-
-      const { getSourceIdentifier } = await import("../core/types.js");
-
-      // Load metadata for each index
-      const indexes: Array<{
-        name: string;
-        type: string;
-        identifier: string;
-        syncedAt: string;
-      }> = [];
-
-      for (const key of keys) {
-        const state = await store.loadSearch(key);
-        if (state) {
-          indexes.push({
-            name: key,
-            type: state.source.type,
-            identifier: getSourceIdentifier(state.source),
-            syncedAt: state.source.syncedAt,
-          });
-        }
-      }
-
-      // Format relative time
-      const formatRelativeTime = (isoDate: string): string => {
-        const date = new Date(isoDate);
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffSecs = Math.floor(diffMs / 1000);
-        const diffMins = Math.floor(diffSecs / 60);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
-
-        if (diffDays > 0) return `${diffDays}d ago`;
-        if (diffHours > 0) return `${diffHours}h ago`;
-        if (diffMins > 0) return `${diffMins}m ago`;
-        return "just now";
-      };
-
-      // Calculate column widths
-      const nameWidth = Math.max(4, ...indexes.map((i) => i.name.length));
-      const sourceWidth = Math.max(
-        6,
-        ...indexes.map((i) => `${i.type}://${i.identifier}`.length)
-      );
-
-      // Print header
-      console.log(
-        `${"NAME".padEnd(nameWidth)}  ${"SOURCE".padEnd(sourceWidth)}  SYNCED`
-      );
-
-      // Print indexes
-      for (const idx of indexes) {
-        const source = `${idx.type}://${idx.identifier}`;
-        const synced = formatRelativeTime(idx.syncedAt);
-        console.log(
-          `${idx.name.padEnd(nameWidth)}  ${source.padEnd(sourceWidth)}  ${synced}`
-        );
-      }
-
-      console.log(`\nTotal: ${indexes.length} index(es)`);
-    } catch (error) {
-      console.error("List failed:", error);
-      process.exit(1);
-    }
-  });
-
-// Delete subcommand
-const deleteSubCommand = new Command("delete")
-  .description("Delete an index from a store")
-  .argument("<name>", "Index name to delete")
-  .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path")
-  .option("--bucket <name>", "S3 bucket name (for s3 store)")
-  .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
-  .option("--s3-region <region>", "S3 region")
-  .option("--s3-endpoint <url>", "S3-compatible endpoint URL (for MinIO, R2, etc.)")
-  .option("--s3-force-path-style", "Use path-style S3 URLs (for some S3-compatible services)")
-  .action(async (name, options) => {
-    try {
-      const store = await createStore(options);
-
-      // Check if index exists (use 'search' for metadata check)
-      const state = await store.loadSearch(name);
-      if (!state) {
-        console.error(`Index "${name}" not found.`);
-        process.exit(1);
-      }
-
-      await store.delete(name);
-      console.log(`Index "${name}" deleted successfully.`);
-    } catch (error) {
-      console.error("Delete failed:", error);
-      process.exit(1);
-    }
-  });
-
 // Main index command
 export const indexCommand = new Command("index")
   .description("Index a data source")
-  .addCommand(filesystemCommand)
   .addCommand(githubCommand)
   .addCommand(gitlabCommand)
   .addCommand(bitbucketCommand)
-  .addCommand(websiteCommand)
-  .addCommand(listSubCommand)
-  .addCommand(deleteSubCommand);
+  .addCommand(websiteCommand);
 

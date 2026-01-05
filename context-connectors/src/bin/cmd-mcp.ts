@@ -5,22 +5,23 @@
 import { Command } from "commander";
 import { FilesystemStore } from "../stores/filesystem.js";
 import { runMCPServer } from "../clients/mcp-server.js";
+import { getS3Config } from "../stores/s3-config.js";
 
 // Helper to create store
 async function createStore(options: {
   store: string;
   storePath?: string;
-  bucket?: string;
 }) {
   if (options.store === "filesystem") {
     return new FilesystemStore({ basePath: options.storePath });
   } else if (options.store === "s3") {
-    if (!options.bucket) {
-      console.error("S3 store requires --bucket option");
+    const s3Config = getS3Config();
+    if (!s3Config.bucket) {
+      console.error("S3 store requires CC_S3_BUCKET environment variable");
       process.exit(1);
     }
     const { S3Store } = await import("../stores/s3.js");
-    return new S3Store({ bucket: options.bucket });
+    return new S3Store(s3Config);
   } else {
     console.error(`Unknown store type: ${options.store}`);
     process.exit(1);
@@ -32,9 +33,8 @@ const localCommand = new Command("local")
   .description("Start stdio-based MCP server")
   .option("-i, --index <names...>", "Index name(s) to expose (loads from {store-path}/{name}/)")
   .option("-n, --name <names...>", "Alias for --index")
-  .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
+  .option("--store <type>", "Store type: filesystem, s3 (S3 requires CC_S3_* env vars)", "filesystem")
   .option("--store-path <path>", "Store base path (loads directly from {store-path}/search.json if no --index)")
-  .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .action(async (options) => {
     try {
@@ -67,9 +67,8 @@ const remoteCommand = new Command("remote")
   .option("--host <host>", "Host to bind to", "localhost")
   .option("--cors <origins>", "CORS origins (comma-separated, or '*' for any)")
   .option("--base-path <path>", "Base path for MCP endpoint", "/mcp")
-  .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
+  .option("--store <type>", "Store type: filesystem, s3 (S3 requires CC_S3_* env vars)", "filesystem")
   .option("--store-path <path>", "Store base path")
-  .option("--bucket <name>", "S3 bucket name (for s3 store)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .option(
     "--api-key <key>",

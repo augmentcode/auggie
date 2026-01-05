@@ -7,6 +7,7 @@ import { SearchClient } from "../clients/search-client.js";
 import { FilesystemStore } from "../stores/filesystem.js";
 import { FilesystemSource } from "../sources/filesystem.js";
 import { getSourceIdentifier } from "../core/types.js";
+import { getS3Config } from "../stores/s3-config.js";
 import type { Source } from "../sources/types.js";
 
 export const searchCommand = new Command("search")
@@ -14,13 +15,8 @@ export const searchCommand = new Command("search")
   .argument("<query>", "Search query")
   .option("-i, --index <name>", "Index name (loads from {store-path}/{name}/search.json)")
   .option("-n, --name <name>", "Alias for --index")
-  .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
+  .option("--store <type>", "Store type: filesystem, s3 (S3 requires CC_S3_* env vars)", "filesystem")
   .option("--store-path <path>", "Store base path (loads directly from {store-path}/search.json if no --index)")
-  .option("--bucket <name>", "S3 bucket name (for s3 store)")
-  .option("--s3-prefix <prefix>", "S3 key prefix", "context-connectors/")
-  .option("--s3-region <region>", "S3 region")
-  .option("--s3-endpoint <url>", "S3-compatible endpoint URL (for MinIO, R2, etc.)")
-  .option("--s3-force-path-style", "Use path-style S3 URLs (for some S3-compatible services)")
   .option("--max-chars <number>", "Max output characters", parseInt)
   .option("--search-only", "Disable file access (search only)")
   .option("-p, --path <path>", "Path override for filesystem source")
@@ -36,18 +32,13 @@ export const searchCommand = new Command("search")
       if (options.store === "filesystem") {
         store = new FilesystemStore({ basePath: options.storePath });
       } else if (options.store === "s3") {
-        if (!options.bucket) {
-          console.error("S3 store requires --bucket option");
+        const s3Config = getS3Config();
+        if (!s3Config.bucket) {
+          console.error("S3 store requires CC_S3_BUCKET environment variable");
           process.exit(1);
         }
         const { S3Store } = await import("../stores/s3.js");
-        store = new S3Store({
-          bucket: options.bucket,
-          prefix: options.s3Prefix,
-          region: options.s3Region,
-          endpoint: options.s3Endpoint,
-          forcePathStyle: options.s3ForcePathStyle,
-        });
+        store = new S3Store(s3Config);
       } else {
         console.error(`Unknown store type: ${options.store}`);
         process.exit(1);
