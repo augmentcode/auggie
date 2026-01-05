@@ -105,9 +105,9 @@ export class Indexer {
         if (progress.stage === "uploading") {
           const bytes = progress.bytesUploaded ?? 0;
           const kb = Math.round(bytes / 1024);
-          console.log(`  [${elapsed}s] Uploading: ${progress.processed}/${progress.total} new files (${kb} KB)`);
+          console.log(`  [${elapsed}s] Uploaded: ${progress.uploaded}/${progress.total}, Indexed: ${progress.indexed}/${progress.total} (${kb} KB)`);
         } else if (progress.stage === "indexing") {
-          console.log(`  [${elapsed}s] Indexing: ${progress.processed}/${progress.total} new files`);
+          console.log(`  [${elapsed}s] Uploaded: ${progress.uploaded}/${progress.total}, Indexed: ${progress.indexed}/${progress.total}`);
         } else if (progress.stage === "checkpointing") {
           console.log(`  [${elapsed}s] Checkpointing...`);
         }
