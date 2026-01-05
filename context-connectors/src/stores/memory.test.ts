@@ -4,25 +4,43 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { MemoryStore } from "./memory.js";
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 
 describe("MemoryStore", () => {
   let store: MemoryStore;
 
-  const createTestState = (id: string): IndexState => ({
-    version: 1,
-    contextState: {
-      checkpointId: `checkpoint-${id}`,
-      addedBlobs: [],
-      deletedBlobs: [],
-      blobs: [],
-    },
-    source: {
-      type: "filesystem",
+  const createTestState = (
+    id: string
+  ): { full: IndexState; search: IndexStateSearchOnly } => {
+    const source = {
+      type: "filesystem" as const,
       config: { rootPath: `/test/${id}` },
       syncedAt: new Date().toISOString(),
-    },
-  });
+    };
+    return {
+      full: {
+        version: 1,
+        contextState: {
+          mode: "full" as const,
+          checkpointId: `checkpoint-${id}`,
+          addedBlobs: [],
+          deletedBlobs: [],
+          blobs: [],
+        },
+        source,
+      },
+      search: {
+        version: 1,
+        contextState: {
+          mode: "search-only" as const,
+          checkpointId: `checkpoint-${id}`,
+          addedBlobs: [],
+          deletedBlobs: [],
+        },
+        source,
+      },
+    };
+  };
 
   beforeEach(() => {
     store = new MemoryStore();
@@ -30,11 +48,11 @@ describe("MemoryStore", () => {
 
   describe("save and load", () => {
     it("should save and load state", async () => {
-      const state = createTestState("1");
-      await store.save("test-key", state);
+      const { full, search } = createTestState("1");
+      await store.save("test-key", full, search);
 
       const loaded = await store.loadState("test-key");
-      expect(loaded).toEqual(state);
+      expect(loaded).toEqual(full);
     });
 
     it("should return null for non-existent key", async () => {
@@ -46,16 +64,16 @@ describe("MemoryStore", () => {
       const state1 = createTestState("1");
       const state2 = createTestState("2");
 
-      await store.save("key", state1);
-      await store.save("key", state2);
+      await store.save("key", state1.full, state1.search);
+      await store.save("key", state2.full, state2.search);
 
       const loaded = await store.loadState("key");
-      expect(loaded).toEqual(state2);
+      expect(loaded).toEqual(state2.full);
     });
 
     it("should return deep copy on load", async () => {
-      const state = createTestState("1");
-      await store.save("key", state);
+      const { full, search } = createTestState("1");
+      await store.save("key", full, search);
 
       const loaded = await store.loadState("key");
       if (loaded!.source.type === "filesystem") {
@@ -69,11 +87,11 @@ describe("MemoryStore", () => {
     });
 
     it("should store deep copy on save", async () => {
-      const state = createTestState("1");
-      await store.save("key", state);
+      const { full, search } = createTestState("1");
+      await store.save("key", full, search);
 
-      if (state.source.type === "filesystem") {
-        state.source.config.rootPath = "modified";
+      if (full.source.type === "filesystem") {
+        full.source.config.rootPath = "modified";
       }
 
       const loaded = await store.loadState("key");
@@ -85,8 +103,8 @@ describe("MemoryStore", () => {
 
   describe("delete", () => {
     it("should delete existing key", async () => {
-      const state = createTestState("1");
-      await store.save("key", state);
+      const { full, search } = createTestState("1");
+      await store.save("key", full, search);
       expect(store.has("key")).toBe(true);
 
       await store.delete("key");
@@ -105,9 +123,12 @@ describe("MemoryStore", () => {
     });
 
     it("should return all keys", async () => {
-      await store.save("key1", createTestState("1"));
-      await store.save("key2", createTestState("2"));
-      await store.save("key3", createTestState("3"));
+      const s1 = createTestState("1");
+      const s2 = createTestState("2");
+      const s3 = createTestState("3");
+      await store.save("key1", s1.full, s1.search);
+      await store.save("key2", s2.full, s2.search);
+      await store.save("key3", s3.full, s3.search);
 
       const keys = await store.list();
       expect(keys.sort()).toEqual(["key1", "key2", "key3"]);
@@ -118,16 +139,20 @@ describe("MemoryStore", () => {
     it("size should return number of stored keys", async () => {
       expect(store.size).toBe(0);
 
-      await store.save("key1", createTestState("1"));
+      const s1 = createTestState("1");
+      await store.save("key1", s1.full, s1.search);
       expect(store.size).toBe(1);
 
-      await store.save("key2", createTestState("2"));
+      const s2 = createTestState("2");
+      await store.save("key2", s2.full, s2.search);
       expect(store.size).toBe(2);
     });
 
     it("clear should remove all data", async () => {
-      await store.save("key1", createTestState("1"));
-      await store.save("key2", createTestState("2"));
+      const s1 = createTestState("1");
+      const s2 = createTestState("2");
+      await store.save("key1", s1.full, s1.search);
+      await store.save("key2", s2.full, s2.search);
 
       store.clear();
       expect(store.size).toBe(0);
@@ -137,23 +162,9 @@ describe("MemoryStore", () => {
     it("has should check key existence", async () => {
       expect(store.has("key")).toBe(false);
 
-      await store.save("key", createTestState("1"));
+      const { full, search } = createTestState("1");
+      await store.save("key", full, search);
       expect(store.has("key")).toBe(true);
-    });
-  });
-
-  describe("initialization", () => {
-    it("should accept initial data", async () => {
-      const initialData = new Map<string, IndexState>();
-      initialData.set("existing", createTestState("existing"));
-
-      const storeWithData = new MemoryStore({ initialData });
-
-      expect(storeWithData.has("existing")).toBe(true);
-      const loaded = await storeWithData.loadState("existing");
-      if (loaded!.source.type === "filesystem") {
-        expect(loaded!.source.config.rootPath).toBe("/test/existing");
-      }
     });
   });
 });

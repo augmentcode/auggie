@@ -7,50 +7,54 @@
  * - Short-lived processes
  */
 
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 import type { IndexStore } from "./types.js";
+
+/** Stored data for each index */
+interface StoredIndex {
+  fullState: IndexState;
+  searchState: IndexStateSearchOnly;
+}
 
 /** Configuration for MemoryStore */
 export interface MemoryStoreConfig {
   /** Optional initial data to populate the store */
-  initialData?: Map<string, IndexState>;
+  initialData?: Map<string, StoredIndex>;
 }
 
 export class MemoryStore implements IndexStore {
-  private readonly data: Map<string, IndexState>;
+  private readonly data: Map<string, StoredIndex>;
 
   constructor(config: MemoryStoreConfig = {}) {
-    this.data = config.initialData
-      ? new Map(config.initialData)
-      : new Map();
+    this.data = config.initialData ? new Map(config.initialData) : new Map();
   }
 
   async loadState(key: string): Promise<IndexState | null> {
-    const state = this.data.get(key);
-    if (!state) return null;
-
-    // Validate that this is a full state with blobs
-    if (!state.contextState.blobs) {
-      throw new Error(
-        `Invalid state for key "${key}": missing blobs field. ` +
-        `Use loadSearch() instead for search operations.`
-      );
-    }
+    const stored = this.data.get(key);
+    if (!stored) return null;
 
     // Return a deep copy to prevent external mutation
-    return JSON.parse(JSON.stringify(state));
+    return JSON.parse(JSON.stringify(stored.fullState));
   }
 
   async loadSearch(key: string): Promise<IndexState | null> {
-    const state = this.data.get(key);
+    const stored = this.data.get(key);
+    if (!stored) return null;
+
     // Return a deep copy to prevent external mutation
-    // Note: MemoryStore stores full state, but loadSearch() can work with it
-    return state ? JSON.parse(JSON.stringify(state)) : null;
+    return JSON.parse(JSON.stringify(stored.searchState));
   }
 
-  async save(key: string, state: IndexState): Promise<void> {
-    // Store a deep copy to prevent external mutation
-    this.data.set(key, JSON.parse(JSON.stringify(state)));
+  async save(
+    key: string,
+    fullState: IndexState,
+    searchState: IndexStateSearchOnly
+  ): Promise<void> {
+    // Store deep copies to prevent external mutation
+    this.data.set(key, {
+      fullState: JSON.parse(JSON.stringify(fullState)),
+      searchState: JSON.parse(JSON.stringify(searchState)),
+    });
   }
 
   async delete(key: string): Promise<void> {

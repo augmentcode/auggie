@@ -7,6 +7,7 @@ export type {
   FileInfo,
   SourceMetadata,
   IndexState,
+  IndexStateSearchOnly,
   IndexResult,
 } from "./types.js";
 

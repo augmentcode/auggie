@@ -24,7 +24,16 @@
  */
 
 import { DirectContext } from "@augmentcode/auggie-sdk";
-import type { FileEntry, IndexResult, IndexState } from "./types.js";
+import type {
+  FullContextState,
+  SearchOnlyContextState,
+} from "@augmentcode/auggie-sdk";
+import type {
+  FileEntry,
+  IndexResult,
+  IndexState,
+  IndexStateSearchOnly,
+} from "./types.js";
 import type { FileChanges, Source } from "../sources/types.js";
 import type { IndexStore } from "../stores/types.js";
 
@@ -173,14 +182,26 @@ export class Indexer {
     // Get source metadata
     const metadata = await source.getMetadata();
 
-    // Export context state and save
-    const contextState = context.export();
-    const state: IndexState = {
+    // Export both full and search-only states
+    const fullContextState = context.export({
+      mode: "full",
+    }) as FullContextState;
+    const searchContextState = context.export({
+      mode: "search-only",
+    }) as SearchOnlyContextState;
+
+    const fullState: IndexState = {
       version: 1,
-      contextState,
+      contextState: fullContextState,
       source: metadata,
     };
-    await store.save(key, state);
+    const searchState: IndexStateSearchOnly = {
+      version: 1,
+      contextState: searchContextState,
+      source: metadata,
+    };
+
+    await store.save(key, fullState, searchState);
 
     return {
       type: "full",
@@ -222,14 +243,26 @@ export class Indexer {
     // Get updated source metadata
     const metadata = await source.getMetadata();
 
-    // Export and save updated state
-    const contextState = context.export();
-    const state: IndexState = {
+    // Export both full and search-only states
+    const fullContextState = context.export({
+      mode: "full",
+    }) as FullContextState;
+    const searchContextState = context.export({
+      mode: "search-only",
+    }) as SearchOnlyContextState;
+
+    const fullState: IndexState = {
       version: 1,
-      contextState,
+      contextState: fullContextState,
       source: metadata,
     };
-    await store.save(key, state);
+    const searchState: IndexStateSearchOnly = {
+      version: 1,
+      contextState: searchContextState,
+      source: metadata,
+    };
+
+    await store.save(key, fullState, searchState);
 
     return {
       type: "incremental",

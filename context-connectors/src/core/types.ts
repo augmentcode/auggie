@@ -10,7 +10,10 @@
  * @module core/types
  */
 
-import type { DirectContextState } from "@augmentcode/auggie-sdk";
+import type {
+  FullContextState,
+  SearchOnlyContextState,
+} from "@augmentcode/auggie-sdk";
 
 /**
  * A file with its contents, used for indexing operations.
@@ -188,7 +191,22 @@ export interface IndexState {
   /** Format version for future evolution */
   version: 1;
   /** The DirectContext state from auggie-sdk (embeddings, index data) */
-  contextState: DirectContextState;
+  contextState: FullContextState;
+  /** Metadata about the source that was indexed */
+  source: SourceMetadata;
+}
+
+/**
+ * Search-only index state optimized for storage.
+ *
+ * Contains minimal DirectContext state (no blobs array) for search operations.
+ * Cannot be used for incremental indexing.
+ */
+export interface IndexStateSearchOnly {
+  /** Format version for future evolution */
+  version: 1;
+  /** The search-only DirectContext state from auggie-sdk */
+  contextState: SearchOnlyContextState;
   /** Metadata about the source that was indexed */
   source: SourceMetadata;
 }

@@ -13,7 +13,7 @@
  * @module stores/types
  */
 
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 
 /**
  * Read-only store interface for loading index state.
@@ -85,12 +85,21 @@ export interface IndexStore extends IndexStoreReader {
   /**
    * Save index state with the given key.
    *
+   * Saves both full state (for incremental indexing) and search-only state
+   * (for search operations). The search-only state is much smaller as it
+   * excludes the blobs array.
+   *
    * Overwrites any existing state with the same key.
    *
    * @param key - The index key/name
-   * @param state - The IndexState to persist
+   * @param fullState - The full IndexState for incremental indexing
+   * @param searchState - The search-only IndexState for search operations
    */
-  save(key: string, state: IndexState): Promise<void>;
+  save(
+    key: string,
+    fullState: IndexState,
+    searchState: IndexStateSearchOnly
+  ): Promise<void>;
 
   /**
    * Delete index state by key.

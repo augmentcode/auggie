@@ -37,7 +37,7 @@
  * ```
  */
 
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 import type { IndexStore } from "./types.js";
 
 /**
@@ -220,38 +220,39 @@ export class S3Store implements IndexStore {
     }
   }
 
-  async save(key: string, state: IndexState): Promise<void> {
+  async save(
+    key: string,
+    fullState: IndexState,
+    searchState: IndexStateSearchOnly
+  ): Promise<void> {
     const client = await this.getClient();
     const stateKey = this.getStateKey(key);
     const searchKey = this.getSearchKey(key);
 
     // Full state for incremental indexing (includes blobs with paths)
-    const stateJson = JSON.stringify(state, null, 2);
+    const stateJson = JSON.stringify(fullState, null, 2);
 
-    // Search-optimized state (strip blobs array, keep checkpointId, addedBlobs, deletedBlobs)
-    const searchState: IndexState = {
-      ...state,
-      contextState: {
-        ...state.contextState,
-        blobs: [], // Strip blobs for search.json
-      },
-    };
+    // Search-optimized state from SDK (no blobs array)
     const searchJson = JSON.stringify(searchState, null, 2);
 
     // Write both files
     await Promise.all([
-      client.send(new this.commands!.PutObjectCommand({
-        Bucket: this.bucket,
-        Key: stateKey,
-        Body: stateJson,
-        ContentType: "application/json",
-      })),
-      client.send(new this.commands!.PutObjectCommand({
-        Bucket: this.bucket,
-        Key: searchKey,
-        Body: searchJson,
-        ContentType: "application/json",
-      })),
+      client.send(
+        new this.commands!.PutObjectCommand({
+          Bucket: this.bucket,
+          Key: stateKey,
+          Body: stateJson,
+          ContentType: "application/json",
+        })
+      ),
+      client.send(
+        new this.commands!.PutObjectCommand({
+          Bucket: this.bucket,
+          Key: searchKey,
+          Body: searchJson,
+          ContentType: "application/json",
+        })
+      ),
     ]);
   }
 

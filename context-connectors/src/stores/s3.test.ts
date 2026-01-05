@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 
 // Mock the @aws-sdk/client-s3 module
 vi.mock("@aws-sdk/client-s3", () => {
@@ -22,20 +22,38 @@ vi.mock("@aws-sdk/client-s3", () => {
 });
 
 describe("S3Store", () => {
-  const createTestState = (id: string): IndexState => ({
-    version: 1,
-    contextState: {
-      checkpointId: `checkpoint-${id}`,
-      addedBlobs: [],
-      deletedBlobs: [],
-      blobs: [],
-    },
-    source: {
-      type: "filesystem",
+  const createTestState = (
+    id: string
+  ): { full: IndexState; search: IndexStateSearchOnly } => {
+    const source = {
+      type: "filesystem" as const,
       config: { rootPath: `/test/${id}` },
       syncedAt: new Date().toISOString(),
-    },
-  });
+    };
+    return {
+      full: {
+        version: 1,
+        contextState: {
+          mode: "full" as const,
+          checkpointId: `checkpoint-${id}`,
+          addedBlobs: [],
+          deletedBlobs: [],
+          blobs: [],
+        },
+        source,
+      },
+      search: {
+        version: 1,
+        contextState: {
+          mode: "search-only" as const,
+          checkpointId: `checkpoint-${id}`,
+          addedBlobs: [],
+          deletedBlobs: [],
+        },
+        source,
+      },
+    };
+  };
 
   let mockSend: ReturnType<typeof vi.fn>;
 
@@ -96,14 +114,16 @@ describe("S3Store", () => {
     it("should load state from S3", async () => {
       const { S3Store } = await import("./s3.js");
       const store = new S3Store({ bucket: "test-bucket" });
-      const state = createTestState("1");
+      const { full } = createTestState("1");
 
       mockSend.mockResolvedValueOnce({
-        Body: { transformToString: () => Promise.resolve(JSON.stringify(state)) },
+        Body: {
+          transformToString: () => Promise.resolve(JSON.stringify(full)),
+        },
       });
 
       const loaded = await store.loadState("test-key");
-      expect(loaded).toEqual(state);
+      expect(loaded).toEqual(full);
     });
 
     it("should return null for non-existent key", async () => {
@@ -122,17 +142,18 @@ describe("S3Store", () => {
     it("should save state to S3", async () => {
       const { S3Store } = await import("./s3.js");
       const store = new S3Store({ bucket: "test-bucket" });
-      const state = createTestState("1");
+      const { full, search } = createTestState("1");
 
       mockSend.mockResolvedValueOnce({});
+      mockSend.mockResolvedValueOnce({});
 
-      await store.save("test-key", state);
+      await store.save("test-key", full, search);
 
       const { PutObjectCommand } = await import("@aws-sdk/client-s3");
       expect(PutObjectCommand).toHaveBeenCalledWith({
         Bucket: "test-bucket",
         Key: "context-connectors/test-key/state.json",
-        Body: JSON.stringify(state, null, 2),
+        Body: JSON.stringify(full, null, 2),
         ContentType: "application/json",
       });
     });

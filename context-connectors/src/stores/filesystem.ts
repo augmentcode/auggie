@@ -32,7 +32,7 @@ import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { sanitizeKey } from "../core/utils.js";
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 import type { IndexStore } from "./types.js";
 
 /**
@@ -174,7 +174,11 @@ export class FilesystemStore implements IndexStore {
   /**
    * Save state to a specific directory path (internal helper)
    */
-  private async saveToPath(dirPath: string, state: IndexState): Promise<void> {
+  private async saveToPath(
+    dirPath: string,
+    fullState: IndexState,
+    searchState: IndexStateSearchOnly
+  ): Promise<void> {
     const statePath = join(dirPath, STATE_FILENAME);
     const searchPath = join(dirPath, SEARCH_FILENAME);
 
@@ -182,16 +186,9 @@ export class FilesystemStore implements IndexStore {
     await fs.mkdir(dirPath, { recursive: true });
 
     // Full state for incremental indexing (includes blobs with paths)
-    const stateJson = JSON.stringify(state, null, 2);
+    const stateJson = JSON.stringify(fullState, null, 2);
 
-    // Search-optimized state (strip blobs array, keep checkpointId, addedBlobs, deletedBlobs)
-    const searchState: IndexState = {
-      ...state,
-      contextState: {
-        ...state.contextState,
-        blobs: [], // Strip blobs for search.json
-      },
-    };
+    // Search-optimized state from SDK (no blobs array)
     const searchJson = JSON.stringify(searchState, null, 2);
 
     // Write both files
@@ -211,9 +208,13 @@ export class FilesystemStore implements IndexStore {
     return this.loadFromPath(filePath, false);
   }
 
-  async save(key: string, state: IndexState): Promise<void> {
+  async save(
+    key: string,
+    fullState: IndexState,
+    searchState: IndexStateSearchOnly
+  ): Promise<void> {
     const keyDir = this.getKeyDir(key);
-    await this.saveToPath(keyDir, state);
+    await this.saveToPath(keyDir, fullState, searchState);
   }
 
   async delete(key: string): Promise<void> {

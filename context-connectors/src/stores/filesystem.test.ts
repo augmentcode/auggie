@@ -6,27 +6,41 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { FilesystemStore } from "./filesystem.js";
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 
 const TEST_DIR = "/tmp/context-connectors-test-fs-store";
 
 // Create a minimal mock IndexState for testing
-function createMockState(): IndexState {
+function createMockState(): { full: IndexState; search: IndexStateSearchOnly } {
+  const source = {
+    type: "filesystem" as const,
+    config: { rootPath: "/path/to/project" },
+    syncedAt: new Date().toISOString(),
+  };
   return {
-    version: 1,
-    contextState: {
-      checkpointId: "test-checkpoint-123",
-      addedBlobs: ["blob-1", "blob-2"],
-      deletedBlobs: [],
-      blobs: [
-        ["blob-1", "src/file1.ts"],
-        ["blob-2", "src/file2.ts"],
-      ],
+    full: {
+      version: 1,
+      contextState: {
+        mode: "full" as const,
+        checkpointId: "test-checkpoint-123",
+        addedBlobs: ["blob-1", "blob-2"],
+        deletedBlobs: [],
+        blobs: [
+          ["blob-1", "src/file1.ts"],
+          ["blob-2", "src/file2.ts"],
+        ],
+      },
+      source,
     },
-    source: {
-      type: "filesystem",
-      config: { rootPath: "/path/to/project" },
-      syncedAt: new Date().toISOString(),
+    search: {
+      version: 1,
+      contextState: {
+        mode: "search-only" as const,
+        checkpointId: "test-checkpoint-123",
+        addedBlobs: ["blob-1", "blob-2"],
+        deletedBlobs: [],
+      },
+      source,
     },
   };
 }
@@ -45,9 +59,9 @@ describe("FilesystemStore", () => {
   describe("save", () => {
     it("creates directory and file", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const state = createMockState();
+      const { full, search } = createMockState();
 
-      await store.save("my-project", state);
+      await store.save("my-project", full, search);
 
       // Verify file was created in indexes subdirectory
       const statePath = join(TEST_DIR, "indexes", "my-project", "state.json");
@@ -60,9 +74,9 @@ describe("FilesystemStore", () => {
 
     it("sanitizes key for filesystem safety", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const state = createMockState();
+      const { full, search } = createMockState();
 
-      await store.save("owner/repo@main", state);
+      await store.save("owner/repo@main", full, search);
 
       // Key should be sanitized and stored in indexes subdirectory
       const sanitizedKey = "owner_repo_main";
@@ -74,9 +88,9 @@ describe("FilesystemStore", () => {
   describe("loadState", () => {
     it("returns saved state with blobs", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const originalState = createMockState();
+      const { full, search } = createMockState();
 
-      await store.save("test-key", originalState);
+      await store.save("test-key", full, search);
       const loadedState = await store.loadState("test-key");
 
       expect(loadedState).not.toBeNull();
@@ -106,15 +120,15 @@ describe("FilesystemStore", () => {
   describe("loadSearch", () => {
     it("returns saved state without blobs", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const originalState = createMockState();
+      const { full, search } = createMockState();
 
-      await store.save("search-test", originalState);
+      await store.save("search-test", full, search);
       const searchLoaded = await store.loadSearch("search-test");
 
       expect(searchLoaded).not.toBeNull();
       expect(searchLoaded!.contextState.checkpointId).toBe("test-checkpoint-123");
-      // search.json should have empty blobs array
-      expect(searchLoaded!.contextState.blobs).toEqual([]);
+      // search.json should not have blobs property
+      expect("blobs" in searchLoaded!.contextState).toBe(false);
       // But should have addedBlobs and deletedBlobs
       expect(searchLoaded!.contextState.addedBlobs).toBeDefined();
       expect(searchLoaded!.contextState.deletedBlobs).toBeDefined();
@@ -131,9 +145,9 @@ describe("FilesystemStore", () => {
   describe("delete", () => {
     it("removes state", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const state = createMockState();
+      const { full, search } = createMockState();
 
-      await store.save("to-delete", state);
+      await store.save("to-delete", full, search);
       expect(await store.loadState("to-delete")).not.toBeNull();
 
       await store.delete("to-delete");
@@ -149,11 +163,11 @@ describe("FilesystemStore", () => {
   describe("list", () => {
     it("returns saved keys", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const state = createMockState();
+      const { full, search } = createMockState();
 
-      await store.save("project-a", state);
-      await store.save("project-b", state);
-      await store.save("project-c", state);
+      await store.save("project-a", full, search);
+      await store.save("project-b", full, search);
+      await store.save("project-c", full, search);
 
       const keys = await store.list();
 
@@ -172,9 +186,9 @@ describe("FilesystemStore", () => {
 
     it("ignores directories without state.json", async () => {
       const store = new FilesystemStore({ basePath: TEST_DIR });
-      const state = createMockState();
+      const { full, search } = createMockState();
 
-      await store.save("valid-project", state);
+      await store.save("valid-project", full, search);
       // Create an invalid directory without state.json
       await fs.mkdir(join(TEST_DIR, "invalid-project"), { recursive: true });
 
