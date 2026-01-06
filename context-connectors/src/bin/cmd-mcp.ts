@@ -1,5 +1,5 @@
 /**
- * MCP command - Run MCP servers (local stdio or remote HTTP)
+ * MCP command - Run MCP servers (stdio or HTTP transport)
  */
 
 import { Command } from "commander";
@@ -8,9 +8,9 @@ import { runMCPServer } from "../clients/mcp-server.js";
 import { parseIndexSpecs } from "../stores/index-spec.js";
 import { CompositeStoreReader } from "../stores/composite.js";
 
-// Local subcommand (stdio-based MCP server)
-const localCommand = new Command("local")
-  .description("Start stdio-based MCP server")
+// stdio subcommand (stdio-based MCP server for local clients like Claude Desktop)
+const stdioCommand = new Command("stdio")
+  .description("Start MCP server using stdio transport (for Claude Desktop, etc.)")
   .option(
     "-i, --index <specs...>",
     "Index spec(s): name, path:/path, or s3://bucket/key"
@@ -51,9 +51,9 @@ const localCommand = new Command("local")
     }
   });
 
-// Remote subcommand (HTTP-based MCP server)
-const remoteCommand = new Command("remote")
-  .description("Start HTTP-based MCP server for remote client access")
+// http subcommand (HTTP-based MCP server for remote clients)
+const httpCommand = new Command("http")
+  .description("Start MCP server using Streamable HTTP transport")
   .option(
     "-i, --index <specs...>",
     "Index spec(s): name, path:/path, or s3://bucket/key"
@@ -152,6 +152,6 @@ const remoteCommand = new Command("remote")
 
 // Main mcp command
 export const mcpCommand = new Command("mcp")
-  .description("Run MCP servers")
-  .addCommand(localCommand)
-  .addCommand(remoteCommand);
+  .description("Run MCP servers (stdio or http transport)")
+  .addCommand(stdioCommand)
+  .addCommand(httpCommand);

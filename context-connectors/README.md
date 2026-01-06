@@ -86,7 +86,7 @@ Common options for all sources:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-n, --name <name>` | Index name | Required |
+| `-i, --index <specs...>` | Index spec(s): name, path:/path, or s3://bucket/key | - |
 | `--store <type>` | Store type: `filesystem`, `s3` | `filesystem` |
 | `--store-path <path>` | Filesystem store path | Platform-specific |
 | `--bucket <name>` | S3 bucket name | - |
@@ -112,10 +112,10 @@ context-connectors search <query> [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-n, --name <name>` | Index name | Required |
+| `-i, --index <specs...>` | Index spec(s): name, path:/path, or s3://bucket/key | - |
 | `--max-chars <n>` | Max output characters | - |
 | `--search-only` | Disable file operations | `false` |
-| `-p, --path <path>` | Path override for filesystem source | - |
+
 
 ### `agent` - Interactive AI agent
 
@@ -125,37 +125,37 @@ context-connectors agent [options]
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-n, --name <name>` | Index name | Required |
+| `-i, --index <specs...>` | Index spec(s): name, path:/path, or s3://bucket/key | - |
 | `--model <name>` | OpenAI model | `gpt-4o` |
 | `--max-steps <n>` | Max agent steps | `10` |
 | `-v, --verbose` | Show tool calls | `false` |
 | `-q, --query <query>` | Single query (non-interactive) | - |
 | `--search-only` | Disable file operations | `false` |
-| `-p, --path <path>` | Path override for filesystem source | - |
 
-### `mcp` - Start MCP server
+
+### `mcp stdio` - Start MCP server with stdio transport
 
 ```bash
-context-connectors mcp [options]
+context-connectors mcp stdio [options]
 ```
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-n, --name <name>` | Index name | Required |
+| `-i, --index <specs...>` | Index spec(s): name, path:/path, or s3://bucket/key | - |
 | `--search-only` | Disable file operations | `false` |
-| `-p, --path <path>` | Path override for filesystem source | - |
 
-### `mcp-serve` - Start MCP HTTP server
+
+### `mcp http` - Start MCP server with HTTP transport
 
 Start an MCP server accessible over HTTP for remote clients.
 
 ```bash
-context-connectors mcp-serve [options]
+context-connectors mcp http [options]
 ```
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-n, --name <name>` | Index name | Required |
+| `-i, --index <specs...>` | Index spec(s): name, path:/path, or s3://bucket/key | - |
 | `--port <number>` | Port to listen on | `3000` |
 | `--host <host>` | Host to bind to | `localhost` |
 | `--cors <origins>` | CORS origins (comma-separated or `*`) | - |
@@ -168,13 +168,13 @@ context-connectors mcp-serve [options]
 Example:
 ```bash
 # Start server on port 8080, allow any CORS origin
-context-connectors mcp-serve -n my-project --port 8080 --cors "*"
+context-connectors mcp http -n my-project --port 8080 --cors "*"
 
 # With authentication
-context-connectors mcp-serve -n my-project --api-key "secret-key"
+context-connectors mcp http -n my-project --api-key "secret-key"
 
 # Or use environment variable for the key
-MCP_API_KEY="secret-key" context-connectors mcp-serve -n my-project
+MCP_API_KEY="secret-key" context-connectors mcp http -n my-project
 ```
 
 ### About `--search-only`
@@ -256,7 +256,7 @@ process.on("SIGTERM", () => server.stop());
 
 ## Security Considerations
 
-### Remote MCP Server (mcp remote / mcp-serve)
+### MCP HTTP Server Security
 
 The remote MCP server uses **HTTP without TLS** by default. This has important security implications:
 
@@ -270,7 +270,7 @@ When binding to `localhost` (the default), traffic never leaves your machine:
 
 ```bash
 # Safe: localhost only (default)
-context-connectors mcp remote -i my-project --api-key "$MCP_API_KEY"
+context-connectors mcp http -i my-project --api-key "$MCP_API_KEY"
 ```
 
 **For Production: Use a TLS-Terminating Reverse Proxy**
@@ -287,7 +287,7 @@ mcp.yourdomain.com {
 Then run the MCP server on localhost:
 
 ```bash
-context-connectors mcp remote -i my-project --api-key "$MCP_API_KEY" --port 3000
+context-connectors mcp http -i my-project --api-key "$MCP_API_KEY" --port 3000
 ```
 
 **Alternative: nginx with Let's Encrypt**
@@ -321,7 +321,7 @@ For ad-hoc remote access, use SSH port forwarding:
 
 ```bash
 # On the server
-context-connectors mcp remote -i my-project --api-key "$MCP_API_KEY"
+context-connectors mcp http -i my-project --api-key "$MCP_API_KEY"
 
 # On your local machine
 ssh -L 3000:localhost:3000 user@server
@@ -343,10 +343,10 @@ Always use an API key for any non-localhost deployment:
 ```bash
 # Set via environment variable (recommended - avoids key in shell history)
 export MCP_API_KEY="your-secure-random-key"
-context-connectors mcp remote -i my-project
+context-connectors mcp http -i my-project
 
 # Or via command line option
-context-connectors mcp remote -i my-project --api-key "your-secure-random-key"
+context-connectors mcp http -i my-project --api-key "your-secure-random-key"
 ```
 
 Generate a secure key with:
@@ -364,7 +364,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "my-project": {
       "command": "npx",
-      "args": ["context-connectors", "mcp", "-n", "my-project", "-p", "/path/to/project"],
+      "args": ["context-connectors", "mcp", "stdio", "-i", "my-project"],
       "env": {
         "AUGMENT_API_TOKEN": "your-token",
         "AUGMENT_API_URL": "https://your-tenant.api.augmentcode.com/"
@@ -376,7 +376,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 
 ## Remote MCP Client Integration
 
-The `mcp-serve` command exposes your indexed data over HTTP using the MCP Streamable HTTP transport. Any MCP-compatible client can connect.
+The `mcp http` command exposes your indexed data over HTTP using the MCP Streamable HTTP transport. Any MCP-compatible client can connect.
 
 ### Connecting with MCP SDK
 
