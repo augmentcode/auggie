@@ -118,6 +118,24 @@ const remoteCommand = new Command("remote")
         console.log(`Authentication: None (open access)`);
       }
 
+      // Security warnings for non-localhost bindings
+      const host = options.host;
+      const isLocalhost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+      if (!isLocalhost) {
+        console.log();
+        console.log("⚠️  SECURITY WARNING: Server is binding to a non-localhost interface.");
+        console.log("   This server uses HTTP (not HTTPS) - all traffic is unencrypted.");
+        if (apiKey) {
+          console.log("   API keys will be transmitted in cleartext over the network.");
+        }
+        console.log();
+        console.log("   For production deployments, use one of these approaches:");
+        console.log("   • Place behind a TLS-terminating reverse proxy (nginx, Caddy, etc.)");
+        console.log("   • Use within a private network or VPN");
+        console.log("   • Bind to localhost and use SSH tunneling for remote access");
+        console.log();
+      }
+
       // Handle shutdown
       const shutdown = async () => {
         console.log("\nShutting down...");
@@ -137,4 +155,3 @@ export const mcpCommand = new Command("mcp")
   .description("Run MCP servers")
   .addCommand(localCommand)
   .addCommand(remoteCommand);
-

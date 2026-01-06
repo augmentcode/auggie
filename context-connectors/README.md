@@ -253,6 +253,108 @@ console.log(`MCP server running at ${server.getUrl()}`);
 process.on("SIGTERM", () => server.stop());
 ```
 
+
+## Security Considerations
+
+### Remote MCP Server (mcp remote / mcp-serve)
+
+The remote MCP server uses **HTTP without TLS** by default. This has important security implications:
+
+⚠️ **API keys and all data are transmitted in cleartext** when using plain HTTP. This means anyone who can observe network traffic (via MITM attacks, network sniffing, etc.) can capture credentials and data.
+
+#### Recommended Deployments
+
+**For Development (localhost only)**
+
+When binding to `localhost` (the default), traffic never leaves your machine:
+
+```bash
+# Safe: localhost only (default)
+context-connectors mcp remote -i my-project --api-key "$MCP_API_KEY"
+```
+
+**For Production: Use a TLS-Terminating Reverse Proxy**
+
+Place the MCP server behind a reverse proxy that handles TLS. Here's an example with Caddy (which automatically obtains certificates):
+
+```
+# Caddyfile
+mcp.yourdomain.com {
+    reverse_proxy localhost:3000
+}
+```
+
+Then run the MCP server on localhost:
+
+```bash
+context-connectors mcp remote -i my-project --api-key "$MCP_API_KEY" --port 3000
+```
+
+**Alternative: nginx with Let's Encrypt**
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name mcp.yourdomain.com;
+    
+    ssl_certificate /etc/letsencrypt/live/mcp.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/mcp.yourdomain.com/privkey.pem;
+    
+    location /mcp {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # For SSE streaming
+        proxy_buffering off;
+        proxy_cache off;
+    }
+}
+```
+
+**Alternative: SSH Tunneling**
+
+For ad-hoc remote access, use SSH port forwarding:
+
+```bash
+# On the server
+context-connectors mcp remote -i my-project --api-key "$MCP_API_KEY"
+
+# On your local machine
+ssh -L 3000:localhost:3000 user@server
+
+# Now connect to localhost:3000 on your local machine
+```
+
+#### Network Isolation
+
+If TLS isn't feasible, ensure the server runs within:
+- A private VPC/network with no public internet access
+- A trusted network segment with firewall rules limiting access
+- A Docker network or Kubernetes cluster with network policies
+
+#### Authentication
+
+Always use an API key for any non-localhost deployment:
+
+```bash
+# Set via environment variable (recommended - avoids key in shell history)
+export MCP_API_KEY="your-secure-random-key"
+context-connectors mcp remote -i my-project
+
+# Or via command line option
+context-connectors mcp remote -i my-project --api-key "your-secure-random-key"
+```
+
+Generate a secure key with:
+
+```bash
+openssl rand -base64 32
+```
+
 ## Claude Desktop Integration
 
 Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
