@@ -53,13 +53,9 @@ export class CompositeStoreReader implements IndexStoreReader {
    * Create a composite store from parsed index specs.
    *
    * @param specs - Parsed index specifications
-   * @param defaultStorePath - Base path for named indexes (default: ~/.augment/context-connectors)
    * @returns CompositeStoreReader instance
    */
-  static async fromSpecs(
-    specs: IndexSpec[],
-    defaultStorePath?: string
-  ): Promise<CompositeStoreReader> {
+  static async fromSpecs(specs: IndexSpec[]): Promise<CompositeStoreReader> {
     const entries: StoreEntry[] = [];
 
     // Lazily create stores as needed
@@ -72,9 +68,9 @@ export class CompositeStoreReader implements IndexStoreReader {
 
       switch (spec.type) {
         case "name":
-          // Use the default filesystem store
+          // Use the default filesystem store (~/.augment/context-connectors)
           if (!defaultStore) {
-            defaultStore = new FilesystemStore({ basePath: defaultStorePath });
+            defaultStore = new FilesystemStore();
           }
           store = defaultStore;
           key = spec.value;

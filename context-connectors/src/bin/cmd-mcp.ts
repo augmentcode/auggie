@@ -15,7 +15,6 @@ const localCommand = new Command("local")
     "-i, --index <specs...>",
     "Index spec(s): name, path:/path, or s3://bucket/key"
   )
-  .option("--store-path <path>", "Base path for named indexes (default: ~/.augment/context-connectors)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .action(async (options) => {
     try {
@@ -27,14 +26,10 @@ const localCommand = new Command("local")
       if (indexSpecs && indexSpecs.length > 0) {
         // Parse index specs and create composite store
         const specs = parseIndexSpecs(indexSpecs);
-        store = await CompositeStoreReader.fromSpecs(specs, options.storePath);
+        store = await CompositeStoreReader.fromSpecs(specs);
         indexNames = specs.map((s) => s.displayName);
-      } else if (options.storePath) {
-        // No --index but --store-path provided: load directly from store-path
-        store = new FilesystemStore({ basePath: options.storePath });
-        indexNames = ["."];
       } else {
-        // No --index and no --store-path: use default store, list all indexes
+        // No --index: use default store, list all indexes
         store = new FilesystemStore();
         indexNames = await store.list();
         if (indexNames.length === 0) {
@@ -63,7 +58,6 @@ const remoteCommand = new Command("remote")
     "-i, --index <specs...>",
     "Index spec(s): name, path:/path, or s3://bucket/key"
   )
-  .option("--store-path <path>", "Base path for named indexes (default: ~/.augment/context-connectors)")
   .option("--port <number>", "Port to listen on", "3000")
   .option("--host <host>", "Host to bind to", "localhost")
   .option("--cors <origins>", "CORS origins (comma-separated, or '*' for any)")
@@ -83,14 +77,10 @@ const remoteCommand = new Command("remote")
       if (indexSpecs && indexSpecs.length > 0) {
         // Parse index specs and create composite store
         const specs = parseIndexSpecs(indexSpecs);
-        store = await CompositeStoreReader.fromSpecs(specs, options.storePath);
+        store = await CompositeStoreReader.fromSpecs(specs);
         indexNames = specs.map((s) => s.displayName);
-      } else if (options.storePath) {
-        // No --index but --store-path provided: use that store, serve all
-        store = new FilesystemStore({ basePath: options.storePath });
-        indexNames = undefined; // undefined means all
       } else {
-        // No --index and no --store-path: use default store, serve all
+        // No --index: use default store, serve all
         store = new FilesystemStore();
         indexNames = undefined;
       }

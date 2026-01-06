@@ -19,7 +19,6 @@ export const searchCommand = new Command("search")
     "-i, --index <spec>",
     "Index spec: name, path:/path, or s3://bucket/key"
   )
-  .option("--store-path <path>", "Base path for named indexes (default: ~/.augment/context-connectors)")
   .option("--max-chars <number>", "Max output characters", parseInt)
   .option("--search-only", "Disable file access (search only)")
   .action(async (query, options) => {
@@ -32,7 +31,8 @@ export const searchCommand = new Command("search")
 
       switch (spec.type) {
         case "name":
-          store = new FilesystemStore({ basePath: options.storePath });
+          // Use default store path (~/.augment/context-connectors)
+          store = new FilesystemStore();
           indexKey = spec.value;
           displayName = spec.value;
           break;

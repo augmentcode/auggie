@@ -24,7 +24,6 @@ export const agentCommand = new Command("agent")
     "--provider <name>",
     "LLM provider (openai, anthropic, google)"
   )
-  .option("--store-path <path>", "Base path for named indexes (default: ~/.augment/context-connectors)")
   .option("--search-only", "Disable listFiles/readFile tools (search only)")
   .option("--model <name>", "Model to use (defaults based on provider)")
   .option("--max-steps <n>", "Maximum agent steps", (val) => parseInt(val, 10), 10)
@@ -46,7 +45,7 @@ export const agentCommand = new Command("agent")
 
       // Parse index specs and create composite store
       const specs = parseIndexSpecs(options.index);
-      const store = await CompositeStoreReader.fromSpecs(specs, options.storePath);
+      const store = await CompositeStoreReader.fromSpecs(specs);
 
       // Create multi-index runner
       const runner = await MultiIndexRunner.create({
