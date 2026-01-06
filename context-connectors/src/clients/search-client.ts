@@ -192,6 +192,31 @@ export class SearchClient {
   }
 
   /**
+   * Search the indexed content and ask a question about the results.
+   *
+   * Uses an LLM to answer the question based on the search results.
+   *
+   * @param query - Search query to find relevant content
+   * @param question - Question to ask about the search results
+   * @returns Answer from the LLM based on the search results
+   *
+   * @example
+   * ```typescript
+   * const answer = await client.searchAndAsk(
+   *   "user authentication",
+   *   "How does the login flow work?"
+   * );
+   * console.log(answer);
+   * ```
+   */
+  async searchAndAsk(query: string, question: string): Promise<string> {
+    if (!this.context) {
+      throw new Error("Client not initialized. Call initialize() first.");
+    }
+    return this.context.searchAndAsk(query, question);
+  }
+
+  /**
    * List files and directories in the source.
    *
    * Requires a Source to be configured (full mode).

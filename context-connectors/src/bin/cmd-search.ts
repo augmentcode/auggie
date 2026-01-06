@@ -5,22 +5,20 @@
 import { Command } from "commander";
 import { SearchClient } from "../clients/search-client.js";
 import { FilesystemStore } from "../stores/filesystem.js";
-import { FilesystemSource } from "../sources/filesystem.js";
 import { getSourceIdentifier } from "../core/types.js";
 import { getS3Config } from "../stores/s3-config.js";
 import { parseIndexSpec } from "../stores/index-spec.js";
-import type { Source } from "../sources/types.js";
 import type { IndexStoreReader } from "../stores/types.js";
 
 export const searchCommand = new Command("search")
-  .description("Search indexed content")
-  .argument("<query>", "Search query")
+  .description("Search indexed content and answer questions (use --raw for raw results)")
+  .argument("<query>", "Search query (also used as the question unless --raw)")
   .requiredOption(
     "-i, --index <spec>",
     "Index spec: name, path:/path, or s3://bucket/key"
   )
-  .option("--max-chars <number>", "Max output characters", parseInt)
-  .option("--search-only", "Disable file access (search only)")
+  .option("--max-chars <number>", "Max output characters (only for --raw)", parseInt)
+  .option("--raw", "Return raw search results instead of asking LLM")
   .action(async (query, options) => {
     try {
       // Parse index spec and create store
@@ -67,38 +65,9 @@ export const searchCommand = new Command("search")
         }
       }
 
-      // Load state to get source metadata
-      const state = await store.loadSearch(indexKey);
-      if (!state) {
-        console.error(`Index not found: ${options.index}`);
-        process.exit(1);
-      }
-
-      // Create source unless --search-only is specified
-      let source: Source | undefined;
-      if (!options.searchOnly) {
-        const meta = state.source;
-        if (meta.type === "filesystem") {
-          source = new FilesystemSource(meta.config);
-        } else if (meta.type === "github") {
-          const { GitHubSource } = await import("../sources/github.js");
-          source = new GitHubSource(meta.config);
-        } else if (meta.type === "gitlab") {
-          const { GitLabSource } = await import("../sources/gitlab.js");
-          source = new GitLabSource(meta.config);
-        } else if (meta.type === "bitbucket") {
-          const { BitBucketSource } = await import("../sources/bitbucket.js");
-          source = new BitBucketSource(meta.config);
-        } else if (meta.type === "website") {
-          const { WebsiteSource } = await import("../sources/website.js");
-          source = new WebsiteSource(meta.config);
-        }
-      }
-
-      // Create client
+      // Create client (search-only, no source needed)
       const client = new SearchClient({
         store,
-        source,
         indexName: indexKey,
       });
 
@@ -109,17 +78,31 @@ export const searchCommand = new Command("search")
       console.log(`Source: ${clientMeta.type}://${getSourceIdentifier(clientMeta)}`);
       console.log(`Last synced: ${clientMeta.syncedAt}\n`);
 
-      const result = await client.search(query, {
-        maxOutputLength: options.maxChars,
-      });
+      if (options.raw) {
+        // Raw mode: just return search results
+        const result = await client.search(query, {
+          maxOutputLength: options.maxChars,
+        });
 
-      if (!result.results || result.results.trim().length === 0) {
-        console.log("No results found.");
-        return;
+        if (!result.results || result.results.trim().length === 0) {
+          console.log("No results found.");
+          return;
+        }
+
+        console.log("Results:\n");
+        console.log(result.results);
+      } else {
+        // Default: searchAndAsk - use LLM to answer based on search results
+        const answer = await client.searchAndAsk(query, query);
+
+        if (!answer || answer.trim().length === 0) {
+          console.log("No answer found.");
+          return;
+        }
+
+        console.log("Answer:\n");
+        console.log(answer);
       }
-
-      console.log("Results:\n");
-      console.log(result.results);
     } catch (error) {
       console.error("Search failed:", error);
       process.exit(1);
