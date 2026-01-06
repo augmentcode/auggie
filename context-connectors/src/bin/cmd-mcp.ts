@@ -5,50 +5,48 @@
 import { Command } from "commander";
 import { FilesystemStore } from "../stores/filesystem.js";
 import { runMCPServer } from "../clients/mcp-server.js";
-import { getS3Config } from "../stores/s3-config.js";
-
-// Helper to create store
-async function createStore(options: {
-  store: string;
-  storePath?: string;
-}) {
-  if (options.store === "filesystem") {
-    return new FilesystemStore({ basePath: options.storePath });
-  } else if (options.store === "s3") {
-    const s3Config = getS3Config();
-    if (!s3Config.bucket) {
-      console.error("S3 store requires CC_S3_BUCKET environment variable");
-      process.exit(1);
-    }
-    const { S3Store } = await import("../stores/s3.js");
-    return new S3Store(s3Config);
-  } else {
-    console.error(`Unknown store type: ${options.store}`);
-    process.exit(1);
-  }
-}
+import { parseIndexSpecs } from "../stores/index-spec.js";
+import { CompositeStoreReader } from "../stores/composite.js";
 
 // Local subcommand (stdio-based MCP server)
 const localCommand = new Command("local")
   .description("Start stdio-based MCP server")
-  .option("-i, --index <names...>", "Index name(s) to expose (loads from {store-path}/{name}/)")
-  .option("-n, --name <names...>", "Alias for --index")
-  .option("--store <type>", "Store type: filesystem, s3 (S3 requires CC_S3_* env vars)", "filesystem")
-  .option("--store-path <path>", "Store base path (loads directly from {store-path}/search.json if no --index)")
+  .option(
+    "-i, --index <specs...>",
+    "Index spec(s): name, path:/path, or s3://bucket/key"
+  )
+  .option("--store-path <path>", "Base path for named indexes (default: ~/.augment/context-connectors)")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .action(async (options) => {
     try {
-      // --index and --name are aliases, prefer --index
-      const indexNames: string[] | undefined = options.index || options.name;
-      // Use "." as key if no --index, so files are loaded directly from store-path
-      const indexKeys = indexNames || ["."];
+      const indexSpecs: string[] | undefined = options.index;
 
-      const store = await createStore(options);
+      let store;
+      let indexNames: string[];
+
+      if (indexSpecs && indexSpecs.length > 0) {
+        // Parse index specs and create composite store
+        const specs = parseIndexSpecs(indexSpecs);
+        store = await CompositeStoreReader.fromSpecs(specs, options.storePath);
+        indexNames = specs.map((s) => s.displayName);
+      } else if (options.storePath) {
+        // No --index but --store-path provided: load directly from store-path
+        store = new FilesystemStore({ basePath: options.storePath });
+        indexNames = ["."];
+      } else {
+        // No --index and no --store-path: use default store, list all indexes
+        store = new FilesystemStore();
+        indexNames = await store.list();
+        if (indexNames.length === 0) {
+          console.error("No indexes found. Create an index first with 'context-connectors index'");
+          process.exit(1);
+        }
+      }
 
       // Start MCP server (writes to stdout, reads from stdin)
       await runMCPServer({
         store,
-        indexNames: indexKeys,
+        indexNames,
         searchOnly: options.searchOnly,
       });
     } catch (error) {
@@ -61,14 +59,15 @@ const localCommand = new Command("local")
 // Remote subcommand (HTTP-based MCP server)
 const remoteCommand = new Command("remote")
   .description("Start HTTP-based MCP server for remote client access")
-  .option("-i, --index <names...>", "Index name(s) to expose (default: all)")
-  .option("-n, --name <names...>", "Alias for --index")
+  .option(
+    "-i, --index <specs...>",
+    "Index spec(s): name, path:/path, or s3://bucket/key"
+  )
+  .option("--store-path <path>", "Base path for named indexes (default: ~/.augment/context-connectors)")
   .option("--port <number>", "Port to listen on", "3000")
   .option("--host <host>", "Host to bind to", "localhost")
   .option("--cors <origins>", "CORS origins (comma-separated, or '*' for any)")
   .option("--base-path <path>", "Base path for MCP endpoint", "/mcp")
-  .option("--store <type>", "Store type: filesystem, s3 (S3 requires CC_S3_* env vars)", "filesystem")
-  .option("--store-path <path>", "Store base path")
   .option("--search-only", "Disable list_files/read_file tools (search only)")
   .option(
     "--api-key <key>",
@@ -76,7 +75,25 @@ const remoteCommand = new Command("remote")
   )
   .action(async (options) => {
     try {
-      const store = await createStore(options);
+      const indexSpecs: string[] | undefined = options.index;
+
+      let store;
+      let indexNames: string[] | undefined;
+
+      if (indexSpecs && indexSpecs.length > 0) {
+        // Parse index specs and create composite store
+        const specs = parseIndexSpecs(indexSpecs);
+        store = await CompositeStoreReader.fromSpecs(specs, options.storePath);
+        indexNames = specs.map((s) => s.displayName);
+      } else if (options.storePath) {
+        // No --index but --store-path provided: use that store, serve all
+        store = new FilesystemStore({ basePath: options.storePath });
+        indexNames = undefined; // undefined means all
+      } else {
+        // No --index and no --store-path: use default store, serve all
+        store = new FilesystemStore();
+        indexNames = undefined;
+      }
 
       // Parse CORS option
       let cors: string | string[] | undefined;
@@ -90,14 +107,11 @@ const remoteCommand = new Command("remote")
       // Get API key from option or environment
       const apiKey = options.apiKey ?? process.env.MCP_API_KEY;
 
-      // --index and --name are aliases, prefer --index
-      const indexNames: string[] | undefined = options.index || options.name;
-
       // Start HTTP server
       const { runMCPHttpServer } = await import("../clients/mcp-http-server.js");
       const server = await runMCPHttpServer({
         store,
-        indexNames, // undefined means all
+        indexNames,
         searchOnly: options.searchOnly,
         port: parseInt(options.port, 10),
         host: options.host,

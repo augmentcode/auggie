@@ -34,6 +34,13 @@ import {
 } from "ai";
 import { z } from "zod";
 import type { SearchClient } from "./search-client.js";
+import type { MultiIndexRunner } from "./multi-index-runner.js";
+import {
+  SEARCH_DESCRIPTION,
+  LIST_FILES_DESCRIPTION,
+  READ_FILE_DESCRIPTION,
+  withIndexList,
+} from "./tool-descriptions.js";
 
 /**
  * Supported LLM providers.
@@ -42,11 +49,13 @@ import type { SearchClient } from "./search-client.js";
 export type Provider = "openai" | "anthropic" | "google";
 
 /**
- * Configuration for the CLI agent.
+ * Configuration for the CLI agent with a single SearchClient.
  */
-export interface CLIAgentConfig {
+export interface CLIAgentSingleConfig {
   /** Initialized SearchClient instance */
   client: SearchClient;
+  /** Multi-index runner - mutually exclusive with client */
+  runner?: never;
   /** LLM provider to use */
   provider: Provider;
   /** Model name (e.g., "gpt-4o", "claude-3-opus", "gemini-pro") */
@@ -70,7 +79,41 @@ export interface CLIAgentConfig {
   systemPrompt?: string;
 }
 
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful coding assistant with access to a codebase.
+/**
+ * Configuration for the CLI agent with multiple indexes via MultiIndexRunner.
+ */
+export interface CLIAgentMultiConfig {
+  /** Single client - mutually exclusive with runner */
+  client?: never;
+  /** Multi-index runner for searching across multiple indexes */
+  runner: MultiIndexRunner;
+  /** LLM provider to use */
+  provider: Provider;
+  /** Model name (e.g., "gpt-4o", "claude-3-opus", "gemini-pro") */
+  model: string;
+  /**
+   * Maximum number of agent steps (tool calls + responses).
+   * @default 10
+   */
+  maxSteps?: number;
+  /**
+   * Log tool calls to stderr for debugging.
+   * @default false
+   */
+  verbose?: boolean;
+  /**
+   * Stream responses token by token.
+   * @default true
+   */
+  stream?: boolean;
+  /** Custom system prompt. Uses a sensible default if not provided. */
+  systemPrompt?: string;
+}
+
+/** Configuration for the CLI agent */
+export type CLIAgentConfig = CLIAgentSingleConfig | CLIAgentMultiConfig;
+
+const DEFAULT_SYSTEM_PROMPT = `You are a helpful coding assistant with access to one or more codebases.
 
 Available tools:
 - search: Find relevant code using natural language queries
@@ -160,7 +203,9 @@ async function loadModel(
  * ```
  */
 export class CLIAgent {
-  private readonly client: SearchClient;
+  // Either client (single-index) or runner (multi-index) is set
+  private readonly client: SearchClient | null;
+  private readonly runner: MultiIndexRunner | null;
   private model: LanguageModel | null = null;
   private readonly provider: Provider;
   private readonly modelName: string;
@@ -179,129 +224,155 @@ export class CLIAgent {
    * @param config - Agent configuration
    */
   constructor(config: CLIAgentConfig) {
-    this.client = config.client;
+    this.client = config.client ?? null;
+    this.runner = config.runner ?? null;
     this.provider = config.provider;
     this.modelName = config.model;
     this.maxSteps = config.maxSteps ?? 10;
     this.verbose = config.verbose ?? false;
     this.stream = config.stream ?? true;
     this.systemPrompt = config.systemPrompt ?? DEFAULT_SYSTEM_PROMPT;
-    this.tools = this.createTools();
+    this.tools = this.runner ? this.createMultiIndexTools() : this.createSingleClientTools();
   }
 
   /**
-   * Create AI SDK tools for the SearchClient.
+   * Create AI SDK tools for single SearchClient mode.
    */
-  private createTools(): ToolSet {
-    const client = this.client;
+  private createSingleClientTools(): ToolSet {
+    const client = this.client!;
     const hasSource = client.hasSource();
 
-    // Tool descriptions adapted from Auggie CLI
-    const searchDescription = `Search the indexed content using natural language.
-Returns relevant snippets organized by file path with line numbers.
-
-Features:
-- Takes a natural language description of what you're looking for
-- Returns snippets ranked by relevance
-- Works across different file types
-- Reflects the indexed state of the content`;
-
-    const listFilesDescription = `List files and directories with type annotations.
-* \`directory\` is a path relative to the source root
-* Lists files and subdirectories up to 2 levels deep by default
-* Hidden files (starting with \`.\`) are excluded by default
-* Supports glob pattern filtering (e.g., \`*.ts\`, \`src/*.json\`)
-* If the output is long, it will be truncated`;
-
-    const readFileDescription = `Read file contents with line numbers (cat -n format).
-* \`path\` is a file path relative to the source root
-* Displays output with 6-character padded line numbers
-* Use \`startLine\` and \`endLine\` to read a specific range (1-based, inclusive)
-* Use \`searchPattern\` for regex search - only matching lines and context will be shown
-* Large files are automatically truncated
-
-Regex search:
-* Use \`searchPattern\` to search for patterns in the file
-* Non-matching sections between matches are replaced with \`...\`
-* Supported: \`.\`, \`[abc]\`, \`[a-z]\`, \`^\`, \`$\`, \`*\`, \`+\`, \`?\`, \`{n,m}\`, \`|\`, \`\\t\`
-* Not supported: \`\\n\`, \`\\d\`, \`\\s\`, \`\\w\`, look-ahead/behind, back-references`;
-
-    const searchSchema = z.object({
-      query: z.string().describe("Natural language description of what you're looking for."),
-      maxChars: z.number().optional().describe("Maximum characters in response."),
-    });
-
     const searchTool = tool({
-      description: searchDescription,
-      inputSchema: searchSchema,
-      execute: async ({ query, maxChars }: z.infer<typeof searchSchema>) => {
+      description: SEARCH_DESCRIPTION,
+      inputSchema: z.object({
+        query: z.string().describe("Natural language description of what you're looking for."),
+        maxChars: z.number().optional().describe("Maximum characters in response."),
+      }),
+      execute: async ({ query, maxChars }) => {
         const result = await client.search(query, { maxOutputLength: maxChars });
         return result.results || "No results found.";
       },
     });
 
-    if (hasSource) {
-      const listFilesSchema = z.object({
-        directory: z.string().optional().describe("Directory to list (default: root)."),
-        pattern: z.string().optional().describe("Glob pattern to filter results (e.g., '*.ts', 'src/*.json')."),
-        depth: z.number().optional().describe("Maximum depth to recurse (default: 2). Use 1 for immediate children only."),
-        showHidden: z.boolean().optional().describe("Include hidden files starting with '.' (default: false)."),
-      });
-
-      const listFilesTool = tool({
-        description: listFilesDescription,
-        inputSchema: listFilesSchema,
-        execute: async ({ directory, pattern, depth, showHidden }: z.infer<typeof listFilesSchema>) => {
-          const opts = { directory, pattern, depth, showHidden };
-          const entries = await client.listFiles(opts);
-          const { formatListOutput } = await import("../tools/list-files.js");
-          return formatListOutput(entries, opts);
-        },
-      });
-
-      const readFileSchema = z.object({
-        path: z.string().describe("Path to the file to read, relative to the source root."),
-        startLine: z.number().optional().describe("First line to read (1-based, inclusive). Default: 1."),
-        endLine: z.number().optional().describe("Last line to read (1-based, inclusive). Use -1 for end of file. Default: -1."),
-        searchPattern: z.string().optional().describe("Regex pattern to search for. Only matching lines and context will be shown."),
-        contextLinesBefore: z.number().optional().describe("Lines of context before each regex match (default: 5)."),
-        contextLinesAfter: z.number().optional().describe("Lines of context after each regex match (default: 5)."),
-        includeLineNumbers: z.boolean().optional().describe("Include line numbers in output (default: true)."),
-      });
-
-      const readFileTool = tool({
-        description: readFileDescription,
-        inputSchema: readFileSchema,
-        execute: async (args: z.infer<typeof readFileSchema>) => {
-          const result = await client.readFile(args.path, {
-            startLine: args.startLine,
-            endLine: args.endLine,
-            searchPattern: args.searchPattern,
-            contextLinesBefore: args.contextLinesBefore,
-            contextLinesAfter: args.contextLinesAfter,
-            includeLineNumbers: args.includeLineNumbers,
-          });
-          if (result.error) {
-            let errorText = `Error: ${result.error}`;
-            if (result.suggestions && result.suggestions.length > 0) {
-              errorText += `\n\nDid you mean one of these?\n${result.suggestions.map(s => `  - ${s}`).join("\n")}`;
-            }
-            return errorText;
-          }
-          return result.contents ?? "";
-        },
-      });
-
-      return {
-        search: searchTool,
-        listFiles: listFilesTool,
-        readFile: readFileTool,
-      } as ToolSet;
+    if (!hasSource) {
+      return { search: searchTool } as ToolSet;
     }
 
-    return {
-      search: searchTool,
-    } as ToolSet;
+    const listFilesTool = tool({
+      description: LIST_FILES_DESCRIPTION,
+      inputSchema: z.object({
+        directory: z.string().optional().describe("Directory to list (default: root)."),
+        pattern: z.string().optional().describe("Glob pattern to filter results."),
+        depth: z.number().optional().describe("Maximum depth (default: 2)."),
+        showHidden: z.boolean().optional().describe("Include hidden files (default: false)."),
+      }),
+      execute: async ({ directory, pattern, depth, showHidden }) => {
+        const opts = { directory, pattern, depth, showHidden };
+        const entries = await client.listFiles(opts);
+        const { formatListOutput } = await import("../tools/list-files.js");
+        return formatListOutput(entries, opts);
+      },
+    });
+
+    const readFileTool = tool({
+      description: READ_FILE_DESCRIPTION,
+      inputSchema: z.object({
+        path: z.string().describe("Path to the file."),
+        startLine: z.number().optional().describe("First line (1-based). Default: 1."),
+        endLine: z.number().optional().describe("Last line. Use -1 for end. Default: -1."),
+        searchPattern: z.string().optional().describe("Regex pattern to search for."),
+        contextLinesBefore: z.number().optional().describe("Context lines before match (default: 5)."),
+        contextLinesAfter: z.number().optional().describe("Context lines after match (default: 5)."),
+        includeLineNumbers: z.boolean().optional().describe("Include line numbers (default: true)."),
+      }),
+      execute: async (args) => {
+        const result = await client.readFile(args.path, args);
+        if (result.error) {
+          let errorText = `Error: ${result.error}`;
+          if (result.suggestions?.length) {
+            errorText += `\n\nDid you mean one of these?\n${result.suggestions.map(s => `  - ${s}`).join("\n")}`;
+          }
+          return errorText;
+        }
+        return result.contents ?? "";
+      },
+    });
+
+    return { search: searchTool, listFiles: listFilesTool, readFile: readFileTool } as ToolSet;
+  }
+
+  /**
+   * Create AI SDK tools for multi-index mode with index_name parameter.
+   */
+  private createMultiIndexTools(): ToolSet {
+    const runner = this.runner!;
+    const indexNames = runner.indexNames;
+    const hasSource = runner.hasFileOperations();
+    const indexListStr = runner.getIndexListString();
+
+    const searchTool = tool({
+      description: withIndexList(SEARCH_DESCRIPTION, indexListStr),
+      inputSchema: z.object({
+        index_name: z.enum(indexNames as [string, ...string[]]).describe("Which index to search."),
+        query: z.string().describe("Natural language description of what you're looking for."),
+        maxChars: z.number().optional().describe("Maximum characters in response."),
+      }),
+      execute: async ({ index_name, query, maxChars }) => {
+        const client = await runner.getClient(index_name);
+        const result = await client.search(query, { maxOutputLength: maxChars });
+        return result.results || "No results found.";
+      },
+    });
+
+    if (!hasSource) {
+      return { search: searchTool } as ToolSet;
+    }
+
+    const listFilesTool = tool({
+      description: withIndexList(LIST_FILES_DESCRIPTION, indexListStr),
+      inputSchema: z.object({
+        index_name: z.enum(indexNames as [string, ...string[]]).describe("Which index."),
+        directory: z.string().optional().describe("Directory to list (default: root)."),
+        pattern: z.string().optional().describe("Glob pattern to filter results."),
+        depth: z.number().optional().describe("Maximum depth (default: 2)."),
+        showHidden: z.boolean().optional().describe("Include hidden files (default: false)."),
+      }),
+      execute: async ({ index_name, directory, pattern, depth, showHidden }) => {
+        const client = await runner.getClient(index_name);
+        const opts = { directory, pattern, depth, showHidden };
+        const entries = await client.listFiles(opts);
+        const { formatListOutput } = await import("../tools/list-files.js");
+        return formatListOutput(entries, opts);
+      },
+    });
+
+    const readFileTool = tool({
+      description: withIndexList(READ_FILE_DESCRIPTION, indexListStr),
+      inputSchema: z.object({
+        index_name: z.enum(indexNames as [string, ...string[]]).describe("Which index."),
+        path: z.string().describe("Path to the file."),
+        startLine: z.number().optional().describe("First line (1-based). Default: 1."),
+        endLine: z.number().optional().describe("Last line. Use -1 for end. Default: -1."),
+        searchPattern: z.string().optional().describe("Regex pattern to search for."),
+        contextLinesBefore: z.number().optional().describe("Context lines before match (default: 5)."),
+        contextLinesAfter: z.number().optional().describe("Context lines after match (default: 5)."),
+        includeLineNumbers: z.boolean().optional().describe("Include line numbers (default: true)."),
+      }),
+      execute: async ({ index_name, ...args }) => {
+        const client = await runner.getClient(index_name);
+        const result = await client.readFile(args.path, args);
+        if (result.error) {
+          let errorText = `Error: ${result.error}`;
+          if (result.suggestions?.length) {
+            errorText += `\n\nDid you mean one of these?\n${result.suggestions.map(s => `  - ${s}`).join("\n")}`;
+          }
+          return errorText;
+        }
+        return result.contents ?? "";
+      },
+    });
+
+    return { search: searchTool, listFiles: listFilesTool, readFile: readFileTool } as ToolSet;
   }
 
   /**

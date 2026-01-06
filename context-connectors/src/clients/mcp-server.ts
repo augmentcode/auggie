@@ -38,11 +38,13 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import type { IndexStoreReader } from "../stores/types.js";
-import type { Source } from "../sources/types.js";
-import type { IndexState } from "../core/types.js";
-import { getSourceIdentifier, getResolvedRef } from "../core/types.js";
-import { SearchClient } from "./search-client.js";
-import { FilesystemSource } from "../sources/filesystem.js";
+import { MultiIndexRunner } from "./multi-index-runner.js";
+import {
+  SEARCH_DESCRIPTION,
+  LIST_FILES_DESCRIPTION,
+  READ_FILE_DESCRIPTION,
+  withIndexList,
+} from "./tool-descriptions.js";
 
 /**
  * Configuration for the MCP server.
@@ -71,36 +73,6 @@ export interface MCPServerConfig {
   version?: string;
 }
 
-/** Metadata about an available index */
-interface IndexInfo {
-  name: string;
-  type: string;
-  identifier: string;
-  ref?: string;
-  syncedAt: string;
-}
-
-/** Create a Source from index state metadata */
-async function createSourceFromState(state: IndexState): Promise<Source> {
-  const meta = state.source;
-  if (meta.type === "filesystem") {
-    return new FilesystemSource(meta.config);
-  } else if (meta.type === "github") {
-    const { GitHubSource } = await import("../sources/github.js");
-    return new GitHubSource(meta.config);
-  } else if (meta.type === "gitlab") {
-    const { GitLabSource } = await import("../sources/gitlab.js");
-    return new GitLabSource(meta.config);
-  } else if (meta.type === "bitbucket") {
-    const { BitBucketSource } = await import("../sources/bitbucket.js");
-    return new BitBucketSource(meta.config);
-  } else if (meta.type === "website") {
-    const { WebsiteSource } = await import("../sources/website.js");
-    return new WebsiteSource(meta.config);
-  }
-  throw new Error(`Unknown source type: ${(meta as { type: string }).type}`);
-}
-
 /**
  * Create an MCP server instance.
  *
@@ -123,65 +95,18 @@ async function createSourceFromState(state: IndexState): Promise<Source> {
 export async function createMCPServer(
   config: MCPServerConfig
 ): Promise<Server> {
-  const store = config.store;
-  const searchOnly = config.searchOnly ?? false;
+  // Create shared runner for multi-index operations
+  const runner = await MultiIndexRunner.create({
+    store: config.store,
+    indexNames: config.indexNames,
+    searchOnly: config.searchOnly,
+  });
 
-  // Discover available indexes
-  const allIndexNames = await store.list();
-  const indexNames = config.indexNames ?? allIndexNames;
-
-  // Validate requested indexes exist
-  const missingIndexes = indexNames.filter((n) => !allIndexNames.includes(n));
-  if (missingIndexes.length > 0) {
-    throw new Error(`Indexes not found: ${missingIndexes.join(", ")}`);
-  }
-
-  if (indexNames.length === 0) {
-    throw new Error("No indexes available in store");
-  }
-
-  // Load metadata for available indexes
-  const indexes: IndexInfo[] = [];
-  for (const name of indexNames) {
-    const state = await store.loadSearch(name);
-    if (state) {
-      indexes.push({
-        name,
-        type: state.source.type,
-        identifier: getSourceIdentifier(state.source),
-        ref: getResolvedRef(state.source),
-        syncedAt: state.source.syncedAt,
-      });
-    }
-  }
-
-  // Cache for lazily initialized clients
-  const clientCache = new Map<string, SearchClient>();
-
-  /** Get or create a SearchClient for an index */
-  async function getClient(indexName: string): Promise<SearchClient> {
-    let client = clientCache.get(indexName);
-    if (!client) {
-      const state = await store.loadSearch(indexName);
-      if (!state) {
-        throw new Error(`Index "${indexName}" not found`);
-      }
-      const source = searchOnly ? undefined : await createSourceFromState(state);
-      client = new SearchClient({
-        store,
-        source,
-        indexName,
-      });
-      await client.initialize();
-      clientCache.set(indexName, client);
-    }
-    return client;
-  }
+  const { indexNames, indexes } = runner;
+  const searchOnly = !runner.hasFileOperations();
 
   // Format index list for tool descriptions
-  const indexListStr = indexes
-    .map((i) => `- ${i.name} (${i.type}://${i.identifier})`)
-    .join("\n");
+  const indexListStr = runner.getIndexListString();
 
   // Create MCP server
   const server = new Server(
@@ -210,64 +135,10 @@ export async function createMCPServer(
     };
   };
 
-  // Tool descriptions with available indexes
-  const searchDescription = `Search indexed content using natural language to find relevant code snippets.
-
-Available indexes:
-${indexListStr}
-
-Parameters:
-- index_name (required): Which codebase to search
-- query (required): Natural language description ("authentication logic", "error handling")
-- maxChars (optional): Max characters in response (default: reasonable limit)
-
-Returns: Snippets with file paths (relative to repo root) and line numbers.
-Example output:
-Path: src/auth/login.ts
-    15: function authenticateUser(username, password) {
-    16:   return validateCredentials(username, password);
-
-Path format: Paths are relative to repository root
-✅ "src/auth/login.ts"  ❌ "/repo/src/auth/login.ts"`;
-
-  const listFilesDescription = `List files and directories to explore codebase structure.
-
-Available indexes:
-${indexListStr}
-
-Parameters:
-- index_name (required): Which codebase to list
-- directory (optional): Path relative to repo root (default: "" for root)
-- depth (optional): Recursion depth (default: 2, max recommended: 5)
-- pattern (optional): Glob filter ("*.ts", "src/**/*.test.js")
-- showHidden (optional): Include hidden files (default: false)
-
-Returns: Directory tree structure with files and subdirectories
-
-Path format: Relative to repository root
-✅ "src/components", ""  ❌ "/repo/src", "./src"`;
-
-  const readFileDescription = `Read file contents with line numbers, optionally filtered by line range or regex pattern.
-
-Available indexes:
-${indexListStr}
-
-Parameters:
-- index_name (required): Which codebase
-- path (required): File path relative to repo root
-- startLine (optional): First line to read (1-based, default: 1)
-- endLine (optional): Last line to read (-1 for end, default: -1)
-- searchPattern (optional): Regex filter - returns only matching lines with context
-- contextLinesBefore/After (optional): Context lines around matches (default: 5)
-- includeLineNumbers (optional): Show line numbers (default: true)
-
-Returns: File contents with line numbers
-
-Path format: Relative to repository root
-✅ "src/main.ts", "package.json"  ❌ "/repo/src/main.ts"
-
-Regex: Supports basic patterns (., [abc], *, +, ?, ^, $, |)
-NOT supported: \\d, \\s, \\w (use [0-9], [ \\t], [a-zA-Z_] instead)`;
+  // Tool descriptions with available indexes (from shared module)
+  const searchDescription = withIndexList(SEARCH_DESCRIPTION, indexListStr);
+  const listFilesDescription = withIndexList(LIST_FILES_DESCRIPTION, indexListStr);
+  const readFileDescription = withIndexList(READ_FILE_DESCRIPTION, indexListStr);
 
   // List available tools
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -386,19 +257,7 @@ NOT supported: \\d, \\s, \\w (use [0-9], [ \\t], [a-zA-Z_] instead)`;
 
     try {
       const indexName = args?.index_name as string;
-      if (!indexName || !indexNames.includes(indexName)) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: `Invalid index_name. Available indexes: ${indexNames.join(", ")}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      const client = await getClient(indexName);
+      const client = await runner.getClient(indexName);
 
       switch (name) {
         case "search": {

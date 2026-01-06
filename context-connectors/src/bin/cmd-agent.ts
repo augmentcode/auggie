@@ -4,12 +4,9 @@
 
 import { Command } from "commander";
 import * as readline from "readline";
-import { SearchClient } from "../clients/search-client.js";
 import { CLIAgent, type Provider } from "../clients/cli-agent.js";
-import { FilesystemStore } from "../stores/filesystem.js";
-import { FilesystemSource } from "../sources/filesystem.js";
-import { getSourceIdentifier } from "../core/types.js";
-import type { Source } from "../sources/types.js";
+import { MultiIndexRunner } from "../clients/multi-index-runner.js";
+import { CompositeStoreReader, parseIndexSpecs } from "../stores/index.js";
 
 const PROVIDER_DEFAULTS: Record<Provider, string> = {
   openai: "gpt-5-mini",
@@ -19,16 +16,16 @@ const PROVIDER_DEFAULTS: Record<Provider, string> = {
 
 export const agentCommand = new Command("agent")
   .description("Interactive AI agent for codebase Q&A")
-  .requiredOption("-n, --name <name>", "Index name")
+  .requiredOption(
+    "-i, --index <specs...>",
+    "Index spec(s): name, path:/path, or s3://bucket/key"
+  )
   .requiredOption(
     "--provider <name>",
     "LLM provider (openai, anthropic, google)"
   )
-  .option("--store <type>", "Store type (filesystem, s3)", "filesystem")
-  .option("--store-path <path>", "Store base path")
-  .option("--bucket <name>", "S3 bucket name (for s3 store)")
+  .option("--store-path <path>", "Base path for named indexes (default: ~/.augment/context-connectors)")
   .option("--search-only", "Disable listFiles/readFile tools (search only)")
-  .option("-p, --path <path>", "Path override for filesystem source")
   .option("--model <name>", "Model to use (defaults based on provider)")
   .option("--max-steps <n>", "Maximum agent steps", (val) => parseInt(val, 10), 10)
   .option("-v, --verbose", "Show tool calls")
@@ -47,62 +44,26 @@ export const agentCommand = new Command("agent")
       // Get model (use provider default if not specified)
       const model = options.model ?? PROVIDER_DEFAULTS[provider];
 
-      // Create store
-      let store;
-      if (options.store === "filesystem") {
-        store = new FilesystemStore({ basePath: options.storePath });
-      } else if (options.store === "s3") {
-        const { S3Store } = await import("../stores/s3.js");
-        store = new S3Store({ bucket: options.bucket });
-      } else {
-        console.error(`Unknown store type: ${options.store}`);
-        process.exit(1);
+      // Parse index specs and create composite store
+      const specs = parseIndexSpecs(options.index);
+      const store = await CompositeStoreReader.fromSpecs(specs, options.storePath);
+
+      // Create multi-index runner
+      const runner = await MultiIndexRunner.create({
+        store,
+        searchOnly: options.searchOnly,
+      });
+
+      // Display connected indexes
+      console.log(`\x1b[36mConnected to ${runner.indexes.length} index(es):\x1b[0m`);
+      for (const idx of runner.indexes) {
+        console.log(`  - ${idx.name} (${idx.type}://${idx.identifier})`);
       }
+      console.log(`\x1b[36mUsing: ${provider}/${model}\x1b[0m\n`);
 
-      // Load state for source type detection
-      const state = await store.loadSearch(options.name);
-      if (!state) {
-        console.error(`Index "${options.name}" not found`);
-        process.exit(1);
-      }
-
-      // Create source unless --search-only is specified
-      let source: Source | undefined;
-      if (!options.searchOnly) {
-        const meta = state.source;
-        if (meta.type === "filesystem") {
-          // Allow override via --path option
-          const config = options.path
-            ? { ...meta.config, rootPath: options.path }
-            : meta.config;
-          source = new FilesystemSource(config);
-        } else if (meta.type === "github") {
-          const { GitHubSource } = await import("../sources/github.js");
-          source = new GitHubSource(meta.config);
-        } else if (meta.type === "gitlab") {
-          const { GitLabSource } = await import("../sources/gitlab.js");
-          source = new GitLabSource(meta.config);
-        } else if (meta.type === "bitbucket") {
-          const { BitBucketSource } = await import("../sources/bitbucket.js");
-          source = new BitBucketSource(meta.config);
-        } else if (meta.type === "website") {
-          const { WebsiteSource } = await import("../sources/website.js");
-          source = new WebsiteSource(meta.config);
-        }
-      }
-
-      // Create client
-      const client = new SearchClient({ store, source, indexName: options.name });
-      await client.initialize();
-
-      const clientMeta = client.getMetadata();
-      console.log(`\x1b[36mConnected to: ${clientMeta.type}://${getSourceIdentifier(clientMeta)}\x1b[0m`);
-      console.log(`\x1b[36mUsing: ${provider}/${model}\x1b[0m`);
-      console.log(`\x1b[36mLast synced: ${clientMeta.syncedAt}\x1b[0m\n`);
-
-      // Create and initialize agent
+      // Create and initialize agent with multi-index runner
       const agent = new CLIAgent({
-        client,
+        runner,
         provider,
         model,
         maxSteps: options.maxSteps,
