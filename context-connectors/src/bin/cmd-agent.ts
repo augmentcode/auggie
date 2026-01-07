@@ -53,6 +53,9 @@ export const agentCommand = new Command("agent")
         searchOnly: options.searchOnly,
       });
 
+      console.log("\x1b[1;36mContext Connectors Minimal Agent\x1b[0m");
+      console.log();
+
       // Display connected indexes
       console.log(`\x1b[36mConnected to ${runner.indexes.length} index(es):\x1b[0m`);
       for (const idx of runner.indexes) {
@@ -60,8 +63,6 @@ export const agentCommand = new Command("agent")
       }
       console.log(`\x1b[36mUsing: ${provider}/${model}\x1b[0m`);
       console.log();
-      console.log("\x1b[90mContext Connectors Minimal Agent");
-      console.log("For production, integrate the tools into your own agent.\x1b[0m");
 
       // Create and initialize agent with multi-index runner
       const agent = new CLIAgent({
