@@ -28,8 +28,9 @@ export const agentCommand = new Command("agent")
   .option("--model <name>", "Model to use (defaults based on provider)")
   .option("--max-steps <n>", "Maximum agent steps", (val) => parseInt(val, 10), 10)
   .option("-v, --verbose", "Show tool calls")
-  .option("-q, --query <query>", "Single query (non-interactive)")
-  .action(async (options) => {
+  .argument("[query]", "Initial query to ask")
+  .option("--print", "Non-interactive mode: print response and exit")
+  .action(async (query, options) => {
     try {
       // Validate provider
       const provider = options.provider as Provider;
@@ -74,13 +75,24 @@ export const agentCommand = new Command("agent")
       });
       await agent.initialize();
 
-      // Single query mode
-      if (options.query) {
-        await agent.ask(options.query);
+      // Non-interactive mode (--print)
+      if (options.print) {
+        if (!query) {
+          console.error("Error: query is required in non-interactive mode (--print)");
+          process.exit(1);
+        }
+        await agent.ask(query);
         return;
       }
 
       // Interactive mode
+      // If initial query provided, ask it first
+      if (query) {
+        console.log();
+        await agent.ask(query);
+        console.log();
+      }
+
       console.log("Ask questions about your codebase. Type 'exit' to quit.\n");
 
       const rl = readline.createInterface({
