@@ -427,7 +427,7 @@ export class CLIAgent {
       stopWhen: stepCountIs(this.maxSteps),
       system: this.systemPrompt,
       messages: this.messages,
-      onStepFinish: this.verbose ? this.logStep.bind(this) : undefined,
+      onStepFinish: this.handleStepFinish.bind(this),
     });
 
     this.messages.push({ role: "assistant", content: result.text });
@@ -441,7 +441,7 @@ export class CLIAgent {
       stopWhen: stepCountIs(this.maxSteps),
       system: this.systemPrompt,
       messages: this.messages,
-      onStepFinish: this.verbose ? this.logStep.bind(this) : undefined,
+      onStepFinish: this.handleStepFinish.bind(this),
     });
 
     let fullText = "";
@@ -455,10 +455,16 @@ export class CLIAgent {
     return fullText;
   }
 
-  private logStep(step: {
+  private handleStepFinish(step: {
+    text?: string;
     toolCalls?: Array<{ toolName: string; args?: unknown }>;
   }) {
-    if (step.toolCalls) {
+    // Add spacing after each step (agent turn) for readability
+    if (step.text) {
+      process.stdout.write("\n\n");
+    }
+    // Log tool calls if verbose mode is enabled
+    if (this.verbose && step.toolCalls) {
       for (const call of step.toolCalls) {
         console.error(
           `\x1b[90m[tool] ${call.toolName}(${JSON.stringify(call.args ?? {})})\x1b[0m`

@@ -58,7 +58,10 @@ export const agentCommand = new Command("agent")
       for (const idx of runner.indexes) {
         console.log(`  - ${idx.name} (${idx.type}://${idx.identifier})`);
       }
-      console.log(`\x1b[36mUsing: ${provider}/${model}\x1b[0m\n`);
+      console.log(`\x1b[36mUsing: ${provider}/${model}\x1b[0m`);
+      console.log();
+      console.log("\x1b[90mContext Connectors Minimal Agent");
+      console.log("For production, integrate the tools into your own agent.\x1b[0m");
 
       // Create and initialize agent with multi-index runner
       const agent = new CLIAgent({
