@@ -1,5 +1,18 @@
 # Changelog
 
+### CLI 0.13.0
+
+- Terminal title updates: Terminal window title now automatically updates based on conversation context
+- Process lifecycle management: Background processes launched via shell tools and launch-process are now tracked in /bash viewer and automatically cleaned up on exit
+- Login improvements: Login flow now preserves existing session if authentication fails, and browser opening has a timeout to prevent hanging on remote machines
+- Terminal-aware session resumption: Using -c flag now prefers the most recent session from the current terminal
+- Model selection: CLI now automatically selects the default model when no model is configured
+- Print mode enhancements: Print mode now outputs request ID for easier debugging and support
+- Session display consistency: Session display format is now consistent between /sessions list and session picker
+- Subagent visibility: Subagent output now includes thinking summary for better visibility into agent reasoning
+- Configuration options: Added auto-update configuration option to /config menu
+- Rules interface: Improved rules popover interface with better navigation and display
+
 ### 0.12.0
 - /about command: View user information and debugging details with a new slash command
 - Keyboard navigation: Improved navigation with consistent arrow key and j/k shortcuts across all TUI components
