@@ -36,8 +36,8 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
       version: 1,
     } as any,
     source: {
-      type: "filesystem",
-      config: { rootPath: "/test/path" },
+      type: "github",
+      config: { owner: "test-owner", repo: "test-repo" },
       syncedAt: new Date().toISOString(),
     },
   });
@@ -52,14 +52,14 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
   // Create mock Source
   const createMockSource = (): Source =>
     ({
-      type: "filesystem" as const,
+      type: "github" as const,
       listFiles: vi.fn().mockResolvedValue([{ path: "test.ts" }]),
       readFile: vi.fn().mockResolvedValue("content"),
       fetchAll: vi.fn(),
       fetchChanges: vi.fn(),
       getMetadata: vi.fn().mockResolvedValue({
-        type: "filesystem",
-        identifier: "/test/path",
+        type: "github",
+        config: { owner: "test-owner", repo: "test-repo" },
         syncedAt: new Date().toISOString(),
       }),
     }) as unknown as Source;
@@ -102,12 +102,13 @@ describe.skipIf(sdkLoadError !== null)("SearchClient", () => {
     it("throws error when source type mismatches", async () => {
       const state = createMockState();
       const store = createMockStore(state);
+      // Create a source with a different type (gitlab) than the state (github)
       const source = {
         ...createMockSource(),
-        type: "github" as const,
+        type: "gitlab" as const,
         getMetadata: vi.fn().mockResolvedValue({
-          type: "github",
-          identifier: "owner/repo",
+          type: "gitlab",
+          config: { owner: "other-owner", repo: "other-repo" },
           syncedAt: new Date().toISOString(),
         }),
       } as unknown as Source;

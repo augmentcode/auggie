@@ -26,8 +26,8 @@ const createMockState = (): IndexState => ({
     version: 1,
   } as any,
   source: {
-    type: "filesystem",
-    config: { rootPath: "/test/path" },
+    type: "github",
+    config: { owner: "test-owner", repo: "test-repo" },
     syncedAt: new Date().toISOString(),
   },
 });
@@ -42,7 +42,7 @@ const createMockStore = (state: IndexState | null): IndexStoreReader => ({
 // Create mock Source
 const createMockSource = (): Source =>
   ({
-    type: "filesystem" as const,
+    type: "github" as const,
     listFiles: vi.fn().mockResolvedValue([
       { path: "src/index.ts" },
       { path: "src/utils.ts" },
@@ -60,8 +60,8 @@ const createMockSource = (): Source =>
     fetchAll: vi.fn(),
     fetchChanges: vi.fn(),
     getMetadata: vi.fn().mockResolvedValue({
-      type: "filesystem",
-      identifier: "/test/path",
+      type: "github",
+      config: { owner: "test-owner", repo: "test-repo" },
       syncedAt: new Date().toISOString(),
     }),
   }) as unknown as Source;

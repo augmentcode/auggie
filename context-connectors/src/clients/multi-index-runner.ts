@@ -12,7 +12,6 @@ import type { Source } from "../sources/types.js";
 import type { IndexState } from "../core/types.js";
 import { getSourceIdentifier, getResolvedRef } from "../core/types.js";
 import { SearchClient } from "./search-client.js";
-import { FilesystemSource } from "../sources/filesystem.js";
 import { formatListOutput } from "../tools/list-files.js";
 
 /** Metadata about an available index */
@@ -42,9 +41,7 @@ export interface MultiIndexRunnerConfig {
 /** Create a Source from index state metadata */
 async function createSourceFromState(state: IndexState): Promise<Source> {
   const meta = state.source;
-  if (meta.type === "filesystem") {
-    return new FilesystemSource(meta.config);
-  } else if (meta.type === "github") {
+  if (meta.type === "github") {
     const { GitHubSource } = await import("../sources/github.js");
     return new GitHubSource(meta.config);
   } else if (meta.type === "gitlab") {

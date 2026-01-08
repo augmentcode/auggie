@@ -90,12 +90,6 @@ export interface WebsiteSourceStoredConfig {
   delayMs?: number;
 }
 
-/** Filesystem source config */
-export interface FilesystemSourceStoredConfig {
-  rootPath: string;
-  ignorePatterns?: string[];
-}
-
 /**
  * Metadata about a data source, stored alongside the index state.
  * Uses a discriminated union to store source-specific configuration.
@@ -131,11 +125,6 @@ export type SourceMetadata =
       type: "website";
       config: WebsiteSourceStoredConfig;
       syncedAt: string;
-    }
-  | {
-      type: "filesystem";
-      config: FilesystemSourceStoredConfig;
-      syncedAt: string;
     };
 
 /** Helper type to extract source type */
@@ -143,7 +132,7 @@ export type SourceType = SourceMetadata["type"];
 
 /**
  * Get a human-readable identifier from source metadata.
- * Returns owner/repo for VCS, URL for website, path for filesystem.
+ * Returns owner/repo for VCS, URL for website.
  */
 export function getSourceIdentifier(meta: SourceMetadata): string {
   switch (meta.type) {
@@ -155,8 +144,6 @@ export function getSourceIdentifier(meta: SourceMetadata): string {
       return `${meta.config.workspace}/${meta.config.repo}`;
     case "website":
       return new URL(meta.config.url).hostname;
-    case "filesystem":
-      return meta.config.rootPath;
   }
 }
 

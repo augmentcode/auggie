@@ -26,8 +26,8 @@ describe("S3Store", () => {
     id: string
   ): { full: IndexState; search: IndexStateSearchOnly } => {
     const source = {
-      type: "filesystem" as const,
-      config: { rootPath: `/test/${id}` },
+      type: "github" as const,
+      config: { owner: "test-owner", repo: `test-repo-${id}` },
       syncedAt: new Date().toISOString(),
     };
     return {

@@ -13,8 +13,8 @@ describe("MemoryStore", () => {
     id: string
   ): { full: IndexState; search: IndexStateSearchOnly } => {
     const source = {
-      type: "filesystem" as const,
-      config: { rootPath: `/test/${id}` },
+      type: "github" as const,
+      config: { owner: "test-owner", repo: `test-repo-${id}` },
       syncedAt: new Date().toISOString(),
     };
     return {
@@ -76,13 +76,13 @@ describe("MemoryStore", () => {
       await store.save("key", full, search);
 
       const loaded = await store.loadState("key");
-      if (loaded!.source.type === "filesystem") {
-        loaded!.source.config.rootPath = "modified";
+      if (loaded!.source.type === "github") {
+        loaded!.source.config.repo = "modified";
       }
 
       const loadedAgain = await store.loadState("key");
-      if (loadedAgain!.source.type === "filesystem") {
-        expect(loadedAgain!.source.config.rootPath).toBe("/test/1");
+      if (loadedAgain!.source.type === "github") {
+        expect(loadedAgain!.source.config.repo).toBe("test-repo-1");
       }
     });
 
@@ -90,13 +90,13 @@ describe("MemoryStore", () => {
       const { full, search } = createTestState("1");
       await store.save("key", full, search);
 
-      if (full.source.type === "filesystem") {
-        full.source.config.rootPath = "modified";
+      if (full.source.type === "github") {
+        full.source.config.repo = "modified";
       }
 
       const loaded = await store.loadState("key");
-      if (loaded!.source.type === "filesystem") {
-        expect(loaded!.source.config.rootPath).toBe("/test/1");
+      if (loaded!.source.type === "github") {
+        expect(loaded!.source.config.repo).toBe("test-repo-1");
       }
     });
   });

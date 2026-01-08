@@ -113,18 +113,18 @@ export interface CLIAgentMultiConfig {
 /** Configuration for the CLI agent */
 export type CLIAgentConfig = CLIAgentSingleConfig | CLIAgentMultiConfig;
 
-const DEFAULT_SYSTEM_PROMPT = `You are a helpful coding assistant with access to one or more codebases.
+const DEFAULT_SYSTEM_PROMPT = `You are a helpful assistant with access to one or more knowledge bases.
 
 Available tools:
-- search: Find relevant code using natural language queries
-- listFiles: List files in the project (with optional glob filter)
+- search: Find relevant content using natural language queries
+- listFiles: List files in the index (with optional glob filter)
 - readFile: Read the contents of a specific file
 
 When answering questions:
-1. Use the search tool to find relevant code
-2. Use listFiles to understand project structure if needed
+1. Use the search tool to find relevant content
+2. Use listFiles to understand the structure if needed
 3. Use readFile to examine specific files in detail
-4. Provide clear, actionable answers based on the actual code
+4. Provide clear, actionable answers based on the actual content
 
 Be concise but thorough. Reference specific files and line numbers when helpful.`;
 

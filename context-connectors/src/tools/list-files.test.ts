@@ -17,7 +17,7 @@ describe("listFiles tool", () => {
       : vi.fn().mockResolvedValue(entries);
 
     return {
-      type: "filesystem" as const,
+      type: "github" as const,
       listFiles: listFilesFn,
       readFile: vi.fn(),
       fetchAll: vi.fn(),
@@ -41,8 +41,8 @@ describe("listFiles tool", () => {
       version: 1,
       contextState: {} as any,
       source: {
-        type: "filesystem",
-        config: { rootPath: "/test" },
+        type: "github",
+        config: { owner: "test-owner", repo: "test-repo" },
         syncedAt: new Date().toISOString(),
       },
     },

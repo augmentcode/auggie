@@ -12,7 +12,7 @@
  * ```typescript
  * import { SearchClient } from "@augmentcode/context-connectors";
  * import { FilesystemStore } from "@augmentcode/context-connectors/stores";
- * import { FilesystemSource } from "@augmentcode/context-connectors/sources";
+ * import { GitHubSource } from "@augmentcode/context-connectors/sources";
  *
  * // Search-only mode (no file operations)
  * const client = new SearchClient({
@@ -25,7 +25,7 @@
  * // Full mode (with file operations)
  * const fullClient = new SearchClient({
  *   store: new FilesystemStore(),
- *   source: new FilesystemSource({ rootPath: "./my-project" }),
+ *   source: new GitHubSource({ owner: "my-org", repo: "my-project" }),
  *   indexName: "my-project",
  * });
  * await fullClient.initialize();
@@ -85,7 +85,7 @@ export interface SearchClientConfig {
  * ```typescript
  * const client = new SearchClient({
  *   store: new FilesystemStore(),
- *   source: new FilesystemSource({ rootPath: "." }),
+ *   source: new GitHubSource({ owner: "my-org", repo: "my-project" }),
  *   indexName: "my-project",
  * });
  *

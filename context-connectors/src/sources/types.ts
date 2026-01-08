@@ -2,9 +2,9 @@
  * Source interface and types for fetching files from data sources.
  *
  * A Source represents any data source that can be indexed:
- * - Filesystem (local directories)
  * - GitHub repositories
  * - GitLab repositories
+ * - Bitbucket repositories
  * - Websites
  *
  * Sources provide methods for both:
@@ -54,7 +54,7 @@ export interface FileChanges {
  * @example
  * ```typescript
  * // Create a source
- * const source = new FilesystemSource({ rootPath: "./my-project" });
+ * const source = new GitHubSource({ owner: "my-org", repo: "my-project" });
  *
  * // For indexing
  * const files = await source.fetchAll();

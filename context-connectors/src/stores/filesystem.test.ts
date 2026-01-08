@@ -13,8 +13,8 @@ const TEST_DIR = "/tmp/context-connectors-test-fs-store";
 // Create a minimal mock IndexState for testing
 function createMockState(): { full: IndexState; search: IndexStateSearchOnly } {
   const source = {
-    type: "filesystem" as const,
-    config: { rootPath: "/path/to/project" },
+    type: "github" as const,
+    config: { owner: "test-owner", repo: "test-repo" },
     syncedAt: new Date().toISOString(),
   };
   return {
@@ -69,7 +69,7 @@ describe("FilesystemStore", () => {
       const savedState = JSON.parse(data);
 
       expect(savedState.contextState.checkpointId).toBe("test-checkpoint-123");
-      expect(savedState.source.type).toBe("filesystem");
+      expect(savedState.source.type).toBe("github");
     });
 
     it("sanitizes key for filesystem safety", async () => {
@@ -97,8 +97,9 @@ describe("FilesystemStore", () => {
       expect(loadedState!.contextState.checkpointId).toBe("test-checkpoint-123");
       expect(loadedState!.contextState.blobs).toBeDefined();
       expect(loadedState!.contextState.blobs.length).toBeGreaterThan(0);
-      if (loadedState!.source.type === "filesystem") {
-        expect(loadedState!.source.config.rootPath).toBe("/path/to/project");
+      if (loadedState!.source.type === "github") {
+        expect(loadedState!.source.config.owner).toBe("test-owner");
+        expect(loadedState!.source.config.repo).toBe("test-repo");
       }
     });
 

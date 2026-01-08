@@ -11,10 +11,10 @@
  * @example
  * ```typescript
  * import { Indexer } from "@augmentcode/context-connectors";
- * import { FilesystemSource } from "@augmentcode/context-connectors/sources";
+ * import { GitHubSource } from "@augmentcode/context-connectors/sources";
  * import { FilesystemStore } from "@augmentcode/context-connectors/stores";
  *
- * const source = new FilesystemSource({ rootPath: "./my-project" });
+ * const source = new GitHubSource({ owner: "my-org", repo: "my-project" });
  * const store = new FilesystemStore();
  * const indexer = new Indexer();
  *

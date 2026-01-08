@@ -30,7 +30,7 @@ describe("CLIAgent", () => {
   beforeEach(() => {
     mockClient = {
       hasSource: vi.fn().mockReturnValue(true),
-      getMetadata: vi.fn().mockReturnValue({ type: "filesystem", identifier: "/test" }),
+      getMetadata: vi.fn().mockReturnValue({ type: "github", identifier: "test-owner/test-repo" }),
       search: vi.fn(),
       listFiles: vi.fn(),
       readFile: vi.fn(),

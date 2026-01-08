@@ -10,8 +10,6 @@ export * from "./core/index.js";
 
 // Sources
 export * from "./sources/index.js";
-export { FilesystemSource } from "./sources/filesystem.js";
-export type { FilesystemSourceConfig } from "./sources/filesystem.js";
 
 // Stores
 export * from "./stores/index.js";

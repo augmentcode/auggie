@@ -12,7 +12,7 @@ describe("readFile tool", () => {
   // Create mock Source
   const createMockSource = (fileContents: Map<string, string | null>) => {
     return {
-      type: "filesystem" as const,
+      type: "github" as const,
       readFile: vi.fn().mockImplementation((path: string) => {
         return Promise.resolve(fileContents.get(path) ?? null);
       }),
@@ -38,8 +38,8 @@ describe("readFile tool", () => {
       version: 1,
       contextState: {} as any,
       source: {
-        type: "filesystem",
-        config: { rootPath: "/test" },
+        type: "github",
+        config: { owner: "test-owner", repo: "test-repo" },
         syncedAt: new Date().toISOString(),
       },
     },

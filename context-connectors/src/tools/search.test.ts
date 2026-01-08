@@ -23,8 +23,8 @@ describe("search tool", () => {
       version: 1,
       contextState: {} as any,
       source: {
-        type: "filesystem",
-        config: { rootPath: "/test" },
+        type: "github",
+        config: { owner: "test-owner", repo: "test-repo" },
         syncedAt: new Date().toISOString(),
       },
     },
@@ -72,8 +72,8 @@ describe("search tool", () => {
         version: 1,
         contextState: {} as any,
         source: {
-          type: "filesystem",
-          config: { rootPath: "/test" },
+          type: "github",
+          config: { owner: "test-owner", repo: "test-repo" },
           syncedAt: new Date().toISOString(),
         },
       },
