@@ -1,6 +1,6 @@
 # Changelog
 
-### CLI 0.13.0
+### 0.13.0
 
 - Terminal title updates: Terminal window title now automatically updates based on conversation context
 - Process lifecycle management: Background processes launched via shell tools and launch-process are now tracked in /bash viewer and automatically cleaned up on exit
