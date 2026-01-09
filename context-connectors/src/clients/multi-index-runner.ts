@@ -9,7 +9,7 @@
 
 import type { IndexStoreReader } from "../stores/types.js";
 import type { Source } from "../sources/types.js";
-import type { IndexState } from "../core/types.js";
+import type { IndexStateSearchOnly } from "../core/types.js";
 import { getSourceIdentifier, getResolvedRef } from "../core/types.js";
 import { SearchClient } from "./search-client.js";
 import { formatListOutput } from "../tools/list-files.js";
@@ -39,7 +39,7 @@ export interface MultiIndexRunnerConfig {
 }
 
 /** Create a Source from index state metadata */
-async function createSourceFromState(state: IndexState): Promise<Source> {
+async function createSourceFromState(state: IndexStateSearchOnly): Promise<Source> {
   const meta = state.source;
   if (meta.type === "github") {
     const { GitHubSource } = await import("../sources/github.js");

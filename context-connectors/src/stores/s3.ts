@@ -197,7 +197,7 @@ export class S3Store implements IndexStore {
     }
   }
 
-  async loadSearch(key: string): Promise<IndexState | null> {
+  async loadSearch(key: string): Promise<IndexStateSearchOnly | null> {
     const client = await this.getClient();
     const fileKey = this.getSearchKey(key);
 
@@ -210,7 +210,7 @@ export class S3Store implements IndexStore {
       const body = await response.Body?.transformToString();
       if (!body) return null;
 
-      return JSON.parse(body) as IndexState;
+      return JSON.parse(body) as IndexStateSearchOnly;
     } catch (error: unknown) {
       const err = error as { name?: string };
       if (err.name === "NoSuchKey") {
@@ -259,12 +259,23 @@ export class S3Store implements IndexStore {
   async delete(key: string): Promise<void> {
     const client = await this.getClient();
     const stateKey = this.getStateKey(key);
+    const searchKey = this.getSearchKey(key);
 
-    const command = new this.commands!.DeleteObjectCommand({
-      Bucket: this.bucket,
-      Key: stateKey,
-    });
-    await client.send(command);
+    // Delete both state.json and search.json to ensure complete removal
+    await Promise.all([
+      client.send(
+        new this.commands!.DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: stateKey,
+        })
+      ),
+      client.send(
+        new this.commands!.DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: searchKey,
+        })
+      ),
+    ]);
   }
 
   async list(): Promise<string[]> {

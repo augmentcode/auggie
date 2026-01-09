@@ -160,19 +160,27 @@ describe("S3Store", () => {
   });
 
   describe("delete", () => {
-    it("should delete state from S3", async () => {
+    it("should delete both state.json and search.json from S3", async () => {
       const { S3Store } = await import("./s3.js");
       const store = new S3Store({ bucket: "test-bucket" });
 
+      // Mock two successful delete operations
+      mockSend.mockResolvedValueOnce({});
       mockSend.mockResolvedValueOnce({});
 
       await store.delete("test-key");
 
       const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+      // Verify both files are deleted
       expect(DeleteObjectCommand).toHaveBeenCalledWith({
         Bucket: "test-bucket",
         Key: "context-connectors/test-key/state.json",
       });
+      expect(DeleteObjectCommand).toHaveBeenCalledWith({
+        Bucket: "test-bucket",
+        Key: "context-connectors/test-key/search.json",
+      });
+      expect(DeleteObjectCommand).toHaveBeenCalledTimes(2);
     });
   });
 

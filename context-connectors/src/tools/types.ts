@@ -16,7 +16,7 @@
 
 import type { DirectContext } from "@augmentcode/auggie-sdk";
 import type { Source } from "../sources/types.js";
-import type { FileInfo, IndexState } from "../core/types.js";
+import type { FileInfo, IndexStateSearchOnly } from "../core/types.js";
 
 // Re-export FileInfo for convenience
 export type { FileInfo };
@@ -27,7 +27,7 @@ export type { FileInfo };
  * Contains all the resources needed for tool operations:
  * - DirectContext for search
  * - Source for file operations (optional)
- * - IndexState for metadata
+ * - IndexStateSearchOnly for metadata
  *
  * @example
  * ```typescript
@@ -48,8 +48,8 @@ export interface ToolContext {
    * Null if client is in search-only mode (no listFiles/readFile).
    */
   source: Source | null;
-  /** The loaded IndexState for metadata access */
-  state: IndexState;
+  /** The loaded IndexStateSearchOnly for metadata access */
+  state: IndexStateSearchOnly;
 }
 
 /**

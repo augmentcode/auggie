@@ -146,15 +146,15 @@ export class FilesystemStore implements IndexStore {
   }
 
   /**
-   * Load state from a specific file path (internal helper)
+   * Load full state from a specific file path (internal helper)
    */
-  private async loadFromPath(filePath: string, validateBlobs: boolean): Promise<IndexState | null> {
+  private async loadFullStateFromPath(filePath: string): Promise<IndexState | null> {
     try {
       const data = await fs.readFile(filePath, "utf-8");
       const state = JSON.parse(data) as IndexState;
 
-      // Validate that this is a full state file with blobs if required
-      if (validateBlobs && !state.contextState.blobs) {
+      // Validate that this is a full state file with blobs
+      if (!state.contextState.blobs) {
         throw new Error(
           `Invalid state file at "${filePath}": missing blobs field. ` +
           `This appears to be a search.json file. Use loadSearch() instead, or ` +
@@ -162,6 +162,22 @@ export class FilesystemStore implements IndexStore {
         );
       }
 
+      return state;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Load search-only state from a specific file path (internal helper)
+   */
+  private async loadSearchStateFromPath(filePath: string): Promise<IndexStateSearchOnly | null> {
+    try {
+      const data = await fs.readFile(filePath, "utf-8");
+      const state = JSON.parse(data) as IndexStateSearchOnly;
       return state;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
@@ -200,12 +216,12 @@ export class FilesystemStore implements IndexStore {
 
   async loadState(key: string): Promise<IndexState | null> {
     const filePath = this.getStatePath(key);
-    return this.loadFromPath(filePath, true);
+    return this.loadFullStateFromPath(filePath);
   }
 
-  async loadSearch(key: string): Promise<IndexState | null> {
+  async loadSearch(key: string): Promise<IndexStateSearchOnly | null> {
     const filePath = this.getSearchPath(key);
-    return this.loadFromPath(filePath, false);
+    return this.loadSearchStateFromPath(filePath);
   }
 
   async save(

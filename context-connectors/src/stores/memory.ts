@@ -37,7 +37,7 @@ export class MemoryStore implements IndexStore {
     return JSON.parse(JSON.stringify(stored.fullState));
   }
 
-  async loadSearch(key: string): Promise<IndexState | null> {
+  async loadSearch(key: string): Promise<IndexStateSearchOnly | null> {
     const stored = this.data.get(key);
     if (!stored) return null;
 

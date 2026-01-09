@@ -52,9 +52,9 @@ export interface IndexStoreReader {
    * the blobs array (which is only needed for incremental indexing).
    *
    * @param key - The index key/name
-   * @returns The stored IndexState (without blobs), or null if not found
+   * @returns The stored IndexStateSearchOnly (without blobs), or null if not found
    */
-  loadSearch(key: string): Promise<IndexState | null>;
+  loadSearch(key: string): Promise<IndexStateSearchOnly | null>;
 
   /**
    * List all available index keys.

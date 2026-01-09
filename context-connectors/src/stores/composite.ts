@@ -8,7 +8,7 @@
  */
 
 import type { IndexStoreReader } from "./types.js";
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 import type { IndexSpec } from "./index-spec.js";
 import { FilesystemStore } from "./filesystem.js";
 import { getS3Config } from "./s3-config.js";
@@ -128,7 +128,7 @@ export class CompositeStoreReader implements IndexStoreReader {
     return entry.store.loadState(entry.key);
   }
 
-  async loadSearch(displayName: string): Promise<IndexState | null> {
+  async loadSearch(displayName: string): Promise<IndexStateSearchOnly | null> {
     const entry = this.entries.get(displayName);
     if (!entry) {
       return null;

@@ -36,7 +36,7 @@
 import { DirectContext } from "@augmentcode/auggie-sdk";
 import type { IndexStoreReader } from "../stores/types.js";
 import type { Source } from "../sources/types.js";
-import type { IndexState } from "../core/types.js";
+import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 import type { ToolContext, SearchOptions } from "../tools/types.js";
 import type { ListFilesOptions } from "../tools/list-files.js";
 import type { ReadFileOptions } from "../tools/read-file.js";
@@ -108,7 +108,7 @@ export class SearchClient {
   private apiUrl: string;
 
   private context: DirectContext | null = null;
-  private state: IndexState | null = null;
+  private state: IndexStateSearchOnly | null = null;
 
   /**
    * Create a new SearchClient.
