@@ -296,6 +296,9 @@ export class GitHubSource implements Source {
 
       stream.pipe(parser);
       parser.on("close", resolve);
+      // Handle parser errors (tar library types don't include error event, but the underlying stream does)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (parser as any).on("error", reject);
       stream.on("error", reject);
     });
 
