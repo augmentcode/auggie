@@ -64,6 +64,11 @@ function createAuthMiddleware(
       return { authorized: false, error: "Missing Authorization header" };
     }
 
+    // Reject duplicate Authorization headers (likely malformed request or attack)
+    if (Array.isArray(authHeader)) {
+      return { authorized: false, error: "Invalid Authorization header: duplicate headers" };
+    }
+
     // Support "Bearer <token>" format
     const match = authHeader.match(/^Bearer\s+(.+)$/i);
     if (!match) {
