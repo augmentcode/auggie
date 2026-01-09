@@ -255,6 +255,19 @@ export async function readFile(
   let output: string;
 
   if (searchPattern) {
+    // Validate regex pattern before use
+    try {
+      new RegExp(searchPattern, caseSensitive ? "g" : "gi");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      return {
+        path,
+        contents: null,
+        error: `Invalid regex pattern: ${message}`,
+        totalLines,
+      };
+    }
+
     // Regex search mode
     const { lineNumbers, matchingLines } = searchWithContext(
       lines,
