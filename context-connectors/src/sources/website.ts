@@ -324,7 +324,9 @@ export class WebsiteSource implements Source {
 
     while (queue.length > 0 && this.crawledPages.length < this.maxPages) {
       const { url, depth } = queue.shift()!;
-      const urlKey = url.href;
+      // Use pathname (without query) for de-duplication to match storage path
+      // This prevents duplicate entries when the same page is linked with different query params
+      const urlKey = url.pathname;
 
       if (visited.has(urlKey)) {
         continue;
@@ -349,7 +351,7 @@ export class WebsiteSource implements Source {
       // Add links to queue if within depth limit (always traverse to discover pages)
       if (depth < this.maxDepth) {
         for (const link of result.links) {
-          if (!visited.has(link.href)) {
+          if (!visited.has(link.pathname)) {
             queue.push({ url: link, depth: depth + 1 });
           }
         }
