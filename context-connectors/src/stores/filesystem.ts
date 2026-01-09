@@ -234,6 +234,14 @@ export class FilesystemStore implements IndexStore {
   }
 
   async delete(key: string): Promise<void> {
+    // Guard against empty/unsafe keys that would delete the entire store
+    const sanitized = sanitizeKey(key);
+    if (sanitized === "") {
+      throw new Error(
+        `Invalid index key "${key}": sanitizes to empty string. Cannot delete.`
+      );
+    }
+
     const keyDir = this.getKeyDir(key);
 
     try {
