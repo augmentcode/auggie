@@ -179,14 +179,35 @@ export async function createMCPHttpServer(
     res.setHeader("Access-Control-Expose-Headers", "Mcp-Session-Id");
   };
 
+  // Maximum request body size (1MB) to prevent memory exhaustion attacks
+  const MAX_BODY_SIZE = 1 * 1024 * 1024;
+
   /**
    * Parse JSON body from request.
+   * Enforces a size limit to prevent DoS attacks via large payloads.
    */
   const parseBody = (req: IncomingMessage): Promise<unknown> => {
     return new Promise((resolve, reject) => {
       let body = "";
-      req.on("data", (chunk) => (body += chunk));
+      let size = 0;
+      let rejected = false;
+
+      req.on("data", (chunk) => {
+        if (rejected) return;
+
+        size += chunk.length;
+        if (size > MAX_BODY_SIZE) {
+          rejected = true;
+          req.destroy();
+          reject(new Error(`Request body too large (max ${MAX_BODY_SIZE} bytes)`));
+          return;
+        }
+        body += chunk;
+      });
+
       req.on("end", () => {
+        if (rejected) return;
+
         if (!body) {
           resolve(undefined);
           return;
@@ -197,6 +218,7 @@ export async function createMCPHttpServer(
           reject(new Error("Invalid JSON body"));
         }
       });
+
       req.on("error", reject);
     });
   };
