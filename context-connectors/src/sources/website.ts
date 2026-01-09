@@ -164,9 +164,12 @@ export class WebsiteSource implements Source {
    * Simple glob pattern matching
    */
   private matchPattern(path: string, pattern: string): boolean {
-    // Convert glob to regex
+    // Convert glob to regex:
+    // 1. Escape regex metacharacters (except * and ?)
+    // 2. Replace glob wildcards with regex equivalents
+    const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(
-      "^" + pattern.replace(/\*/g, ".*").replace(/\?/g, ".") + "$"
+      "^" + escaped.replace(/\*/g, ".*").replace(/\?/g, ".") + "$"
     );
     return regex.test(path);
   }
