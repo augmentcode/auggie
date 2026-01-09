@@ -122,7 +122,9 @@ export class BitBucketSource implements Source {
    */
   private async readFileRawBuffer(path: string, ref: string): Promise<Buffer | null> {
     try {
-      const url = `${this.baseUrl}/repositories/${this.workspace}/${this.repo}/src/${encodeURIComponent(ref)}/${encodeURIComponent(path)}`;
+      // Encode each path segment individually to preserve '/' separators
+      const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+      const url = `${this.baseUrl}/repositories/${this.workspace}/${this.repo}/src/${encodeURIComponent(ref)}/${encodedPath}`;
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${this.token}` },
       });
