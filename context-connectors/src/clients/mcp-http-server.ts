@@ -30,6 +30,19 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import { createMCPServer, MCPServerConfig } from "./mcp-server.js";
 
 /**
+ * HTTP error with status code for proper client error responses.
+ */
+class HttpError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number
+  ) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
+/**
  * Timing-safe string comparison to prevent timing attacks.
  */
 function safeCompare(a: string, b: string): boolean {
@@ -204,7 +217,7 @@ export async function createMCPHttpServer(
         if (size > MAX_BODY_SIZE) {
           rejected = true;
           req.destroy();
-          reject(new Error(`Request body too large (max ${MAX_BODY_SIZE} bytes)`));
+          reject(new HttpError(`Request body too large (max ${MAX_BODY_SIZE} bytes)`, 413));
           return;
         }
         body += chunk;
@@ -220,7 +233,7 @@ export async function createMCPHttpServer(
         try {
           resolve(JSON.parse(body));
         } catch (e) {
-          reject(new Error("Invalid JSON body"));
+          reject(new HttpError("Invalid JSON body", 400));
         }
       });
 
@@ -303,28 +316,16 @@ export async function createMCPHttpServer(
     try {
       body = await parseBody(req);
     } catch (error) {
+      const statusCode = error instanceof HttpError ? error.statusCode : 400;
       const message = error instanceof Error ? error.message : "Bad request";
-      // Map parseBody errors to appropriate 4xx status codes
-      if (message.includes("too large")) {
-        res.writeHead(413, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            error: { code: -32600, message: "Payload too large" },
-            id: null,
-          })
-        );
-      } else {
-        // Invalid JSON or other parse errors
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            jsonrpc: "2.0",
-            error: { code: -32700, message: "Parse error: Invalid JSON" },
-            id: null,
-          })
-        );
-      }
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          jsonrpc: "2.0",
+          error: { code: -32700, message },
+          id: null,
+        })
+      );
       return;
     }
 
