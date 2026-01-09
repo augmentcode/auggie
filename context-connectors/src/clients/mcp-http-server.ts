@@ -299,7 +299,34 @@ export async function createMCPHttpServer(
     res: ServerResponse,
     sessionId: string | undefined
   ): Promise<void> => {
-    const body = await parseBody(req);
+    let body: unknown;
+    try {
+      body = await parseBody(req);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Bad request";
+      // Map parseBody errors to appropriate 4xx status codes
+      if (message.includes("too large")) {
+        res.writeHead(413, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            error: { code: -32600, message: "Payload too large" },
+            id: null,
+          })
+        );
+      } else {
+        // Invalid JSON or other parse errors
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            error: { code: -32700, message: "Parse error: Invalid JSON" },
+            id: null,
+          })
+        );
+      }
+      return;
+    }
 
     let transport: StreamableHTTPServerTransport;
 
