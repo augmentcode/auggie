@@ -291,6 +291,8 @@ export class GitHubSource implements Source {
             const contents = contentBuffer.toString("utf-8");
             files.set(filePath, contents);
           });
+          // Handle entry-level errors to prevent hanging on corrupt entries
+          entry.on("error", reject);
         },
       });
 
