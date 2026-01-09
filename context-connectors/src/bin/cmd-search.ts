@@ -45,8 +45,22 @@ export const searchCommand = new Command("search")
           const url = spec.value;
           const pathPart = url.slice(5); // Remove "s3://"
           const slashIdx = pathPart.indexOf("/");
+
+          if (slashIdx === -1) {
+            throw new Error(
+              "Invalid S3 URL: missing index key. Expected format: s3://bucket/path/to/index"
+            );
+          }
+
           const bucket = pathPart.slice(0, slashIdx);
-          const keyPath = pathPart.slice(slashIdx + 1);
+          // Trim trailing slashes to avoid empty indexKey
+          const keyPath = pathPart.slice(slashIdx + 1).replace(/\/+$/, "");
+
+          if (!keyPath) {
+            throw new Error(
+              "Invalid S3 URL: missing index key. Expected format: s3://bucket/path/to/index"
+            );
+          }
 
           const baseConfig = getS3Config();
           const { S3Store } = await import("../stores/s3.js");
