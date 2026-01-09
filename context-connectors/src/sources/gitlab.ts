@@ -154,9 +154,47 @@ export class GitLabSource implements Source {
   }
 
   /**
-   * Get raw file contents at a specific ref
+   * Check if a file should be included based on ignore patterns and filters.
+   * Returns true if the file should be included, false if it should be filtered out.
+   *
+   * Applies filtering in priority order:
+   * 1. .augmentignore
+   * 2. Path validation, file size, keyish patterns, UTF-8 validation
+   * 3. .gitignore
    */
-  private async readFileRaw(path: string, ref: string): Promise<string | null> {
+  private shouldIncludeFile(
+    path: string,
+    content: Buffer,
+    augmentignore: Ignore,
+    gitignore: Ignore
+  ): boolean {
+    // 1. .augmentignore
+    if (augmentignore.ignores(path)) {
+      return false;
+    }
+
+    // 2. Path validation, file size, keyish patterns, UTF-8 validation
+    const filterResult = shouldFilterFile({
+      path,
+      content,
+    });
+
+    if (filterResult.filtered) {
+      return false;
+    }
+
+    // 3. .gitignore (checked last)
+    if (gitignore.ignores(path)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Get raw file contents at a specific ref as a Buffer
+   */
+  private async readFileRawBuffer(path: string, ref: string): Promise<Buffer | null> {
     try {
       const encodedPath = encodeURIComponent(path);
       const url = `${this.baseUrl}/api/v4/projects/${this.encodedProjectId}/repository/files/${encodedPath}/raw?ref=${encodeURIComponent(ref)}`;
@@ -168,10 +206,19 @@ export class GitLabSource implements Source {
         return null;
       }
 
-      return response.text();
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Get raw file contents at a specific ref
+   */
+  private async readFileRaw(path: string, ref: string): Promise<string | null> {
+    const buffer = await this.readFileRawBuffer(path, ref);
+    return buffer ? buffer.toString("utf-8") : null;
   }
 
   /**
@@ -221,24 +268,8 @@ export class GitLabSource implements Source {
           entry.on("end", () => {
             const contentBuffer = Buffer.concat(chunks);
 
-            // Apply filtering in priority order:
-            // 1. .augmentignore
-            if (augmentignore.ignores(filePath)) {
-              return;
-            }
-
-            // 2. Path validation, file size, keyish patterns, UTF-8 validation
-            const filterResult = shouldFilterFile({
-              path: filePath,
-              content: contentBuffer,
-            });
-
-            if (filterResult.filtered) {
-              return;
-            }
-
-            // 3. .gitignore (checked last)
-            if (gitignore.ignores(filePath)) {
+            // Apply filtering
+            if (!this.shouldIncludeFile(filePath, contentBuffer, augmentignore, gitignore)) {
               return;
             }
 
@@ -390,6 +421,9 @@ export class GitLabSource implements Source {
       return null;
     }
 
+    // Load ignore patterns for filtering
+    const { augmentignore, gitignore } = await this.loadIgnorePatterns(currentRef);
+
     const added: FileEntry[] = [];
     const modified: FileEntry[] = [];
     const removed: string[] = [];
@@ -398,15 +432,24 @@ export class GitLabSource implements Source {
       if (file.deleted_file) {
         removed.push(file.old_path);
       } else {
-        // Download file contents
-        const contents = await this.readFileRaw(file.new_path, currentRef);
-        if (contents !== null) {
-          const entry = { path: file.new_path, contents };
-          if (file.new_file) {
-            added.push(entry);
-          } else {
-            modified.push(entry);
-          }
+        // Download file contents as Buffer for filtering
+        const contentBuffer = await this.readFileRawBuffer(file.new_path, currentRef);
+        if (contentBuffer === null) {
+          continue;
+        }
+
+        // Apply filtering
+        if (!this.shouldIncludeFile(file.new_path, contentBuffer, augmentignore, gitignore)) {
+          continue;
+        }
+
+        // File passed all filters
+        const contents = contentBuffer.toString("utf-8");
+        const entry = { path: file.new_path, contents };
+        if (file.new_file) {
+          added.push(entry);
+        } else {
+          modified.push(entry);
         }
 
         // Handle rename as remove + add

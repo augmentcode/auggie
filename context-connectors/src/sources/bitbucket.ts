@@ -118,9 +118,9 @@ export class BitBucketSource implements Source {
   }
 
   /**
-   * Get raw file contents at a specific ref (used for incremental updates)
+   * Get raw file contents at a specific ref as a Buffer (used for incremental updates)
    */
-  private async readFileRaw(path: string, ref: string): Promise<string | null> {
+  private async readFileRawBuffer(path: string, ref: string): Promise<Buffer | null> {
     try {
       const url = `${this.baseUrl}/repositories/${this.workspace}/${this.repo}/src/${encodeURIComponent(ref)}/${encodeURIComponent(path)}`;
       const response = await fetch(url, {
@@ -131,10 +131,19 @@ export class BitBucketSource implements Source {
         return null;
       }
 
-      return response.text();
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Get raw file contents at a specific ref (used for incremental updates)
+   */
+  private async readFileRaw(path: string, ref: string): Promise<string | null> {
+    const buffer = await this.readFileRawBuffer(path, ref);
+    return buffer ? buffer.toString("utf-8") : null;
   }
 
   /**
@@ -242,6 +251,66 @@ export class BitBucketSource implements Source {
     return { augmentignore, gitignore };
   }
 
+  /**
+   * Load ignore patterns from API at a specific ref
+   */
+  private async loadIgnorePatterns(ref: string): Promise<{ augmentignore: Ignore; gitignore: Ignore }> {
+    const augmentignore = ignore();
+    const gitignore = ignore();
+
+    // Try to load .gitignore
+    const gitignoreContent = await this.readFileRaw(".gitignore", ref);
+    if (gitignoreContent) {
+      gitignore.add(gitignoreContent);
+    }
+
+    // Try to load .augmentignore
+    const augmentignoreContent = await this.readFileRaw(".augmentignore", ref);
+    if (augmentignoreContent) {
+      augmentignore.add(augmentignoreContent);
+    }
+
+    return { augmentignore, gitignore };
+  }
+
+  /**
+   * Check if a file should be included based on ignore patterns and filters.
+   * Returns true if the file should be included, false if it should be filtered out.
+   *
+   * Applies filtering in priority order:
+   * 1. .augmentignore
+   * 2. Path validation, file size, keyish patterns, UTF-8 validation
+   * 3. .gitignore
+   */
+  private shouldIncludeFile(
+    path: string,
+    content: Buffer,
+    augmentignore: Ignore,
+    gitignore: Ignore
+  ): boolean {
+    // 1. .augmentignore
+    if (augmentignore.ignores(path)) {
+      return false;
+    }
+
+    // 2. Path validation, file size, keyish patterns, UTF-8 validation
+    const filterResult = shouldFilterFile({
+      path,
+      content,
+    });
+
+    if (filterResult.filtered) {
+      return false;
+    }
+
+    // 3. .gitignore (checked last)
+    if (gitignore.ignores(path)) {
+      return false;
+    }
+
+    return true;
+  }
+
   /** Default directories to always skip */
   private static readonly SKIP_DIRS = new Set([".git", "node_modules", "__pycache__", ".venv", "venv"]);
 
@@ -277,13 +346,7 @@ export class BitBucketSource implements Source {
         }
         await this.walkDirectory(rootDir, fullPath, augmentignore, gitignore, files);
       } else if (entry.isFile()) {
-        // Apply ignore rules in priority order:
-        // 1. .augmentignore (highest priority)
-        if (augmentignore.ignores(relativePath)) {
-          continue;
-        }
-
-        // 2. Read file content for filtering
+        // Read file content for filtering
         let content: Buffer;
         try {
           content = await readFile(fullPath);
@@ -291,18 +354,8 @@ export class BitBucketSource implements Source {
           continue; // Skip files we can't read
         }
 
-        // 3. Apply built-in filters (binary, large files, secrets)
-        const filterResult = shouldFilterFile({
-          path: relativePath,
-          content,
-        });
-
-        if (filterResult.filtered) {
-          continue;
-        }
-
-        // 4. .gitignore (lowest priority)
-        if (gitignore.ignores(relativePath)) {
+        // Apply filtering
+        if (!this.shouldIncludeFile(relativePath, content, augmentignore, gitignore)) {
           continue;
         }
 
@@ -437,6 +490,9 @@ export class BitBucketSource implements Source {
       return null;
     }
 
+    // Load ignore patterns for filtering
+    const { augmentignore, gitignore } = await this.loadIgnorePatterns(currentRef);
+
     const added: FileEntry[] = [];
     const modified: FileEntry[] = [];
     const removed: string[] = [];
@@ -449,15 +505,24 @@ export class BitBucketSource implements Source {
       } else {
         const filePath = file.new?.path;
         if (filePath) {
-          // Download file contents
-          const contents = await this.readFileRaw(filePath, currentRef);
-          if (contents !== null) {
-            const entry = { path: filePath, contents };
-            if (file.status === "added") {
-              added.push(entry);
-            } else {
-              modified.push(entry);
-            }
+          // Download file contents as Buffer for filtering
+          const contentBuffer = await this.readFileRawBuffer(filePath, currentRef);
+          if (contentBuffer === null) {
+            continue;
+          }
+
+          // Apply filtering
+          if (!this.shouldIncludeFile(filePath, contentBuffer, augmentignore, gitignore)) {
+            continue;
+          }
+
+          // File passed all filters
+          const contents = contentBuffer.toString("utf-8");
+          const entry = { path: filePath, contents };
+          if (file.status === "added") {
+            added.push(entry);
+          } else {
+            modified.push(entry);
           }
 
           // Handle rename as remove + add
