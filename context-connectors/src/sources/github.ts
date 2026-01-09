@@ -277,7 +277,9 @@ export class GitHubSource implements Source {
       ref,
     });
 
-    // Download tarball
+    // Download tarball. The URL returned by Octokit is a pre-signed URL
+    // (codeload.github.com with a ?token=... parameter) that works for private
+    // repos without additional Authorization headers.
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to download tarball: ${response.statusText}`);
