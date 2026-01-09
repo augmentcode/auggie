@@ -247,8 +247,10 @@ export async function createMCPHttpServer(
       return;
     }
 
-    // Check if request is for MCP endpoint
-    if (!url.pathname.startsWith(basePath)) {
+    // Check if request is for MCP endpoint (exact match or subpath)
+    const isExactMatch = url.pathname === basePath;
+    const isSubPath = url.pathname.startsWith(basePath + "/");
+    if (!isExactMatch && !isSubPath) {
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Not found" }));
       return;
