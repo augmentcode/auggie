@@ -162,14 +162,24 @@ websiteCommand.action(async (options) => {
       const fs = await import("fs/promises");
       const path = await import("path");
       const files = await source.fetchAll();
-      const dir = options.saveContent;
+      const dir = path.resolve(options.saveContent);
       await fs.mkdir(dir, { recursive: true });
+      let savedCount = 0;
       for (const file of files) {
-        const filePath = path.join(dir, file.path);
+        // Sanitize file.path to prevent path traversal attacks:
+        // 1. Normalize to resolve any .. segments
+        // 2. Ensure the result stays within the target directory
+        const safePath = path.normalize(file.path).replace(/^(\.\.[/\\])+/, "");
+        const filePath = path.resolve(dir, safePath);
+        if (!filePath.startsWith(dir + path.sep) && filePath !== dir) {
+          console.warn(`Skipping file with unsafe path: ${file.path}`);
+          continue;
+        }
         await fs.mkdir(path.dirname(filePath), { recursive: true });
         await fs.writeFile(filePath, file.contents, "utf-8");
+        savedCount++;
       }
-      console.log(`Saved ${files.length} files to ${dir}`);
+      console.log(`Saved ${savedCount} files to ${dir}`);
       // Note: source.fetchAll() caches results internally, so subsequent calls
       // in runIndex will reuse the crawled data
     }
