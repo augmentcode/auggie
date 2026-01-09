@@ -192,33 +192,25 @@ export class BitBucketSource implements Source {
     const cloneUrl = `https://x-token-auth:${this.token}@bitbucket.org/${this.workspace}/${this.repo}.git`;
 
     try {
-      // Clone with depth 1 for efficiency, then checkout the specific ref
-      execSync(`git clone --depth 1 --branch ${ref} "${cloneUrl}" "${tempDir}"`, {
+      // Shallow clone the default branch, then fetch and checkout the specific ref.
+      // We always receive a commit SHA here (from resolveRefToSha), and git clone --branch
+      // only accepts branch/tag names, not SHAs.
+      execSync(`git clone --depth 1 "${cloneUrl}" "${tempDir}"`, {
         stdio: "pipe",
         timeout: 300000, // 5 minute timeout
       });
-    } catch {
-      // If branch clone fails, try cloning default branch and checking out the ref
-      try {
-        execSync(`git clone --depth 1 "${cloneUrl}" "${tempDir}"`, {
-          stdio: "pipe",
-          timeout: 300000,
-        });
-        // Fetch the specific ref
-        execSync(`git fetch origin ${ref}`, {
-          cwd: tempDir,
-          stdio: "pipe",
-          timeout: 300000,
-        });
-        execSync(`git checkout ${ref}`, {
-          cwd: tempDir,
-          stdio: "pipe",
-        });
-      } catch (error) {
-        // Clean up on failure
-        await this.cleanupTempDir(tempDir);
-        throw new Error(`Failed to clone repository: ${error instanceof Error ? error.message : String(error)}`);
-      }
+      execSync(`git fetch origin ${ref}`, {
+        cwd: tempDir,
+        stdio: "pipe",
+        timeout: 300000,
+      });
+      execSync(`git checkout ${ref}`, {
+        cwd: tempDir,
+        stdio: "pipe",
+      });
+    } catch (error) {
+      await this.cleanupTempDir(tempDir);
+      throw new Error(`Failed to clone repository: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return tempDir;
