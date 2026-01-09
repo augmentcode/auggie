@@ -324,9 +324,8 @@ export class WebsiteSource implements Source {
 
     while (queue.length > 0 && this.crawledPages.length < this.maxPages) {
       const { url, depth } = queue.shift()!;
-      // Use pathname (without query) for de-duplication to match storage path
-      // This prevents duplicate entries when the same page is linked with different query params
-      const urlKey = url.pathname;
+      // Use full URL (href) for de-duplication - different query params = different content
+      const urlKey = url.href;
 
       if (visited.has(urlKey)) {
         continue;
@@ -351,7 +350,7 @@ export class WebsiteSource implements Source {
       // Add links to queue if within depth limit (always traverse to discover pages)
       if (depth < this.maxDepth) {
         for (const link of result.links) {
-          if (!visited.has(link.pathname)) {
+          if (!visited.has(link.href)) {
             queue.push({ url: link, depth: depth + 1 });
           }
         }
@@ -362,10 +361,15 @@ export class WebsiteSource implements Source {
         continue;
       }
 
-      // Create a path from the URL for storage
+      // Create a path from the URL for storage, including query string to avoid overwrites
       let path = url.pathname;
       if (path === "/" || path === "") {
         path = "/index";
+      }
+      // Append sanitized query string if present (replace unsafe chars with underscores)
+      if (url.search) {
+        const sanitizedQuery = url.search.slice(1).replace(/[^a-zA-Z0-9_=-]/g, "_");
+        path = path + "_" + sanitizedQuery;
       }
       // Remove leading slash and add .md extension
       path = path.replace(/^\//, "") + ".md";
