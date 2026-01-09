@@ -103,6 +103,16 @@ function maybeTruncate(
   if (output.length <= maxLength) {
     return { text: output, truncated: false };
   }
+
+  // If maxLength is too small to fit the truncation message,
+  // just slice the output without the message to respect the limit
+  if (maxLength <= TRUNCATION_MESSAGE.length) {
+    return {
+      text: output.slice(0, maxLength),
+      truncated: true,
+    };
+  }
+
   const truncateAt = maxLength - TRUNCATION_MESSAGE.length;
   return {
     text: output.slice(0, truncateAt) + TRUNCATION_MESSAGE,
