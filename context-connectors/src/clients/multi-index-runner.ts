@@ -106,11 +106,13 @@ export class MultiIndexRunner {
       throw new Error("No indexes available in store");
     }
 
-    // Load metadata for available indexes
+    // Load metadata for available indexes, filtering out any that fail to load
     const indexes: IndexInfo[] = [];
+    const validIndexNames: string[] = [];
     for (const name of indexNames) {
       const state = await store.loadSearch(name);
       if (state) {
+        validIndexNames.push(name);
         indexes.push({
           name,
           type: state.source.type,
@@ -119,9 +121,14 @@ export class MultiIndexRunner {
           syncedAt: state.source.syncedAt,
         });
       }
+      // Skip indexes that fail to load (e.g., corrupted or partial state)
     }
 
-    return new MultiIndexRunner(store, indexNames, indexes, searchOnly);
+    if (validIndexNames.length === 0) {
+      throw new Error("No valid indexes available (all indexes failed to load)");
+    }
+
+    return new MultiIndexRunner(store, validIndexNames, indexes, searchOnly);
   }
 
   /**
