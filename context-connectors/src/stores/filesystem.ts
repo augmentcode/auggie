@@ -20,11 +20,17 @@
  *   basePath: "/data/indexes",
  * });
  *
- * // Save an index
- * await store.save("my-project", state, contextData);
+ * // Save an index (both full state for incremental builds and search-only state)
+ * await store.save("my-project", fullState, searchState);
  *
- * // Load an index
- * const { state, contextData } = await store.load("my-project");
+ * // Load full state for incremental indexing
+ * const fullState = await store.loadState("my-project");
+ *
+ * // Load search-only state for search operations
+ * const searchState = await store.loadSearch("my-project");
+ *
+ * // List all indexes
+ * const keys = await store.list();
  * ```
  */
 

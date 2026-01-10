@@ -74,8 +74,8 @@ export interface IndexStoreReader {
  * ```typescript
  * const store: IndexStore = new FilesystemStore();
  *
- * // Indexer uses full interface
- * await store.save("my-project", indexState);
+ * // Indexer saves both full state and search-only state
+ * await store.save("my-project", fullState, searchState);
  *
  * // Cleanup
  * await store.delete("old-project");
