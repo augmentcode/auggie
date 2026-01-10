@@ -20,3 +20,27 @@ export function isoTimestamp(): string {
   return new Date().toISOString();
 }
 
+/**
+ * Normalize a directory/file path for use with Source APIs.
+ *
+ * - Removes leading "./" prefix
+ * - Removes leading "/" prefix
+ * - Removes trailing "/" suffix
+ * - Collapses multiple consecutive slashes
+ * - Returns "" for root directory representations
+ *
+ * @example
+ * normalizePath("./src")    // "src"
+ * normalizePath("/src/")    // "src"
+ * normalizePath("src//lib") // "src/lib"
+ * normalizePath("./")       // ""
+ * normalizePath("/")        // ""
+ */
+export function normalizePath(path: string): string {
+  return path
+    .replace(/^\.\//, "") // Remove leading ./
+    .replace(/^\/+/, "") // Remove leading slashes
+    .replace(/\/+$/, "") // Remove trailing slashes
+    .replace(/\/\/+/g, "/"); // Collapse multiple slashes
+}
+

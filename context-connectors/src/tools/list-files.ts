@@ -14,6 +14,7 @@
 
 import type { FileInfo } from "../core/types.js";
 import type { ToolContext } from "./types.js";
+import { normalizePath } from "../core/utils.js";
 
 /** Default maximum output length in characters */
 const DEFAULT_MAX_OUTPUT = 50000;
@@ -153,9 +154,12 @@ export async function listFiles(
     maxOutputLength = DEFAULT_MAX_OUTPUT,
   } = options ?? {};
 
+  // Normalize directory path to avoid issues with leading/trailing slashes
+  const normalizedDirectory = normalizePath(directory);
+
   // Collect entries recursively up to depth
   const allEntries: FileInfo[] = [];
-  await collectEntries(ctx, directory, depth, showHidden, allEntries);
+  await collectEntries(ctx, normalizedDirectory, depth, showHidden, allEntries);
 
   // Apply pattern filter if specified
   let filteredEntries = allEntries;

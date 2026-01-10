@@ -95,6 +95,24 @@ describe("listFiles tool", () => {
     expect(mockSource.listFiles).toHaveBeenCalledWith("src");
   });
 
+  it("normalizes directory path before calling source", async () => {
+    const mockSource = createMockSource([], (dir?: string) => {
+      if (dir === "src") {
+        return [{ path: "src/index.ts", type: "file" }];
+      }
+      return [];
+    });
+    const ctx = createToolContext(mockSource);
+
+    // Test various malformed directory inputs that should normalize to "src"
+    const malformedPaths = ["./src", "/src", "src/", "/src/", "./src/"];
+    for (const path of malformedPaths) {
+      const result = await listFiles(ctx, { directory: path });
+      expect(result.entries).toHaveLength(1);
+      expect(mockSource.listFiles).toHaveBeenLastCalledWith("src");
+    }
+  });
+
   it("filters by pattern (matches filename only)", async () => {
     const mockSource = createMockSource([
       { path: "src/index.ts", type: "file" },
@@ -230,6 +248,52 @@ describe("formatListOutput", () => {
     const output = formatListOutput({ entries, truncated: false });
 
     expect(output).not.toContain("omitted");
+  });
+});
+
+describe("normalizePath", () => {
+  it("removes leading ./", async () => {
+    const { normalizePath } = await import("../core/utils.js");
+    expect(normalizePath("./src")).toBe("src");
+    expect(normalizePath("./src/lib")).toBe("src/lib");
+  });
+
+  it("removes leading /", async () => {
+    const { normalizePath } = await import("../core/utils.js");
+    expect(normalizePath("/src")).toBe("src");
+    expect(normalizePath("/src/lib")).toBe("src/lib");
+  });
+
+  it("removes trailing /", async () => {
+    const { normalizePath } = await import("../core/utils.js");
+    expect(normalizePath("src/")).toBe("src");
+    expect(normalizePath("src/lib/")).toBe("src/lib");
+  });
+
+  it("handles combined cases", async () => {
+    const { normalizePath } = await import("../core/utils.js");
+    expect(normalizePath("/src/")).toBe("src");
+    expect(normalizePath("./src/")).toBe("src");
+    expect(normalizePath("/")).toBe("");
+    expect(normalizePath("./")).toBe("");
+  });
+
+  it("collapses multiple slashes", async () => {
+    const { normalizePath } = await import("../core/utils.js");
+    expect(normalizePath("src//lib")).toBe("src/lib");
+    expect(normalizePath("src///lib///utils")).toBe("src/lib/utils");
+  });
+
+  it("handles empty string", async () => {
+    const { normalizePath } = await import("../core/utils.js");
+    expect(normalizePath("")).toBe("");
+  });
+
+  it("leaves normal paths unchanged", async () => {
+    const { normalizePath } = await import("../core/utils.js");
+    expect(normalizePath("src")).toBe("src");
+    expect(normalizePath("src/lib")).toBe("src/lib");
+    expect(normalizePath("src/lib/utils")).toBe("src/lib/utils");
   });
 });
 
