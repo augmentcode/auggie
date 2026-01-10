@@ -203,14 +203,17 @@ export async function createMCPHttpServer(
   /**
    * Parse JSON body from request.
    * Enforces a size limit to prevent DoS attacks via large payloads.
+   *
+   * Collects Buffer chunks and decodes once at the end to avoid corrupting
+   * multibyte UTF-8 characters that may be split across chunk boundaries.
    */
   const parseBody = (req: IncomingMessage): Promise<unknown> => {
     return new Promise((resolve, reject) => {
-      let body = "";
+      const chunks: Buffer[] = [];
       let size = 0;
       let rejected = false;
 
-      req.on("data", (chunk) => {
+      req.on("data", (chunk: Buffer) => {
         if (rejected) return;
 
         size += chunk.length;
@@ -220,17 +223,18 @@ export async function createMCPHttpServer(
           reject(new HttpError(`Request body too large (max ${MAX_BODY_SIZE} bytes)`, 413));
           return;
         }
-        body += chunk;
+        chunks.push(chunk);
       });
 
       req.on("end", () => {
         if (rejected) return;
 
-        if (!body) {
+        if (chunks.length === 0) {
           resolve(undefined);
           return;
         }
         try {
+          const body = Buffer.concat(chunks).toString("utf8");
           resolve(JSON.parse(body));
         } catch (e) {
           reject(new HttpError("Invalid JSON body", 400));
