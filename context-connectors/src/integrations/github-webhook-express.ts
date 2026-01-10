@@ -29,15 +29,20 @@ export function createExpressHandler(config: GitHubWebhookConfig) {
         return;
       }
 
-      // Requires raw body - use express.raw() middleware
-      // Handle Buffer (from express.raw()), string, or object
+      // Signature verification requires the raw body bytes.
+      // JSON.stringify(req.body) won't match GitHub's original payload bytes
+      // (due to key ordering, whitespace, unicode escaping differences).
+      // Require Buffer (express.raw()) or string body.
       let body: string;
       if (Buffer.isBuffer(req.body)) {
         body = req.body.toString("utf-8");
       } else if (typeof req.body === "string") {
         body = req.body;
       } else {
-        body = JSON.stringify(req.body);
+        res.status(400).json({
+          error: "Raw body required for signature verification. Use express.raw() middleware.",
+        });
+        return;
       }
 
       const valid = await verifyWebhookSignature(body, signature, config.secret);
@@ -46,12 +51,7 @@ export function createExpressHandler(config: GitHubWebhookConfig) {
         return;
       }
 
-      // Parse payload from the body string (handles Buffer, string, and object)
-      const payload = (
-        Buffer.isBuffer(req.body) || typeof req.body === "string"
-          ? JSON.parse(body)
-          : req.body
-      ) as PushEvent;
+      const payload = JSON.parse(body) as PushEvent;
 
       const result = await handler(eventType, payload);
 
