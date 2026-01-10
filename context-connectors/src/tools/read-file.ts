@@ -289,7 +289,7 @@ export async function readFile(
     // Build output with gaps shown as "..."
     const sortedLines = Array.from(lineNumbers).sort((a, b) => a - b);
     const outputLines: string[] = [];
-    let lastLine = -2; // -2 so first line doesn't trigger gap
+    let lastLine = -1; // -1 so line 0 doesn't trigger gap, but line 1+ does
 
     for (const lineIdx of sortedLines) {
       // Skip lines outside view range
