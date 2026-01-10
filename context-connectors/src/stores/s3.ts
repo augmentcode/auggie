@@ -158,13 +158,27 @@ export class S3Store implements IndexStore {
     }
   }
 
-  private getStateKey(key: string): string {
+  /**
+   * Sanitize key and throw if invalid.
+   * Ensures consistent validation across all operations (save, load, delete).
+   */
+  private validateAndSanitizeKey(key: string): string {
     const sanitized = sanitizeKey(key);
+    if (sanitized === "") {
+      throw new Error(
+        `Invalid index key "${key}": sanitizes to empty string.`
+      );
+    }
+    return sanitized;
+  }
+
+  private getStateKey(key: string): string {
+    const sanitized = this.validateAndSanitizeKey(key);
     return `${this.prefix}${sanitized}/${STATE_FILENAME}`;
   }
 
   private getSearchKey(key: string): string {
-    const sanitized = sanitizeKey(key);
+    const sanitized = this.validateAndSanitizeKey(key);
     return `${this.prefix}${sanitized}/${SEARCH_FILENAME}`;
   }
 
@@ -262,14 +276,7 @@ export class S3Store implements IndexStore {
   }
 
   async delete(key: string): Promise<void> {
-    // Guard against empty/unsafe keys
-    const sanitized = sanitizeKey(key);
-    if (sanitized === "") {
-      throw new Error(
-        `Invalid index key "${key}": sanitizes to empty string. Cannot delete.`
-      );
-    }
-
+    // getStateKey/getSearchKey will throw if key sanitizes to empty string
     const client = await this.getClient();
     const stateKey = this.getStateKey(key);
     const searchKey = this.getSearchKey(key);
