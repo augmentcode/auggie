@@ -110,18 +110,22 @@ export class MultiIndexRunner {
     const indexes: IndexInfo[] = [];
     const validIndexNames: string[] = [];
     for (const name of indexNames) {
-      const state = await store.loadSearch(name);
-      if (state) {
-        validIndexNames.push(name);
-        indexes.push({
-          name,
-          type: state.source.type,
-          identifier: getSourceIdentifier(state.source),
-          ref: getResolvedRef(state.source),
-          syncedAt: state.source.syncedAt,
-        });
+      try {
+        const state = await store.loadSearch(name);
+        if (state) {
+          validIndexNames.push(name);
+          indexes.push({
+            name,
+            type: state.source.type,
+            identifier: getSourceIdentifier(state.source),
+            ref: getResolvedRef(state.source),
+            syncedAt: state.source.syncedAt,
+          });
+        }
+        // Skip indexes that return null (not found)
+      } catch {
+        // Skip indexes that fail to load (e.g., corrupted or partial state)
       }
-      // Skip indexes that fail to load (e.g., corrupted or partial state)
     }
 
     if (validIndexNames.length === 0) {
