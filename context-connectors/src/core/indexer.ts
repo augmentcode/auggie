@@ -156,16 +156,17 @@ export class Indexer {
 
     // If no previous state, do full index
     if (!previousState) {
-      return this.fullIndex(source, store, key, startTime, null);
+      return this.fullIndex(source, store, key, startTime);
     }
 
     // Try to get incremental changes
     const changes = await source.fetchChanges(previousState.source);
 
-    // If source can't provide incremental changes, do a full refresh
-    // but reuse the previous context state for client-side deduplication
+    // If source can't provide incremental changes, do a full re-index.
+    // We intentionally don't reuse previousState here to ensure deleted
+    // files are properly removed from the index.
     if (changes === null) {
-      return this.fullIndex(source, store, key, startTime, previousState);
+      return this.fullIndex(source, store, key, startTime);
     }
 
     // Check if there are any changes
@@ -185,27 +186,18 @@ export class Indexer {
   /**
    * Perform full re-index.
    *
-   * If previousState is provided, imports it to benefit from client-side
-   * deduplication (skipping unchanged files without server round-trip).
+   * Always creates a fresh context to ensure deleted files are not retained.
    */
   private async fullIndex(
     source: Source,
     store: IndexStore,
     key: string,
-    startTime: number,
-    previousState: IndexState | null
+    startTime: number
   ): Promise<IndexResult> {
-    // Import previous context if available (for client-side deduplication),
-    // otherwise create a new one
-    const context = previousState
-      ? await DirectContext.import(previousState.contextState, {
-          apiKey: this.apiKey,
-          apiUrl: this.apiUrl,
-        })
-      : await DirectContext.create({
-          apiKey: this.apiKey,
-          apiUrl: this.apiUrl,
-        });
+    const context = await DirectContext.create({
+      apiKey: this.apiKey,
+      apiUrl: this.apiUrl,
+    });
 
     // Fetch all files from source
     const files = await source.fetchAll();
