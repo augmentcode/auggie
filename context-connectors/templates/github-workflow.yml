@@ -1,0 +1,41 @@
+name: Index Repository
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore index state
+        uses: actions/cache@v4
+        with:
+          path: .augment-index-state
+          key: augment-index-${{ github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            augment-index-${{ github.ref_name }}-
+
+      - name: Index repository
+        run: |
+          npx @augmentcode/context-connectors index github \
+            --owner ${{ github.repository_owner }} \
+            --repo ${{ github.event.repository.name }} \
+            --ref ${{ github.sha }} \
+            -i ${{ github.repository_owner }}/${{ github.event.repository.name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUGMENT_API_TOKEN: ${{ secrets.AUGMENT_API_TOKEN }}
+          AUGMENT_API_URL: ${{ secrets.AUGMENT_API_URL }}
+

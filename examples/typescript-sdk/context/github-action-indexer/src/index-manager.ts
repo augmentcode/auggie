@@ -366,20 +366,11 @@ export class IndexManager {
   ): Promise<IndexResult> {
     console.log("Performing incremental update...");
 
-    // Create a temporary file with the previous context state
-    const tempStateFile = `/tmp/github-indexer-incremental-${Date.now()}.json`;
-    await fs.writeFile(tempStateFile, JSON.stringify(previousState.contextState, null, 2));
-
-    try {
-      // Create a new context from the previous state
-      this.context = await DirectContext.importFromFile(tempStateFile, {
-        apiKey: this.config.apiToken,
-        apiUrl: this.config.apiUrl,
-      });
-    } finally {
-      // Clean up temporary file
-      await fs.unlink(tempStateFile);
-    }
+    // Import the previous context state directly
+    this.context = await DirectContext.import(previousState.contextState, {
+      apiKey: this.config.apiToken,
+      apiUrl: this.config.apiUrl,
+    });
 
     // Get file changes
     const comparison = await this.github.compareCommits(
