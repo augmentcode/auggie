@@ -15,11 +15,17 @@ export function createExpressHandler(config: GitHubWebhookConfig) {
     next: NextFunction
   ) {
     try {
-      const signature = req.headers["x-hub-signature-256"] as string;
-      const eventType = req.headers["x-github-event"] as string;
+      const signature = req.headers["x-hub-signature-256"];
+      const eventType = req.headers["x-github-event"];
 
       if (!signature || !eventType) {
         res.status(400).json({ error: "Missing required headers" });
+        return;
+      }
+
+      // Reject multi-valued headers (Express headers can be string | string[])
+      if (Array.isArray(signature) || Array.isArray(eventType)) {
+        res.status(400).json({ error: "Invalid headers: duplicate values not allowed" });
         return;
       }
 
