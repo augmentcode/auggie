@@ -78,7 +78,12 @@ export class BitBucketSource implements Source {
   }
 
   /**
-   * Resolve ref (branch/tag/HEAD) to commit SHA
+   * Resolve ref (branch/tag/HEAD) to commit SHA.
+   *
+   * The resolved SHA is cached for the lifetime of this instance to ensure
+   * consistency across multiple operations (e.g., getMetadata, fetchAll, listFiles).
+   *
+   * To pick up new commits, create a new BitBucketSource instance.
    */
   private async resolveRefToSha(): Promise<string> {
     if (this.resolvedRef) {
