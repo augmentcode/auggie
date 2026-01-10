@@ -284,9 +284,9 @@ export async function createMCPServer(
             depth: args?.depth as number | undefined,
             showHidden: args?.showHidden as boolean | undefined,
           };
-          const entries = await client.listFiles(listOpts);
+          const result = await client.listFiles(listOpts);
           const { formatListOutput } = await import("../tools/list-files.js");
-          const text = formatListOutput(entries, listOpts);
+          const text = formatListOutput(result, listOpts);
           return {
             content: [{ type: "text", text }],
           };

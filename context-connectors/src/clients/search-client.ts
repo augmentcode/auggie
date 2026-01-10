@@ -223,19 +223,19 @@ export class SearchClient {
    * By default, lists up to 2 levels deep (like Auggie CLI).
    *
    * @param options - Optional filter and depth options
-   * @returns Array of file/directory info objects with paths and types
+   * @returns Result with entries array and truncation metadata
    * @throws Error if no Source is configured
    *
    * @example
    * ```typescript
    * // List with default depth (2 levels)
-   * const files = await client.listFiles();
+   * const { entries, truncated } = await client.listFiles();
    *
    * // List only immediate children
-   * const shallow = await client.listFiles({ depth: 1 });
+   * const result = await client.listFiles({ depth: 1 });
    *
    * // List with pattern filter
-   * const tsFiles = await client.listFiles({ directory: "src", pattern: "*.ts" });
+   * const { entries, omittedCount } = await client.listFiles({ directory: "src", pattern: "*.ts" });
    * ```
    */
   async listFiles(options?: ListFilesOptions) {

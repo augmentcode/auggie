@@ -69,14 +69,16 @@ export interface ListFilesResult {
 /**
  * Format list entries as text with a descriptive header.
  *
- * @param entries - Array of file/directory entries
+ * @param result - Result from listFiles containing entries and truncation info
  * @param options - The options used for listing (for header context)
  * @returns Formatted string with header and entries
  */
 export function formatListOutput(
-  entries: FileInfo[],
+  result: ListFilesResult,
   options?: ListFilesOptions
 ): string {
+  const { entries, truncated, omittedCount } = result;
+
   if (entries.length === 0) {
     return "No files found.";
   }
@@ -94,7 +96,12 @@ export function formatListOutput(
 
   const body = entries.map((e) => `${e.path} [${e.type}]`).join("\n");
 
-  return header + body;
+  // Add truncation notice if applicable
+  const truncationNotice = truncated
+    ? `\n\n... (${omittedCount} more entries omitted due to output limit)`
+    : "";
+
+  return header + body + truncationNotice;
 }
 
 /**
@@ -111,19 +118,19 @@ export function formatListOutput(
  *
  * @param ctx - Tool context (must have source configured)
  * @param options - Optional filter and depth options
- * @returns Array of file/directory info objects
+ * @returns Result with entries array and truncation metadata
  * @throws Error if no Source is configured
  *
  * @example
  * ```typescript
  * // List with default depth (2 levels)
- * const files = await listFiles(ctx);
+ * const { entries, truncated } = await listFiles(ctx);
  *
  * // List only immediate children
- * const shallow = await listFiles(ctx, { depth: 1 });
+ * const result = await listFiles(ctx, { depth: 1 });
  *
  * // List deeper with pattern filter
- * const tsFiles = await listFiles(ctx, {
+ * const { entries, omittedCount } = await listFiles(ctx, {
  *   directory: "src",
  *   pattern: "*.ts",
  *   depth: 3,
@@ -133,7 +140,7 @@ export function formatListOutput(
 export async function listFiles(
   ctx: ToolContext,
   options?: ListFilesOptions
-): Promise<FileInfo[]> {
+): Promise<ListFilesResult> {
   if (!ctx.source) {
     throw new Error("Source not configured. Cannot list files in search-only mode.");
   }
@@ -164,7 +171,7 @@ export async function listFiles(
   filteredEntries.sort((a, b) => a.path.localeCompare(b.path));
 
   // Apply truncation based on output length
-  let truncatedEntries = filteredEntries;
+  let entries = filteredEntries;
   let truncated = false;
   let omittedCount = 0;
 
@@ -174,7 +181,7 @@ export async function listFiles(
     const entry = filteredEntries[i];
     const entrySize = entry.path.length + entry.type.length + 5; // " [type]\n"
     if (estimatedSize + entrySize > maxOutputLength) {
-      truncatedEntries = filteredEntries.slice(0, i);
+      entries = filteredEntries.slice(0, i);
       omittedCount = filteredEntries.length - i;
       truncated = true;
       break;
@@ -182,12 +189,7 @@ export async function listFiles(
     estimatedSize += entrySize;
   }
 
-  // Add truncation info to last entry if needed (for display purposes)
-  if (truncated && truncatedEntries.length > 0) {
-    // The caller can check the array length vs reported total
-  }
-
-  return truncatedEntries;
+  return { entries, truncated, omittedCount };
 }
 
 /**

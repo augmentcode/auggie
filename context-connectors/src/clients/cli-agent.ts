@@ -268,9 +268,9 @@ export class CLIAgent {
       }),
       execute: async ({ directory, pattern, depth, showHidden }) => {
         const opts = { directory, pattern, depth, showHidden };
-        const entries = await client.listFiles(opts);
+        const result = await client.listFiles(opts);
         const { formatListOutput } = await import("../tools/list-files.js");
-        return formatListOutput(entries, opts);
+        return formatListOutput(result, opts);
       },
     });
 
@@ -340,9 +340,9 @@ export class CLIAgent {
       execute: async ({ index_name, directory, pattern, depth, showHidden }) => {
         const client = await runner.getClient(index_name);
         const opts = { directory, pattern, depth, showHidden };
-        const entries = await client.listFiles(opts);
+        const result = await client.listFiles(opts);
         const { formatListOutput } = await import("../tools/list-files.js");
-        return formatListOutput(entries, opts);
+        return formatListOutput(result, opts);
       },
     });
 

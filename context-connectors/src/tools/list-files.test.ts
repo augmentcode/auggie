@@ -65,11 +65,11 @@ describe("listFiles tool", () => {
 
     // With default depth=2, it recurses into directories
     // Use depth=1 to get only immediate children (original behavior)
-    const entries = await listFiles(ctx, { depth: 1 });
+    const result = await listFiles(ctx, { depth: 1 });
 
-    expect(entries).toHaveLength(2);
-    expect(entries).toContainEqual({ path: "README.md", type: "file" });
-    expect(entries).toContainEqual({ path: "src", type: "directory" });
+    expect(result.entries).toHaveLength(2);
+    expect(result.entries).toContainEqual({ path: "README.md", type: "file" });
+    expect(result.entries).toContainEqual({ path: "src", type: "directory" });
     expect(mockSource.listFiles).toHaveBeenCalled();
   });
 
@@ -88,10 +88,10 @@ describe("listFiles tool", () => {
     });
     const ctx = createToolContext(mockSource);
 
-    const entries = await listFiles(ctx, { directory: "src" });
+    const result = await listFiles(ctx, { directory: "src" });
 
-    expect(entries).toHaveLength(2);
-    expect(entries[0].path).toBe("src/index.ts");
+    expect(result.entries).toHaveLength(2);
+    expect(result.entries[0].path).toBe("src/index.ts");
     expect(mockSource.listFiles).toHaveBeenCalledWith("src");
   });
 
@@ -104,10 +104,10 @@ describe("listFiles tool", () => {
     const ctx = createToolContext(mockSource);
 
     // Use depth=1 to avoid recursive listing for simpler test
-    const entries = await listFiles(ctx, { pattern: "*.ts", depth: 1 });
+    const result = await listFiles(ctx, { pattern: "*.ts", depth: 1 });
 
-    expect(entries).toHaveLength(2);
-    expect(entries.every((e) => e.path.endsWith(".ts"))).toBe(true);
+    expect(result.entries).toHaveLength(2);
+    expect(result.entries.every((e) => e.path.endsWith(".ts"))).toBe(true);
   });
 
   it("supports path-based patterns with matchBase", async () => {
@@ -119,22 +119,22 @@ describe("listFiles tool", () => {
     const ctx = createToolContext(mockSource);
 
     // Pattern with path should match full path
-    const entries = await listFiles(ctx, { pattern: "src/*.ts", depth: 1 });
+    const result = await listFiles(ctx, { pattern: "src/*.ts", depth: 1 });
 
-    expect(entries).toHaveLength(2);
-    expect(entries.every((e) => e.path.startsWith("src/"))).toBe(true);
+    expect(result.entries).toHaveLength(2);
+    expect(result.entries.every((e) => e.path.startsWith("src/"))).toBe(true);
   });
 
-  it("returns empty array when no entries match pattern", async () => {
+  it("returns empty entries when no entries match pattern", async () => {
     const mockSource = createMockSource([
       { path: "src/index.ts", type: "file" },
       { path: "README.md", type: "file" },
     ]);
     const ctx = createToolContext(mockSource);
 
-    const entries = await listFiles(ctx, { pattern: "*.py" });
+    const result = await listFiles(ctx, { pattern: "*.py" });
 
-    expect(entries).toHaveLength(0);
+    expect(result.entries).toHaveLength(0);
   });
 
   it("returns all entries when pattern is not provided", async () => {
@@ -146,9 +146,9 @@ describe("listFiles tool", () => {
     const ctx = createToolContext(mockSource);
 
     // Use depth=1 to avoid recursive listing for simpler test
-    const entries = await listFiles(ctx, { depth: 1 });
+    const result = await listFiles(ctx, { depth: 1 });
 
-    expect(entries).toHaveLength(3);
+    expect(result.entries).toHaveLength(3);
   });
 
   it("recursively lists entries with default depth", async () => {
@@ -167,18 +167,18 @@ describe("listFiles tool", () => {
     const ctx = createToolContext(mockSource);
 
     // Default depth=2 should recurse into src/
-    const entries = await listFiles(ctx);
+    const result = await listFiles(ctx);
 
-    expect(entries).toHaveLength(3); // src, README.md, src/index.ts
-    expect(entries).toContainEqual({ path: "src", type: "directory" });
-    expect(entries).toContainEqual({ path: "README.md", type: "file" });
-    expect(entries).toContainEqual({ path: "src/index.ts", type: "file" });
+    expect(result.entries).toHaveLength(3); // src, README.md, src/index.ts
+    expect(result.entries).toContainEqual({ path: "src", type: "directory" });
+    expect(result.entries).toContainEqual({ path: "README.md", type: "file" });
+    expect(result.entries).toContainEqual({ path: "src/index.ts", type: "file" });
   });
 });
 
 describe("formatListOutput", () => {
   it("returns 'No files found.' for empty list", () => {
-    const output = formatListOutput([]);
+    const output = formatListOutput({ entries: [] });
     expect(output).toBe("No files found.");
   });
 
@@ -187,7 +187,7 @@ describe("formatListOutput", () => {
       { path: "src", type: "directory" },
       { path: "README.md", type: "file" },
     ];
-    const output = formatListOutput(entries);
+    const output = formatListOutput({ entries });
 
     expect(output).toContain("files and directories up to 2 levels deep");
     expect(output).toContain("the root directory");
@@ -198,14 +198,14 @@ describe("formatListOutput", () => {
 
   it("includes header with custom directory", () => {
     const entries: FileInfo[] = [{ path: "src/index.ts", type: "file" }];
-    const output = formatListOutput(entries, { directory: "src" });
+    const output = formatListOutput({ entries }, { directory: "src" });
 
     expect(output).toContain("in src");
   });
 
   it("describes depth=1 as immediate children", () => {
     const entries: FileInfo[] = [{ path: "file.ts", type: "file" }];
-    const output = formatListOutput(entries, { depth: 1 });
+    const output = formatListOutput({ entries }, { depth: 1 });
 
     expect(output).toContain("immediate children");
     expect(output).not.toContain("levels deep");
@@ -213,9 +213,23 @@ describe("formatListOutput", () => {
 
   it("describes showHidden correctly", () => {
     const entries: FileInfo[] = [{ path: ".hidden", type: "file" }];
-    const output = formatListOutput(entries, { showHidden: true });
+    const output = formatListOutput({ entries }, { showHidden: true });
 
     expect(output).toContain("including hidden items");
+  });
+
+  it("includes truncation notice when truncated", () => {
+    const entries: FileInfo[] = [{ path: "file.ts", type: "file" }];
+    const output = formatListOutput({ entries, truncated: true, omittedCount: 5 });
+
+    expect(output).toContain("... (5 more entries omitted due to output limit)");
+  });
+
+  it("does not include truncation notice when not truncated", () => {
+    const entries: FileInfo[] = [{ path: "file.ts", type: "file" }];
+    const output = formatListOutput({ entries, truncated: false });
+
+    expect(output).not.toContain("omitted");
   });
 });
 
