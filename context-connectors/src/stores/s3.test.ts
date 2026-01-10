@@ -108,6 +108,47 @@ describe("S3Store", () => {
         forcePathStyle: true,
       });
     });
+
+    it("should normalize prefix without trailing slash", async () => {
+      const { S3Store } = await import("./s3.js");
+      const store = new S3Store({
+        bucket: "test-bucket",
+        prefix: "no-trailing-slash",  // Missing trailing /
+      });
+
+      mockSend.mockResolvedValueOnce({});
+      mockSend.mockResolvedValueOnce({});
+
+      const { full, search } = createTestState("1");
+      await store.save("mykey", full, search);
+
+      const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+      // Should normalize to include trailing slash
+      expect(PutObjectCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Key: "no-trailing-slash/mykey/state.json",
+        })
+      );
+    });
+
+    it("should sanitize key with slashes", async () => {
+      const { S3Store } = await import("./s3.js");
+      const store = new S3Store({ bucket: "test-bucket" });
+
+      mockSend.mockResolvedValueOnce({});
+      mockSend.mockResolvedValueOnce({});
+
+      const { full, search } = createTestState("1");
+      await store.save("org/repo", full, search);
+
+      const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+      // Key should be sanitized (slashes replaced)
+      expect(PutObjectCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Key: "context-connectors/org_repo/state.json",
+        })
+      );
+    });
   });
 
   describe("loadState", () => {
@@ -181,6 +222,14 @@ describe("S3Store", () => {
         Key: "context-connectors/test-key/search.json",
       });
       expect(DeleteObjectCommand).toHaveBeenCalledTimes(2);
+    });
+
+    it("should reject empty key", async () => {
+      const { S3Store } = await import("./s3.js");
+      const store = new S3Store({ bucket: "test-bucket" });
+
+      await expect(store.delete("")).rejects.toThrow(/sanitizes to empty string/);
+      await expect(store.delete("...")).rejects.toThrow(/sanitizes to empty string/);
     });
   });
 

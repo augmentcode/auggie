@@ -39,6 +39,7 @@
 
 import type { IndexState, IndexStateSearchOnly } from "../core/types.js";
 import type { IndexStore } from "./types.js";
+import { sanitizeKey } from "../core/utils.js";
 
 /**
  * Configuration for S3Store.
@@ -121,7 +122,9 @@ export class S3Store implements IndexStore {
    */
   constructor(config: S3StoreConfig) {
     this.bucket = config.bucket;
-    this.prefix = config.prefix ?? DEFAULT_PREFIX;
+    // Normalize prefix to always end with "/" (unless empty)
+    const rawPrefix = config.prefix ?? DEFAULT_PREFIX;
+    this.prefix = rawPrefix === "" ? "" : rawPrefix.endsWith("/") ? rawPrefix : `${rawPrefix}/`;
     this.region = config.region ?? process.env.AWS_REGION ?? "us-east-1";
     this.endpoint = config.endpoint;
     this.forcePathStyle = config.forcePathStyle ?? false;
@@ -156,11 +159,13 @@ export class S3Store implements IndexStore {
   }
 
   private getStateKey(key: string): string {
-    return `${this.prefix}${key}/${STATE_FILENAME}`;
+    const sanitized = sanitizeKey(key);
+    return `${this.prefix}${sanitized}/${STATE_FILENAME}`;
   }
 
   private getSearchKey(key: string): string {
-    return `${this.prefix}${key}/${SEARCH_FILENAME}`;
+    const sanitized = sanitizeKey(key);
+    return `${this.prefix}${sanitized}/${SEARCH_FILENAME}`;
   }
 
   async loadState(key: string): Promise<IndexState | null> {
@@ -257,6 +262,14 @@ export class S3Store implements IndexStore {
   }
 
   async delete(key: string): Promise<void> {
+    // Guard against empty/unsafe keys
+    const sanitized = sanitizeKey(key);
+    if (sanitized === "") {
+      throw new Error(
+        `Invalid index key "${key}": sanitizes to empty string. Cannot delete.`
+      );
+    }
+
     const client = await this.getClient();
     const stateKey = this.getStateKey(key);
     const searchKey = this.getSearchKey(key);
