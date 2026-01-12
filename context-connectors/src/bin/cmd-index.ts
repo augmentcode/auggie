@@ -54,9 +54,19 @@ async function runIndex(
 
   console.log(`\nIndexing complete!`);
   console.log(`  Type: ${result.type}`);
-  console.log(`  Files indexed: ${result.filesIndexed}`);
-  console.log(`  Files removed: ${result.filesRemoved}`);
   console.log(`  Duration: ${result.duration}ms`);
+  console.log();
+  console.log(`Summary:`);
+  console.log(`  Total files: ${result.filesIndexed}`);
+  if (result.filesNewOrModified > 0) {
+    console.log(`    - New/modified: ${result.filesNewOrModified} (uploaded and indexed)`);
+  }
+  if (result.filesUnchanged > 0) {
+    console.log(`    - Unchanged: ${result.filesUnchanged} (skipped)`);
+  }
+  if (result.filesRemoved > 0) {
+    console.log(`  Files removed: ${result.filesRemoved}`);
+  }
 }
 
 // GitHub subcommand

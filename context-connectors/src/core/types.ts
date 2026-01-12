@@ -219,6 +219,10 @@ export interface IndexResult {
   filesIndexed: number;
   /** Number of files removed from the index */
   filesRemoved: number;
+  /** Number of new or modified files that were uploaded and indexed */
+  filesNewOrModified: number;
+  /** Number of files that were unchanged and skipped */
+  filesUnchanged: number;
   /** Total duration of the operation in milliseconds */
   duration: number;
 }

@@ -114,14 +114,6 @@ export class Indexer {
       },
     });
 
-    // Log summary of what was indexed
-    if (result.alreadyUploaded.length > 0) {
-      console.log(`  ${result.alreadyUploaded.length} files unchanged (skipped)`);
-    }
-    if (result.newlyUploaded.length > 0) {
-      console.log(`  ${result.newlyUploaded.length} new files uploaded and indexed`);
-    }
-
     return result;
   }
 
@@ -175,6 +167,8 @@ export class Indexer {
         type: "unchanged",
         filesIndexed: 0,
         filesRemoved: 0,
+        filesNewOrModified: 0,
+        filesUnchanged: 0,
         duration: Date.now() - startTime,
       };
     }
@@ -202,9 +196,13 @@ export class Indexer {
     // Fetch all files from source
     const files = await source.fetchAll();
 
-    // Add files to index
+    // Add files to index and capture detailed results
+    let filesNewOrModified = 0;
+    let filesUnchanged = 0;
     if (files.length > 0) {
-      await this.addToIndex(context, files);
+      const indexingResult = await this.addToIndex(context, files);
+      filesNewOrModified = indexingResult.newlyUploaded.length;
+      filesUnchanged = indexingResult.alreadyUploaded.length;
     }
 
     // Get source metadata
@@ -235,6 +233,8 @@ export class Indexer {
       type: "full",
       filesIndexed: files.length,
       filesRemoved: 0,
+      filesNewOrModified,
+      filesUnchanged,
       duration: Date.now() - startTime,
     };
   }
@@ -262,10 +262,14 @@ export class Indexer {
       await context.removeFromIndex(changes.removed);
     }
 
-    // Add new and modified files
+    // Add new and modified files and capture detailed results
     const filesToAdd: FileEntry[] = [...changes.added, ...changes.modified];
+    let filesNewOrModified = 0;
+    let filesUnchanged = 0;
     if (filesToAdd.length > 0) {
-      await this.addToIndex(context, filesToAdd);
+      const indexingResult = await this.addToIndex(context, filesToAdd);
+      filesNewOrModified = indexingResult.newlyUploaded.length;
+      filesUnchanged = indexingResult.alreadyUploaded.length;
     }
 
     // Get updated source metadata
@@ -296,6 +300,8 @@ export class Indexer {
       type: "incremental",
       filesIndexed: filesToAdd.length,
       filesRemoved: changes.removed.length,
+      filesNewOrModified,
+      filesUnchanged,
       duration: Date.now() - startTime,
     };
   }
