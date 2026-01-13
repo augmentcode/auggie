@@ -1,13 +1,13 @@
 /**
- * Local command - Manage local indexes
+ * List and delete commands for managing local indexes
  */
 
 import { Command } from "commander";
 import { FilesystemStore } from "../stores/filesystem.js";
 import { getSourceIdentifier } from "../core/types.js";
 
-// List subcommand
-const listCommand = new Command("list")
+// List command
+export const listCommand = new Command("list")
   .description("List local indexes")
   .option("--store-path <path>", "Store base path (default: ~/.augment/context-connectors)")
   .action(async (options) => {
@@ -84,8 +84,8 @@ const listCommand = new Command("list")
     }
   });
 
-// Delete subcommand
-const deleteCommand = new Command("delete")
+// Delete command
+export const deleteCommand = new Command("delete")
   .description("Delete a local index")
   .argument("<name>", "Index name to delete")
   .option("--store-path <path>", "Store base path (default: ~/.augment/context-connectors)")
@@ -107,10 +107,4 @@ const deleteCommand = new Command("delete")
       process.exit(1);
     }
   });
-
-// Main local command
-export const localCommand = new Command("local")
-  .description("Manage local indexes")
-  .addCommand(listCommand)
-  .addCommand(deleteCommand);
 

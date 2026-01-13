@@ -158,26 +158,20 @@ Provider default models:
 - `anthropic`: `claude-haiku-4-5`
 - `google`: `gemini-3-flash-preview`
 
-### `local` - Manage local indexes
+### `list` - List local indexes
 
 ```bash
-context-connectors local <subcommand>
-```
-
-#### `local list` - List local indexes
-
-```bash
-context-connectors local list [options]
+context-connectors list [options]
 ```
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--store-path <path>` | Store base path | `~/.augment/context-connectors` |
 
-#### `local delete` - Delete a local index
+### `delete` - Delete a local index
 
 ```bash
-context-connectors local delete <name> [options]
+context-connectors delete <name> [options]
 ```
 
 | Option | Description | Default |

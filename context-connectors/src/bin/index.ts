@@ -7,7 +7,7 @@ import { Command } from "commander";
 import { indexCommand } from "./cmd-index.js";
 import { searchCommand } from "./cmd-search.js";
 import { mcpCommand } from "./cmd-mcp.js";
-import { localCommand } from "./cmd-local.js";
+import { listCommand, deleteCommand } from "./cmd-local.js";
 import { agentCommand } from "./cmd-agent.js";
 
 const program = new Command();
@@ -19,9 +19,10 @@ program
 
 // Add subcommands
 program.addCommand(indexCommand);
+program.addCommand(listCommand);
+program.addCommand(deleteCommand);
 program.addCommand(searchCommand);
 program.addCommand(mcpCommand);
-program.addCommand(localCommand);
 program.addCommand(agentCommand);
 
 program.parse();
