@@ -1,0 +1,554 @@
+/**
+ * GitHub Source - Fetches files from GitHub repositories.
+ *
+ * Features:
+ * - Full indexing via tarball download
+ * - Incremental updates via Compare API
+ * - Force push detection (triggers full re-index)
+ * - Respects .gitignore and .augmentignore
+ * - Uses Git Trees API for efficient file listing
+ *
+ * @module sources/github
+ *
+ * @example
+ * ```typescript
+ * import { GitHubSource } from "@augmentcode/context-connectors/sources";
+ *
+ * const source = new GitHubSource({
+ *   owner: "microsoft",
+ *   repo: "vscode",
+ *   ref: "main",
+ * });
+ *
+ * // For indexing
+ * const files = await source.fetchAll();
+ *
+ * // For clients
+ * const fileList = await source.listFiles();
+ * const contents = await source.readFile("package.json");
+ * ```
+ */
+
+import { Readable } from "node:stream";
+import ignoreFactory, { type Ignore } from "ignore";
+import tar from "tar";
+import { shouldFilterFile } from "../core/file-filter.js";
+import { isoTimestamp } from "../core/utils.js";
+import type { FileEntry, FileInfo, SourceMetadata } from "../core/types.js";
+import type { FileChanges, Source } from "./types.js";
+
+// With NodeNext module resolution, we need to access the default export properly
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ignore = (ignoreFactory as any).default ?? ignoreFactory;
+
+/**
+ * Configuration for GitHubSource.
+ */
+export interface GitHubSourceConfig {
+  /**
+   * GitHub API token for authentication.
+   * Required for private repos and to avoid rate limits.
+   * @default process.env.GITHUB_TOKEN
+   */
+  token?: string;
+  /** Repository owner (user or organization) */
+  owner: string;
+  /** Repository name */
+  repo: string;
+  /**
+   * Git ref (branch, tag, or commit SHA).
+   * @default "HEAD"
+   */
+  ref?: string;
+}
+
+// Type for dynamically imported Octokit - use any since it's an optional peer dep
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type OctokitType = any;
+
+/**
+ * Source implementation for GitHub repositories.
+ *
+ * Uses the GitHub API to:
+ * - Download repository contents as tarball (for full index)
+ * - Compare commits (for incremental updates)
+ * - List files via Git Trees API (for file listing)
+ * - Read individual files (for read_file tool)
+ *
+ * Requires @octokit/rest as a peer dependency.
+ *
+ * @example
+ * ```typescript
+ * const source = new GitHubSource({
+ *   owner: "octocat",
+ *   repo: "hello-world",
+ *   ref: "main",
+ * });
+ *
+ * // Resolve ref to commit SHA
+ * const meta = await source.getMetadata();
+ * console.log(`Indexing ${meta.identifier}@${meta.ref}`);
+ * ```
+ */
+export class GitHubSource implements Source {
+  readonly type = "github" as const;
+  private readonly owner: string;
+  private readonly repo: string;
+  private readonly ref: string;
+  private readonly token: string;
+  private octokit: OctokitType | null = null;
+  private resolvedRef: string | null = null;
+
+  /**
+   * Create a new GitHubSource.
+   *
+   * @param config - Source configuration
+   * @throws Error if no GitHub token is available
+   */
+  constructor(config: GitHubSourceConfig) {
+    this.owner = config.owner;
+    this.repo = config.repo;
+    this.ref = config.ref ?? "HEAD";
+    this.token = config.token ?? process.env.GITHUB_TOKEN ?? "";
+
+    if (!this.token) {
+      throw new Error("GitHub token required. Set GITHUB_TOKEN environment variable or pass token in config.");
+    }
+  }
+
+  /**
+   * Get or create Octokit instance (lazy loading for optional dependency)
+   */
+  private async getOctokit(): Promise<OctokitType> {
+    if (this.octokit) {
+      return this.octokit;
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { Octokit } = (await import("@octokit/rest" as any)) as { Octokit: any };
+      this.octokit = new Octokit({ auth: this.token });
+      return this.octokit;
+    } catch {
+      throw new Error(
+        "GitHubSource requires @octokit/rest. Install it with: npm install @octokit/rest"
+      );
+    }
+  }
+
+  /**
+   * Resolve ref (branch/tag/HEAD) to commit SHA.
+   *
+   * The resolved SHA is cached for the lifetime of this instance to ensure
+   * consistency across multiple operations (e.g., getMetadata, fetchAll, listFiles).
+   *
+   * To pick up new commits, create a new GitHubSource instance.
+   */
+  private async resolveRefToSha(): Promise<string> {
+    if (this.resolvedRef) {
+      return this.resolvedRef;
+    }
+
+    const octokit = await this.getOctokit();
+    try {
+      const { data } = await octokit.repos.getCommit({
+        owner: this.owner,
+        repo: this.repo,
+        ref: this.ref,
+      });
+      this.resolvedRef = data.sha;
+      return data.sha;
+    } catch (error) {
+      throw new Error(
+        `Failed to resolve ref "${this.ref}" for ${this.owner}/${this.repo}: ${error}`
+      );
+    }
+  }
+
+  /**
+   * Load ignore patterns from .gitignore and .augmentignore
+   */
+  private async loadIgnorePatterns(ref: string): Promise<{
+    augmentignore: Ignore;
+    gitignore: Ignore;
+  }> {
+    const augmentignore = ignore();
+    const gitignore = ignore();
+
+    // Try to load .gitignore
+    try {
+      const content = await this.getFileContents(".gitignore", ref);
+      if (content) {
+        gitignore.add(content);
+      }
+    } catch {
+      // .gitignore doesn't exist
+    }
+
+    // Try to load .augmentignore
+    try {
+      const content = await this.getFileContents(".augmentignore", ref);
+      if (content) {
+        augmentignore.add(content);
+      }
+    } catch {
+      // .augmentignore doesn't exist
+    }
+
+    return { augmentignore, gitignore };
+  }
+
+  /**
+   * Check if a file should be included based on ignore patterns and filters.
+   * Returns true if the file should be included, false if it should be filtered out.
+   *
+   * Applies filtering in priority order:
+   * 1. .augmentignore
+   * 2. Path validation, file size, keyish patterns, UTF-8 validation
+   * 3. .gitignore
+   */
+  private shouldIncludeFile(
+    path: string,
+    content: Buffer,
+    augmentignore: Ignore,
+    gitignore: Ignore
+  ): boolean {
+    // 1. .augmentignore
+    if (augmentignore.ignores(path)) {
+      return false;
+    }
+
+    // 2. Path validation, file size, keyish patterns, UTF-8 validation
+    const filterResult = shouldFilterFile({
+      path,
+      content,
+    });
+
+    if (filterResult.filtered) {
+      return false;
+    }
+
+    // 3. .gitignore (checked last)
+    if (gitignore.ignores(path)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Get file contents at a specific ref as a Buffer
+   */
+  private async getFileContentsRaw(path: string, ref: string): Promise<Buffer | null> {
+    const octokit = await this.getOctokit();
+    try {
+      const { data } = await octokit.repos.getContent({
+        owner: this.owner,
+        repo: this.repo,
+        path,
+        ref,
+      });
+
+      if (Array.isArray(data) || data.type !== "file") {
+        return null;
+      }
+
+      // Decode base64 content
+      return Buffer.from(data.content, "base64");
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Get file contents at a specific ref
+   */
+  private async getFileContents(path: string, ref: string): Promise<string | null> {
+    const buffer = await this.getFileContentsRaw(path, ref);
+    return buffer ? buffer.toString("utf-8") : null;
+  }
+
+  /**
+   * Download tarball and extract files
+   */
+  private async downloadTarball(ref: string): Promise<Map<string, string>> {
+    const octokit = await this.getOctokit();
+    console.log(`Downloading tarball for ${this.owner}/${this.repo}@${ref}...`);
+
+    // Get tarball URL
+    const { url } = await octokit.repos.downloadTarballArchive({
+      owner: this.owner,
+      repo: this.repo,
+      ref,
+    });
+
+    // Download tarball. The URL returned by Octokit is a pre-signed URL
+    // (codeload.github.com with a ?token=... parameter) that works for private
+    // repos without additional Authorization headers.
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to download tarball: ${response.statusText}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Load ignore patterns
+    const { augmentignore, gitignore } = await this.loadIgnorePatterns(ref);
+
+    // Extract files from tarball
+    const files = new Map<string, string>();
+    const stream = Readable.from(buffer);
+
+    await new Promise<void>((resolve, reject) => {
+      const parser = tar.list({
+        onentry: (entry) => {
+          // Skip directories and symlinks
+          if (entry.type !== "File") {
+            return;
+          }
+
+          // Remove the root directory prefix (e.g., "owner-repo-sha/")
+          const pathParts = entry.path.split("/");
+          pathParts.shift(); // Remove first component
+          const filePath = pathParts.join("/");
+
+          // Read file contents
+          const chunks: Buffer[] = [];
+          entry.on("data", (chunk) => chunks.push(chunk));
+          entry.on("end", () => {
+            const contentBuffer = Buffer.concat(chunks);
+
+            // Apply filtering
+            if (!this.shouldIncludeFile(filePath, contentBuffer, augmentignore, gitignore)) {
+              return;
+            }
+
+            // File passed all filters
+            const contents = contentBuffer.toString("utf-8");
+            files.set(filePath, contents);
+          });
+          // Handle entry-level errors to prevent hanging on corrupt entries
+          entry.on("error", reject);
+        },
+      });
+
+      stream.pipe(parser);
+      parser.on("close", resolve);
+      // Handle parser errors (tar library types don't include error event, but the underlying stream does)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (parser as any).on("error", reject);
+      stream.on("error", reject);
+    });
+
+    console.log(`Extracted ${files.size} files from tarball`);
+    return files;
+  }
+
+  /**
+   * Check if the push was a force push (base commit not reachable from head)
+   *
+   * Force push detection cases:
+   * 1. Compare API fails - base commit no longer exists
+   * 2. status: "diverged" - histories have diverged
+   * 3. status: "behind" - head is behind base (revert to older commit)
+   * 4. behind_by > 0 - additional indicator of non-linear history
+   */
+  private async isForcePush(base: string, head: string): Promise<boolean> {
+    const octokit = await this.getOctokit();
+    try {
+      const { data } = await octokit.repos.compareCommits({
+        owner: this.owner,
+        repo: this.repo,
+        base,
+        head,
+      });
+
+      // Check for non-linear history indicators
+      // "diverged" means histories have diverged (typical force push)
+      // "behind" means head is an ancestor of base (revert to older commit)
+      if (data.status === "diverged" || data.status === "behind") {
+        return true;
+      }
+
+      // Additional safety check: behind_by > 0 indicates head is behind base
+      if (data.behind_by > 0) {
+        return true;
+      }
+
+      return false;
+    } catch {
+      // If comparison fails, it's likely a force push
+      return true;
+    }
+  }
+
+  /**
+   * Check if ignore files changed between commits
+   */
+  private async ignoreFilesChanged(base: string, head: string): Promise<boolean> {
+    const octokit = await this.getOctokit();
+    const { data } = await octokit.repos.compareCommits({
+      owner: this.owner,
+      repo: this.repo,
+      base,
+      head,
+    });
+
+    const ignoreFiles = [".gitignore", ".augmentignore"];
+    return (data.files || []).some((file: { filename: string }) =>
+      ignoreFiles.includes(file.filename)
+    );
+  }
+
+  async fetchAll(): Promise<FileEntry[]> {
+    const ref = await this.resolveRefToSha();
+    const filesMap = await this.downloadTarball(ref);
+
+    const files: FileEntry[] = [];
+    for (const [path, contents] of filesMap) {
+      files.push({ path, contents });
+    }
+
+    return files;
+  }
+
+  async fetchChanges(previous: SourceMetadata): Promise<FileChanges | null> {
+    // Need previous resolved ref to compute changes
+    const previousRef =
+      previous.type === "github" ||
+      previous.type === "gitlab" ||
+      previous.type === "bitbucket"
+        ? previous.resolvedRef
+        : undefined;
+
+    if (!previousRef) {
+      return null;
+    }
+
+    const currentRef = await this.resolveRefToSha();
+
+    // Same commit, no changes
+    if (previousRef === currentRef) {
+      return { added: [], modified: [], removed: [] };
+    }
+
+    // Check for force push
+    if (await this.isForcePush(previousRef, currentRef)) {
+      console.log("Force push detected, triggering full re-index");
+      return null;
+    }
+
+    // Check if ignore files changed
+    if (await this.ignoreFilesChanged(previousRef, currentRef)) {
+      console.log("Ignore files changed, triggering full re-index");
+      return null;
+    }
+
+    // Get changed files via compare API
+    const octokit = await this.getOctokit();
+    const { data } = await octokit.repos.compareCommits({
+      owner: this.owner,
+      repo: this.repo,
+      base: previousRef,
+      head: currentRef,
+    });
+
+    const changedFiles = data.files || [];
+
+    // If too many changes, do full reindex
+    if (changedFiles.length > 100) {
+      console.log(`Too many changes (${changedFiles.length}), triggering full re-index`);
+      return null;
+    }
+
+    // Load ignore patterns for filtering
+    const { augmentignore, gitignore } = await this.loadIgnorePatterns(currentRef);
+
+    const added: FileEntry[] = [];
+    const modified: FileEntry[] = [];
+    const removed: string[] = [];
+
+    for (const file of changedFiles) {
+      if (file.status === "removed") {
+        removed.push(file.filename);
+      } else if (file.status === "added" || file.status === "modified" || file.status === "renamed") {
+        // Download file contents as Buffer for filtering
+        const contentBuffer = await this.getFileContentsRaw(file.filename, currentRef);
+        if (contentBuffer === null) {
+          continue;
+        }
+
+        // Apply filtering
+        if (!this.shouldIncludeFile(file.filename, contentBuffer, augmentignore, gitignore)) {
+          continue;
+        }
+
+        // File passed all filters
+        const contents = contentBuffer.toString("utf-8");
+        const entry = { path: file.filename, contents };
+        if (file.status === "added") {
+          added.push(entry);
+        } else {
+          modified.push(entry);
+        }
+
+        // Handle rename as remove + add
+        if (file.status === "renamed" && file.previous_filename) {
+          removed.push(file.previous_filename);
+        }
+      }
+    }
+
+    return { added, modified, removed };
+  }
+
+  async getMetadata(): Promise<SourceMetadata> {
+    const resolvedRef = await this.resolveRefToSha();
+    return {
+      type: "github",
+      config: {
+        owner: this.owner,
+        repo: this.repo,
+        ref: this.ref,
+      },
+      resolvedRef,
+      syncedAt: isoTimestamp(),
+    };
+  }
+
+  async listFiles(directory: string = ""): Promise<FileInfo[]> {
+    // Use getContent API for specific directory (non-recursive)
+    const octokit = await this.getOctokit();
+    const sha = await this.resolveRefToSha();
+
+    try {
+      const { data } = await octokit.repos.getContent({
+        owner: this.owner,
+        repo: this.repo,
+        path: directory,
+        ref: sha,
+      });
+
+      // getContent returns an array for directories, single object for files
+      if (!Array.isArray(data)) {
+        // This is a file, not a directory - return empty
+        return [];
+      }
+
+      return data.map((item: { path: string; type: string }) => ({
+        path: item.path,
+        type: item.type === "dir" ? "directory" as const : "file" as const,
+      }));
+    } catch {
+      // Directory doesn't exist
+      return [];
+    }
+  }
+
+  async readFile(path: string): Promise<string | null> {
+    const ref = await this.resolveRefToSha();
+    return this.getFileContents(path, ref);
+  }
+}
+
