@@ -1,5 +1,25 @@
 # Changelog
 
+### 0.14.0
+
+#### New Features
+- MCP dynamic workspace discovery: MCP mode now supports on-the-fly workspace indexing with --mcp-auto-workspace flag, allowing codebase-retrieval to search different directories without restarting
+
+#### Improvements
+- Session management: Most recent sessions now appear at the top of the session picker list
+- Chat history: Chat history display fixed on --continue
+- Custom commands: Custom command model overrides now only apply to the next response instead of all follow-up responses
+- Banner: Updated banner with left-to-right gradient and all caps text
+
+#### Bug Fixes
+- Settings management: Settings updates now preserve comments and invalid/unknown fields in settings.json
+- Session persistence: Workspace settings (guidelines, rules, memories) are now preserved when using /new command or --continue flag
+- Fixed keyboard shortcuts not responding while in mention mode
+- Fixed issue with focus characters appearing in input
+- Fixed rules not being applied when starting a new session with /new or --continue
+- Fixed MCP server orphan processes when parent process terminates
+- Onboarding: Updated prompt enhancer onboarding text to clarify credit usage
+
 ### 0.13.0
 
 - Terminal title updates: Terminal window title now automatically updates based on conversation context
