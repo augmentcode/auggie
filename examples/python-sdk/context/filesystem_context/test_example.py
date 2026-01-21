@@ -27,7 +27,7 @@ def main():
         [sys.executable, "-m", "filesystem_context"],
         capture_output=True,
         text=True,
-        timeout=120,  # 2 minutes should be plenty
+        timeout=300,  # 5 minutes - multiple LLM API calls via search_and_ask
         cwd=str(context_dir),
     )
 
