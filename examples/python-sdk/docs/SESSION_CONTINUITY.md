@@ -266,3 +266,9 @@ with AuggieACPClient(workspace_root="/path/to/workspace") as client:
 | **Best For** | One-off requests | Multiple related requests |
 
 **Key Takeaway:** The ACP client's long-running architecture makes session resume unnecessary - it's a feature, not a bug! 🎉
+
+## See Also
+
+- [Agent Event Listener](./AGENT_EVENT_LISTENER.md)
+- [Claude Code Client](./CLAUDE_CODE_CLIENT.md)
+- [Prompt to Code](./PROMPT_TO_CODE.md)

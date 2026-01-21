@@ -1,6 +1,5 @@
 import sys
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
 
 # Add the parent directory to the path so we can import auggie_sdk
@@ -19,14 +18,15 @@ class PR:
 
 
 def main():
-    a = Agent(workspace_root=Path.cwd())
+    agent = Auggie(workspace_root=Path.cwd())
 
-    if not a(bool) @ "are you connected to github?":
+    is_connected = agent.run("are you connected to github?", return_type=bool)
+    if not is_connected:
         raise Exception("Not connected to github")
 
-    prs = a(list[PR]) @ "List the last 3 PRs in the current repo"
+    prs = agent.run("List the last 3 PRs in the current repo", return_type=list[PR])
 
-    summaries = [a(str) @ f"summarize PR {pr}" for pr in prs]
+    summaries = [agent.run(f"summarize PR {pr}", return_type=str) for pr in prs]
 
     for pr, summary in zip(prs, summaries):
         print("Title:", pr.title)

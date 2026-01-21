@@ -24,8 +24,7 @@ Converting these to SDK programs gives you:
 Make sure the Augment SDK is installed:
 
 ```bash
-cd experimental/guy/auggie_sdk
-pip install -e .
+pip install auggie-sdk
 ```
 
 ## Usage
@@ -255,6 +254,26 @@ This clearly shows:
 - Conditional logic (if any fail)
 - Data dependencies (which files need tests)
 
+### More Example Prompts
+
+**Documentation Generator:**
+```
+Analyze all public functions and classes in the src/ directory. For each
+one that's missing a docstring or has an incomplete docstring, generate
+comprehensive documentation including description, parameters, return
+values, and usage examples. Then validate that all docstrings follow
+Google style guide format.
+```
+
+**Code Refactoring Pipeline:**
+```
+Find all functions in the codebase that are longer than 50 lines. For
+each one, analyze if it can be broken down into smaller functions. If
+yes, refactor it into multiple well-named functions with clear
+responsibilities. After each refactoring, run the existing tests to
+ensure nothing broke. Keep a log of all refactorings performed.
+```
+
 ### Less Ideal Prompt Example
 
 ```
@@ -262,6 +281,22 @@ Make the codebase better with tests and stuff.
 ```
 
 This is too vague and doesn't provide enough structure for conversion.
+
+## What Gets Generated
+
+The tool generates a complete Python program with:
+
+1. **Proper shebang and docstring**
+2. **All necessary imports** (Agent, dataclasses, typing, etc.)
+3. **Dataclass definitions** for structured data
+4. **Agent initialization** with appropriate settings
+5. **Workflow implementation** using SDK patterns:
+   - Sessions for context continuity
+   - Typed results for decision-making
+   - Loops for iteration
+   - Error handling
+6. **Main function** that can be run directly
+7. **Helpful comments** explaining each stage
 
 ## After Generation
 
@@ -272,6 +307,47 @@ Once you have your generated SDK program:
 3. **Test it** - Run it on a small subset first
 4. **Iterate** - Modify the program based on results
 5. **Reuse it** - Run the same workflow whenever needed
+
+### Modifying Generated Programs
+
+After generation, you can enhance the code:
+
+**Add error handling:**
+```python
+try:
+    result = agent("Some operation", int)
+except AugmentCLIError as e:
+    print(f"Error: {e}")
+```
+
+**Add logging:**
+```python
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.info(f"Processing {len(files)} files")
+```
+
+**Add function calling:**
+```python
+def run_tests(file: str) -> dict:
+    """Run tests for a file."""
+    # Your implementation
+    return {"passed": 10, "failed": 0}
+
+result = agent.run(
+    "Run tests and analyze results",
+    return_type=dict,
+    functions=[run_tests]
+)
+```
+
+**Add event listeners:**
+```python
+from auggie_sdk import LoggingAgentListener
+
+listener = LoggingAgentListener(verbose=True)
+agent = Auggie(listener=listener)
+```
 
 ## See Also
 

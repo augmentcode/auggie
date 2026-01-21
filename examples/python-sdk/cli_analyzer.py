@@ -43,9 +43,10 @@ def main():
     
     # Initialize the agent
     print("🚀 Initializing Augment Agent...")
+    import os
     agent = Auggie(
-        workspace_root="/home/augment/augment2",
-        model="claude-3-5-sonnet-latest"
+        workspace_root=os.getcwd(),  # Use current working directory
+        model="sonnet4.5"
     )
     
     # ============================================================================
@@ -54,10 +55,10 @@ def main():
     print("\n📁 Stage 1: Discovering TypeScript files...")
     
     try:
-        ts_files = agent(
+        ts_files = agent.run(
             "List all TypeScript files (.ts) in the clients/beachhead/src/cli directory. "
             "Return just the file paths as a list of strings, relative to the workspace root.",
-            list[str]
+            return_type=list[str]
         )
         print(f"   Found {len(ts_files)} TypeScript files to analyze")
     except Exception as e:
@@ -83,14 +84,14 @@ def main():
             
             try:
                 # Analyze this specific file
-                analysis = session(
+                analysis = session.run(
                     f"Analyze the file {file_path}. Check for:\n"
                     f"1. Whether it has proper error handling (try-catch blocks, error returns)\n"
                     f"2. Whether exported functions have JSDoc comments\n"
                     f"3. Any potential bugs or code smells\n"
                     f"Also rate the importance of this file from 1-10 based on its role.\n"
                     f"Return a FileAnalysis object.",
-                    FileAnalysis
+                    return_type=FileAnalysis
                 )
                 all_analyses.append(analysis)
                 
@@ -145,7 +146,7 @@ def main():
     print(f"   - Files missing JSDoc: {files_missing_jsdoc}")
     
     try:
-        agent(
+        agent.run(
             f"Create a comprehensive analysis report in cli_analysis_report.md with:\n"
             f"- Summary statistics: {len(ts_files)} files analyzed, {len(all_issues)} issues found\n"
             f"- {files_missing_error_handling} files missing error handling\n"
@@ -169,7 +170,7 @@ def main():
         print("      Creating detailed error handling plan...")
         
         try:
-            agent(
+            agent.run(
                 f"Create a detailed plan for adding error handling to the {files_missing_error_handling} "
                 f"files that are missing it. Save this plan in error_handling_plan.md. "
                 f"Include:\n"
@@ -199,7 +200,7 @@ def main():
         try:
             with agent.session() as session:
                 for file_analysis in top_5_files:
-                    session(
+                    session.run(
                         f"Generate JSDoc comment templates for all exported functions in "
                         f"{file_analysis.file_path}. Add these as comments in the file, "
                         f"following TypeScript JSDoc best practices."
@@ -237,9 +238,9 @@ def main():
     with agent.session() as session:
         for idx, issue in enumerate(top_3_issues, 1):
             print(f"      [{idx}/3] Creating fix for: {issue.description} in {issue.file_path}")
-            
+
             try:
-                session(
+                session.run(
                     f"Create a specific fix suggestion for this issue:\n"
                     f"File: {issue.file_path}\n"
                     f"Issue: {issue.description}\n"

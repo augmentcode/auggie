@@ -95,8 +95,8 @@ See the [context README](context/README.md) for prerequisites and detailed usage
 
 ## Prompt-to-SDK Conversion
 
-### `example_complex_prompt.txt`
-A sample complex prompt that demonstrates multiple stages, conditions, and iterations. Use this to test the `/prompt-to-sdk` command.
+### `example_prompt.txt`
+A sample complex prompt that demonstrates multiple stages, conditions, and iterations. Use this to test the prompt-to-code converter.
 
 **Example prompt structure:**
 ```
@@ -118,7 +118,7 @@ Finally:
 - Create fix suggestions for top 3
 ```
 
-See [README_PROMPT_TO_CODE.md](README_PROMPT_TO_CODE.md) for more details on prompt-to-code conversion.
+See [PROMPT_TO_CODE.md](docs/PROMPT_TO_CODE.md) for more details on prompt-to-code conversion.
 
 ## Workflow Patterns
 

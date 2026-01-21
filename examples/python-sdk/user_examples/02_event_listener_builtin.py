@@ -1,6 +1,6 @@
 """Built-in Logger Example from user_guide.md"""
 
-from auggie_sdk import Agent, LoggingAgentListener
+from auggie_sdk import Auggie, LoggingAgentListener
 
 # Use the built-in logger for easy debugging
 agent = Auggie(listener=LoggingAgentListener(verbose=True))

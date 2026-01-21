@@ -8,18 +8,18 @@ This demonstrates all the key features:
 4. Clearing context
 """
 
-from auggie_sdk.acp import AuggieACPClient, AgentEventListener, ModelName
+from auggie_sdk.acp import AuggieACPClient, AgentEventListener
 from typing import Optional, Any
 
 
 class MyEventListener(AgentEventListener):
     """Example event listener that prints all agent events."""
 
-    def on_agent_message(self, text: str) -> None:
+    def on_agent_message_chunk(self, text: str) -> None:
         """Called when the agent sends a message chunk."""
         print(f"[AGENT MESSAGE] {text}", end="", flush=True)
 
-    def on_tool_call_start(
+    def on_tool_call(
         self,
         tool_call_id: str,
         title: str,
@@ -32,14 +32,14 @@ class MyEventListener(AgentEventListener):
         print(f"  Kind: {kind}")
         print(f"  Status: {status}")
 
-    def on_tool_call_update(
+    def on_tool_response(
         self,
         tool_call_id: str,
         status: Optional[str] = None,
         content: Optional[Any] = None,
     ) -> None:
-        """Called when a tool call is updated."""
-        print(f"[TOOL CALL UPDATE] {tool_call_id}")
+        """Called when a tool response is received."""
+        print(f"[TOOL RESPONSE] {tool_call_id}")
         print(f"  Status: {status}")
         if content:
             print(f"  Content: {str(content)[:100]}...")  # Truncate long content
@@ -58,7 +58,7 @@ def example_basic_usage():
     # Create client without listener
     # You can optionally specify model and workspace_root:
     # client = AuggieACPClient(
-    #     model=ModelName.SONNET_4_5,  # Use enum for type safety
+    #     model="sonnet4.5",  # Model string
     #     workspace_root="/path/to/workspace"
     # )
     client = AuggieACPClient()
@@ -95,7 +95,7 @@ def example_with_listener():
     print(f"Agent started! Session ID: {client.session_id}\n")
 
     # Send a message that will trigger tool calls
-    message = "Please read the file experimental/guy/auggie_sdk/README.md and summarize it in one sentence."
+    message = "Please read the README.md file in the current directory and summarize it in one sentence."
     print(f"Sending: {message}\n")
     response = client.send_message(message, timeout=30.0)
     print(f"\n\nFinal Response: {response}\n")
@@ -191,9 +191,9 @@ def example_model_and_workspace():
     import os
 
     # Create client with specific model and workspace
-    # You can use the ModelName enum for type safety:
+    # Use model string directly:
     client = AuggieACPClient(
-        model=ModelName.SONNET_4_5,  # Use enum for type safety
+        model="sonnet4.5",  # Model string
         workspace_root=os.getcwd(),  # Specify workspace root
     )
 

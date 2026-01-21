@@ -51,14 +51,17 @@ def main():
         print("✅ Created tests (agent remembers the volume function)")
 
         # Third call with typed result - also remembers previous context
-        functions = session(list[Function]) @ "List all the functions we've created in this conversation"
+        functions = session.run(
+            "List all the functions we've created in this conversation",
+            return_type=list[Function]
+        )
         print(f"✅ Retrieved {len(functions)} functions from session memory:")
         for func in functions:
             print(f"   - {func.name}: {func.description}")
 
-        print(f"   Session ID from CLI: {session.last_session_id}")
+        print(f"   Session ID from CLI: {session.session_id}")
 
-    print(f"   Agent now remembers last session: {agent.last_session_id}")
+    print(f"   Agent now remembers last session: {agent.session_id}")
     
     print("\n🎯 MIXED USAGE - Sessions for related work, independent calls for unrelated:")
     print("=" * 50)
@@ -79,18 +82,21 @@ def main():
         session.run("Create a function to check if a string is a palindrome")
 
         # This will only know about string functions, not the math functions from before
-        string_functions = session(list[Function]) @ "List the string utility functions we created"
+        string_functions = session.run(
+            "List the string utility functions we created",
+            return_type=list[Function]
+        )
         print(f"✅ String session has {len(string_functions)} functions:")
         for func in string_functions:
             print(f"   - {func.name}: {func.description}")
 
-        print(f"   New session ID: {session.last_session_id}")
+        print(f"   New session ID: {session.session_id}")
 
     print("\n✨ Session context manager provides clean separation of concerns!")
     print("    - CLI automatically creates session IDs")
     print("    - agent.session() automatically resumes last session if available")
     print("    - agent.session(id) explicitly specifies a session ID")
-    print("    - Agent remembers last_session_id for automatic continuation")
+    print("    - Agent remembers session_id for automatic continuation")
 
 
 if __name__ == "__main__":
