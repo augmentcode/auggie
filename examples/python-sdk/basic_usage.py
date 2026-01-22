@@ -39,55 +39,51 @@ def main():
 
     # Example 1: Automatic type inference (no return_type specified)
     print("\n1. Automatic type inference:")
-    result, inferred_type = agent.run("What is 15 + 27?")
-    print(f"Result: {result} (inferred type: {inferred_type.__name__})")
+    result = agent.run("What is 15 + 27?")
+    print(f"Result: {result} (inferred type: {type(result).__name__})")
 
     # Example 2: Explicit typed response - integer
     print("\n2. Explicit typed response (integer):")
     result = agent.run("What is 15 + 27?", int)
     print(f"Result: {result} (type: {type(result).__name__})")
 
-    # Example 3: @ operator syntax
-    print("\n3. @ operator syntax:")
-    result = agent(int) @ "What is 8 * 7?"
-    print(f"Result: {result} (type: {type(result).__name__})")
-
-    # Example 4: List of strings
-    print("\n4. List of strings:")
-    colors = agent(list[str]) @ "Give me 5 colors"
+    # Example 3: List of strings
+    print("\n3. List of strings:")
+    colors = agent.run("Give me 5 colors")
     print(f"Colors: {colors}")
 
-    # Example 5: Dataclass result
-    print("\n5. Dataclass result:")
-    task = agent(Task) @ "Create a task: 'Write unit tests', medium priority, 4 hours"
+    # Example 4: Dataclass result
+    print("\n4. Dataclass result:")
+    task = agent.run("Create a task: 'Write unit tests', medium priority, 4 hours", return_type=Task)
     print(
         f"Task: {task.title}, Priority: {task.priority}, Hours: {task.estimated_hours}"
     )
 
-    # Example 6: List of dataclasses
-    print("\n6. List of dataclasses:")
-    tasks = agent(list[Task]) @ "Create 3 example programming tasks"
+    # Example 5: List of dataclasses
+    print("\n5. List of dataclasses:")
+    tasks = agent.run("Create 3 example programming tasks", return_type=list[Task])
     print("Tasks:")
-    for i, task in enumerate(tasks, 1):
+    for t in tasks:
         print(
-            f"  {i}. {task.title} ({task.priority} priority, {task.estimated_hours}h)"
+            f"  - {t.title} ({t.priority} priority, {t.estimated_hours}h)"
         )
 
-    # Example 7: Enum result
-    print("\n7. Enum result:")
-    priority = (
-        agent(Priority) @ "What priority should 'fix critical security bug' have?"
+    # Example 6: Enum result
+    print("\n6. Enum result:")
+    priority = agent.run(
+        "What priority should 'fix critical security bug' have?",
+        return_type=Priority
     )
     print(f"Priority: {priority} (type: {type(priority).__name__})")
 
-    # Example 8: Access model's explanation
-    print("\n8. Model explanation:")
-    result = agent(bool) @ "Is Python a compiled language?"
+    # Example 7: Access model's explanation
+    print("\n7. Model explanation:")
+    result = agent.run("Is Python a compiled language?", return_type=bool)
     print(f"Answer: {result}")
     print(f"Explanation: {agent.last_model_answer}")
 
-    # Example 9: Session context manager
-    print("\n9. Session context manager:")
+    # Example 8: Session context manager
+    print("\n8. Session context manager:")
     print("   Default behavior (no memory):")
     agent.run("Create a function called 'greet_user'")
     agent.run("Now add error handling to that function")  # Won't remember greet_user
@@ -105,13 +101,12 @@ def main():
             "Add comprehensive docstring and type hints"
         )  # Remembers the function
 
-        # Use @ operator in session
-        functions = (
-            session(list[str])
-            @ "List all the functions we've worked on in this session"
+        # Query the session for functions
+        functions = session.run(
+            "List all the functions we've worked on in this session"
         )
         print(f"   Functions in session: {functions}")
-        print(f"   Session ID: {session.last_session_id}")
+        print(f"   Session ID: {session.session_id}")
 
     print("   Continuing the same session automatically:")
     with agent.session() as session:  # Automatically resumes last session

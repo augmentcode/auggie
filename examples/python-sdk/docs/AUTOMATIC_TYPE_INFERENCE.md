@@ -49,7 +49,7 @@ def run(
 
 **Return values:**
 - If `return_type` is specified: Returns parsed result of that type
-- If `return_type` is None: Returns tuple of `(result, inferred_type)`
+- If `return_type` is None: Returns result with automatically inferred type (use `type(result)` to inspect)
 
 ## Examples
 
@@ -61,16 +61,16 @@ from auggie_sdk import Auggie
 agent = Auggie()
 
 # Agent automatically determines the type
-result, inferred_type = agent.run("What is 2 + 2?")
-print(f"Result: {result}, Type: {inferred_type.__name__}")
+result = agent.run("What is 2 + 2?")
+print(f"Result: {result}, Type: {type(result).__name__}")
 # Output: Result: 4, Type: int
 
-result, inferred_type = agent.run("List the primary colors")
-print(f"Result: {result}, Type: {inferred_type.__name__}")
+result = agent.run("List the primary colors")
+print(f"Result: {result}, Type: {type(result).__name__}")
 # Output: Result: ['red', 'blue', 'yellow'], Type: list
 
-result, inferred_type = agent.run("Is Python statically typed?")
-print(f"Result: {result}, Type: {inferred_type.__name__}")
+result = agent.run("Is Python statically typed?")
+print(f"Result: {result}, Type: {type(result).__name__}")
 # Output: Result: False, Type: bool
 ```
 
@@ -92,56 +92,6 @@ class Task:
 task = agent.run("Create a task", return_type=Task)
 print(f"Task: {task.title}")
 ```
-
-## Implementation Details
-
-### Core Changes
-
-1. **Added `DEFAULT_INFERENCE_TYPES` constant** in `augment/agent.py`:
-   ```python
-   DEFAULT_INFERENCE_TYPES = [int, float, bool, str, list, dict]
-   ```
-
-2. **Modified `run()` method** to use automatic type inference when `return_type` is None:
-   ```python
-   if return_type is None:
-       # Type inference mode with default types
-       return self._run_with_type_inference(
-           client,
-           instruction,
-           DEFAULT_INFERENCE_TYPES,
-           effective_timeout,
-           max_retries,
-       )
-   ```
-
-3. **Removed `infer_type` parameter** from the `run()` method signature
-
-4. **Updated return type annotation** to reflect the new behavior:
-   ```python
-   -> Union[T, tuple[T, Type[T]]]
-   ```
-
-### Test Updates
-
-- Updated all tests that call `agent.run()` without `return_type` to expect tuple returns
-- Added helper function `make_type_inference_response()` for creating mock responses
-- Renamed tests from `test_run_type_inference_*` to `test_run_automatic_type_inference_*`
-- All 49 unit tests passing
-
-### Documentation Updates
-
-- Updated README.md with automatic type inference examples
-- Added dedicated section explaining the feature
-- Updated API reference
-- Updated examples in `examples/basic_usage.py`
-
-## Benefits
-
-1. **Simpler API**: No need to specify `infer_type` parameter
-2. **More Intelligent**: Agent automatically chooses the best type
-3. **Backward Compatible**: Explicit `return_type` still works as before
-4. **Better UX**: Natural behavior - when you don't specify a type, the agent figures it out
 
 ## Migration Guide
 
@@ -172,19 +122,8 @@ result, inferred_type = agent.run("Hello")  # Returns tuple
 result, _ = agent.run("Hello")
 ```
 
-## Files Modified
+## See Also
 
-1. `augment/agent.py` - Core implementation
-2. `tests/test_agent.py` - Test updates
-3. `README.md` - Documentation
-4. `examples/basic_usage.py` - Example updates
-5. `pyproject.toml` - Fixed duplicate `[project.optional-dependencies]` section
-
-## Testing
-
-All tests pass:
-```bash
-cd experimental/guy/auggie_sdk
-python3 -m pytest tests/test_agent.py -v
-# 49 passed in 0.16s
-```
+- [Typed Returns](./TYPED_RETURNS.md)
+- [Function Calling](./FUNCTION_CALLING.md)
+- [Agent Event Listener](./AGENT_EVENT_LISTENER.md)

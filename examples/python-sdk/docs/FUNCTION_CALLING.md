@@ -4,34 +4,6 @@
 
 The Augment Python SDK now supports **function calling**, allowing you to provide Python functions that the agent can invoke during execution. This enables the agent to interact with external systems, perform calculations, fetch data, and more.
 
-## Implementation Summary
-
-### What Was Added
-
-1. **Function Schema Generation** (`augment/function_tools.py`)
-   - Converts Python functions with type hints to JSON schemas
-   - Extracts parameter descriptions from docstrings
-   - Supports Google-style and NumPy-style docstrings
-   - Handles optional parameters, default values, and various Python types
-
-2. **Agent Integration** (`augment/agent.py`)
-   - Added `functions` parameter to `Agent.run()` method
-   - Function schemas are added to the instruction prompt
-   - Integrated into normal code path (no separate function calling flow)
-   - Added `_handle_function_calls()` helper to process function calls in responses
-   - Added `_parse_function_calls()` to extract function calls from agent responses
-   - Automatic function execution and result passing back to agent
-
-3. **Documentation**
-   - Updated README.md with function calling examples
-   - Updated examples/README.md with proper usage
-   - Updated .augment/commands/prompt-to-sdk.md
-
-4. **Examples and Tests**
-   - Created `examples/function_calling_example.py` with comprehensive examples
-   - Created `examples/simple_function_test.py` for quick testing
-   - Created `test_function_calling.py` with unit tests
-
 ## How It Works
 
 ### 1. Function Definition
@@ -203,15 +175,12 @@ result = agent.run(
 Run the tests:
 
 ```bash
-# Unit tests
-cd experimental/guy/auggie_sdk
-python3 -m pytest test_function_calling.py
+# Install the SDK
+pip install auggie-sdk
 
-# Simple integration test
-python3 examples/simple_function_test.py
-
-# Full examples
-python3 examples/function_calling_example.py
+# Run the function calling example
+cd examples/python-sdk
+python3 function_calling_example.py
 ```
 
 ## Implementation Details
@@ -261,3 +230,9 @@ Potential improvements:
 - Better error recovery
 - Function call validation before execution
 - Support for more complex type hints (TypedDict, Literal, etc.)
+
+## See Also
+
+- [Automatic Type Inference](./AUTOMATIC_TYPE_INFERENCE.md)
+- [Agent Event Listener](./AGENT_EVENT_LISTENER.md)
+- [Prompt to Code](./PROMPT_TO_CODE.md)

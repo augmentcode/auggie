@@ -13,8 +13,16 @@ from auggie_sdk.acp import AuggieACPClient, AgentEventListener
 class SimpleListener(AgentEventListener):
     """Simple listener that prints agent responses."""
 
-    def on_agent_message_chunk(self, text: str):
+    def on_agent_message_chunk(self, text: str) -> None:
         print(text, end="", flush=True)
+
+    def on_tool_call(self, tool_call_id: str, title: str, kind=None, status=None) -> None:
+        """Called when a tool call starts."""
+        pass
+
+    def on_tool_response(self, tool_call_id: str, status=None, content=None) -> None:
+        """Called when a tool response is received."""
+        pass
 
 
 def demo_session_continuity():
@@ -26,7 +34,7 @@ def demo_session_continuity():
 
     # Create client with listener for real-time output
     client = AuggieACPClient(
-        model="claude-3-5-sonnet-latest", listener=SimpleListener()
+        model="sonnet4.5", listener=SimpleListener()
     )
 
     print("Starting ACP client (creates a persistent session)...")

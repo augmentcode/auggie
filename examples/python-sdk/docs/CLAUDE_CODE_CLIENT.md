@@ -193,23 +193,6 @@ Common errors:
 - **`RuntimeError: npx not found`** - Install Node.js
 - **`TimeoutError: Claude Code agent failed to start`** - Install the adapter with `npm install -g @zed-industries/claude-code-acp`
 
-## Testing
-
-Run the E2E tests to verify everything works:
-
-```bash
-# Quick tests (~30 seconds)
-pytest tests/test_claude_code_client_e2e.py
-
-# All tests including slow ones (~5-10 minutes)
-pytest tests/test_claude_code_client_e2e.py -m ""
-
-# Specific test
-pytest tests/test_claude_code_client_e2e.py::test_simple_math_query -v
-```
-
-See [Testing Guide](../tests/README_CLAUDE_CODE_TESTS.md) for details.
-
 ## Comparison with AuggieACPClient
 
 | Feature | ClaudeCodeACPClient | AuggieACPClient |
@@ -219,26 +202,6 @@ See [Testing Guide](../tests/README_CLAUDE_CODE_TESTS.md) for details.
 | Installation | npm package | Built-in CLI |
 | Models | Claude 3.x family | Multiple providers |
 | Features | Full Claude Code features | Augment-specific features |
-
-## Architecture
-
-```
-Python Code
-    ↓
-ClaudeCodeACPClient (Python)
-    ↓
-agent-client-protocol (Python package)
-    ↓
-ACP Protocol (stdio)
-    ↓
-@zed-industries/claude-code-acp (Node.js adapter)
-    ↓
-Claude Agent SDK (TypeScript)
-    ↓
-Claude Code
-    ↓
-Anthropic API
-```
 
 ## Troubleshooting
 

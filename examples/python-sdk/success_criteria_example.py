@@ -13,7 +13,7 @@ The agent will:
 5. If criteria not met after max rounds, raises AugmentVerificationError
 """
 
-from auggie_sdk import Agent, AugmentVerificationError
+from auggie_sdk import Auggie, AugmentVerificationError
 
 
 def main():

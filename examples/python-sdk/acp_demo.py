@@ -16,28 +16,32 @@ from typing import Optional, Any
 class DemoListener(AgentEventListener):
     """Simple listener that prints events in a user-friendly way."""
 
-    def on_agent_message(self, text: str) -> None:
+    def on_agent_message_chunk(self, text: str) -> None:
+        """Called when the agent sends a message chunk."""
         print(text, end="", flush=True)
 
-    def on_tool_call_start(
+    def on_tool_call(
         self,
         tool_call_id: str,
         title: str,
         kind: Optional[str] = None,
         status: Optional[str] = None,
     ) -> None:
+        """Called when the agent starts a tool call."""
         print(f"\n  🔧 Using tool: {title}", flush=True)
 
-    def on_tool_call_update(
+    def on_tool_response(
         self,
         tool_call_id: str,
         status: Optional[str] = None,
         content: Optional[Any] = None,
     ) -> None:
+        """Called when a tool response is received."""
         if status == "completed":
             print("  ✓ Tool completed", flush=True)
 
     def on_agent_thought(self, text: str) -> None:
+        """Called when the agent shares a thought."""
         pass
 
 
@@ -65,7 +69,7 @@ def main():
     print("3️⃣  Sending message that triggers tool calls: 'Read the README.md'\n")
     print("   Agent response: ", end="")
     client.send_message(
-        "Read the file experimental/guy/auggie_sdk/README.md and tell me what it's about in one sentence.",
+        "Read the README.md file in the current directory and tell me what it's about in one sentence.",
         timeout=30.0,
     )
     print("\n   ✓ Got response (with tool call events shown above)\n")
