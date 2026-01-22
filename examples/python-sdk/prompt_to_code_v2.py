@@ -28,9 +28,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, List
 
-# Add the parent directory to the path so we can import auggie_sdk
-sys.path.insert(0, str(Path(__file__).parent))
-
 from auggie_sdk import Auggie
 
 
@@ -99,6 +96,7 @@ def check_imports(code: str) -> tuple[bool, List[str]]:
 
     # List of allowed imports (common Python stdlib + augment SDK)
     allowed_imports = {
+        "__future__",
         "auggie_sdk",
         "augment",
         "dataclasses",

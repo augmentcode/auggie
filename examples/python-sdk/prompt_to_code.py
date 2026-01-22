@@ -22,9 +22,6 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
 
-# Add the parent directory to the path so we can import auggie_sdk
-sys.path.insert(0, str(Path(__file__).parent))
-
 from auggie_sdk import Auggie
 from auggie_sdk.exceptions import AugmentCLIError, AugmentParseError
 
