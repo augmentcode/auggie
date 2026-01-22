@@ -15,7 +15,7 @@ Usage:
 Examples:
     python prompt_to_code_v2.py my_prompt.txt
     python prompt_to_code_v2.py my_prompt.txt --output generated_script.py
-    python prompt_to_code_v2.py my_prompt.txt --model claude-3-5-sonnet-latest
+    python prompt_to_code_v2.py my_prompt.txt --model sonnet4.5
 """
 
 import argparse
@@ -97,8 +97,9 @@ def check_imports(code: str) -> tuple[bool, List[str]]:
     """
     warnings = []
 
-    # List of allowed imports (common Python stdlib + augment)
+    # List of allowed imports (common Python stdlib + augment SDK)
     allowed_imports = {
+        "auggie_sdk",
         "augment",
         "dataclasses",
         "typing",
@@ -123,6 +124,7 @@ def check_imports(code: str) -> tuple[bool, List[str]]:
         "contextlib",
         "io",
         "traceback",
+        "importlib",
     }
 
     try:
@@ -130,12 +132,16 @@ def check_imports(code: str) -> tuple[bool, List[str]]:
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    # Check if it's a known safe import
-                    if alias.name not in allowed_imports:
+                    # Check root module name for imports like "auggie_sdk.acp"
+                    root_module = alias.name.split('.')[0]
+                    if root_module not in allowed_imports:
                         warnings.append(f"Warning: Unexpected import '{alias.name}'")
             elif isinstance(node, ast.ImportFrom):
-                if node.module and node.module not in allowed_imports:
-                    warnings.append(f"Warning: Unexpected import from '{node.module}'")
+                if node.module:
+                    # Check root module name for submodule imports
+                    root_module = node.module.split('.')[0]
+                    if root_module not in allowed_imports:
+                        warnings.append(f"Warning: Unexpected import from '{node.module}'")
 
         return True, warnings
     except Exception as e:
@@ -256,7 +262,7 @@ def validate_code(code: str, workspace_root: str) -> ValidationResult:
 
 def convert_prompt_to_code_v2(
     prompt_content: str,
-    model: str = "claude-3-5-sonnet-latest",
+    model: str = "sonnet4.5",
     workspace_root: str = ".",
     max_iterations: int = 3,
     timeout: int = 300,
@@ -332,7 +338,7 @@ ORIGINAL PROMPT:
 {prompt_content}
 
 REQUIREMENTS:
-1. Use `from auggie_sdk import Agent` for imports
+1. Use `from auggie_sdk import Auggie` for imports
 2. Initialize agent with: `agent = Auggie()` or `agent = Auggie(workspace_root=".")`
 3. Use `agent.run(prompt)` or `agent.run(prompt, return_type=Type)` - DO NOT call agent() directly
 4. Use `agent.session()` for multi-step workflows with shared context
@@ -491,8 +497,8 @@ def main():
         "--model",
         "-m",
         type=str,
-        default="claude-3-5-sonnet-latest",
-        help="AI model to use (default: claude-3-5-sonnet-latest)",
+        default="sonnet4.5",
+        help="AI model to use (default: sonnet4.5)",
     )
     parser.add_argument(
         "--workspace-root",
@@ -540,8 +546,11 @@ def main():
     # Output the code
     if args.output:
         output_file = Path(args.output)
-        output_file.write_text(result.code)
-        print(f"\n✅ Generated SDK program saved to: {output_file}")
+        if result.code:
+            output_file.write_text(result.code)
+            print(f"\n✅ Generated SDK program saved to: {output_file}")
+        else:
+            print(f"\n⚠️  No code generated to save", file=sys.stderr)
     else:
         print("\n" + "=" * 80)
         print("GENERATED SDK PROGRAM")

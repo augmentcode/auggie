@@ -13,7 +13,7 @@ Usage:
 Examples:
     python prompt_to_code.py my_prompt.txt
     python prompt_to_code.py my_prompt.txt --output generated_script.py
-    python prompt_to_code.py my_prompt.txt --model claude-3-5-sonnet-latest
+    python prompt_to_code.py my_prompt.txt --model sonnet4.5
 """
 
 import argparse
@@ -106,7 +106,7 @@ Analyze this complex prompt and convert it into a well-structured Python program
    ```
 
 3. **Generate a complete, runnable Python program** that:
-   - Imports necessary modules (from auggie_sdk import Agent, dataclasses, typing, etc.)
+   - Imports necessary modules (from auggie_sdk import Auggie, dataclasses, typing, etc.)
    - Defines any dataclasses for structured data
    - Creates the agent with: `agent = Auggie(workspace_root=".")` or `agent = Auggie()`
    - IMPORTANT: Agent() takes optional keyword arguments only: workspace_root, model, listener
@@ -154,7 +154,7 @@ def read_prompt_file(file_path: str) -> str:
 
 def convert_prompt_to_code(
     prompt_content: str,
-    model: str = "claude-3-5-sonnet-latest",
+    model: str = "sonnet4.5",
     workspace_root: Optional[str] = None,
 ) -> ConversionResult:
     """
@@ -231,7 +231,7 @@ def main():
 Examples:
   %(prog)s my_prompt.txt
   %(prog)s my_prompt.txt --output generated_script.py
-  %(prog)s my_prompt.txt --model claude-3-5-sonnet-latest
+  %(prog)s my_prompt.txt --model sonnet4.5
         """,
     )
 
@@ -249,8 +249,8 @@ Examples:
     parser.add_argument(
         "-m",
         "--model",
-        help="Model to use for conversion (default: claude-3-5-sonnet-latest)",
-        default="claude-3-5-sonnet-latest",
+        help="Model to use for conversion (default: sonnet4.5)",
+        default="sonnet4.5",
     )
 
     parser.add_argument(
