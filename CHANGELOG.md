@@ -1,5 +1,31 @@
 # Changelog
 
+### 0.15.0
+
+#### New Features
+- **Agent Skills Support**: Added support for loading specialized domain knowledge from SKILL.md files following the agentskills.io specification
+- **Skills Viewer**: Added `/skills` command to display currently loaded skills and approximate token usage
+- **Prompt Enhancement**: Added `--enhance-prompt` flag for non-interactive mode to improve prompts before sending to agent
+
+#### Improvements
+- **Session State Preservation**: Workspace settings (guidelines, rules, memories) are now preserved when using `/new` command or `--continue` flag
+- **Hook Message Display**: Hook messages now appear inline after each tool result instead of being batched at the bottom for better context
+- **Session Picker Ordering**: Session picker now displays most recent sessions at the top of the list
+- **Bash Mode Display**: Bash mode output now appears muted while running and displays in full when complete
+- **Exit Shortcuts**: Improved exit shortcuts (Ctrl+C, Ctrl+D, Escape) to work consistently from any popover state
+- **Custom Command Model Override**: Custom command model overrides now only apply to the next response instead of all follow-up responses
+- **Chat History Display**: Chat history now only shows user message entries for actual user input, not system-generated content
+
+#### Bug Fixes
+- **Session Resumption**: Fixed tool results (ViewTool, EditTool) not rendering when resuming sessions via `--resume` or `/sessions` command
+- **Keyboard Navigation**: Fixed keyboard shortcuts not responding while in mention mode
+- **Popover Input Handling**: Fixed keyboard input handling in popover states
+- **Input Focus Characters**: Fixed issue with focus characters appearing in input
+
+#### UI Updates
+- **Queue Mode Shortcuts**: Updated queue mode keyboard shortcuts - X now deletes items, D moves items down
+
+
 ### 0.14.0
 
 #### New Features
