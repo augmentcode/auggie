@@ -1,5 +1,53 @@
 # Changelog
 
+### 0.16.0
+
+#### New Features
+- Localhost OAuth login: local sessions now authenticate via browser-based OAuth flow instead of JSON paste
+- Session naming: name of sessions via `/rename` command is now displayed to the user
+- Model picker search: Option+M hotkey opens the model picker, which now supports search/filter
+- Prompt stashing: press Ctrl+S while typing to stash your prompt and recall it later
+- `/stats` command: view session billing and usage details
+- MCP server toggling: enable/disable individual MCP servers from the MCP popover
+- MCP log streaming: MCP server logs are now visible in the TUI for easier debugging
+- MCP token variable: `${augmentToken}` variable expansion available for MCP server headers
+- `.agents` directory: added support for `.agents` directory for skill and agent discovery
+- History summarization indicator: visual indicator shown when conversation history is being summarized
+- Hierarchical rules indicator: visual indicator showing active AGENTS.md rules
+
+#### Improvements
+- Auth flags: added `--augment-session-json` flag and `AUGMENT_SESSION_AUTH` env var as recommended auth methods (old flags deprecated but still work)
+- MCP compatibility: improved compatibility with non-standard MCP server JSON schemas (e.g., mcp-server-terminal)
+- View tool display: correctly shows "read directory" with entry count instead of "read file" with "0 lines"
+- Image attachment indicator moved closer to the input textbox
+- Removed distracting "Your queue is done!" popup
+- Removed misleading "To see what's new" message after upgrade
+
+#### Bug Fixes
+- Fixed Ctrl+C not exiting the CLI on macOS (no longer requires `kill -9`)
+- Fixed crash on exit on Windows (UV_HANDLE_CLOSING assertion)
+- Fixed crash when pasting text or using Ctrl+P prompt enhancement
+- Fixed `/logout` requiring two attempts to fully log out
+- Fixed built-in subagents (explore, plan) disappearing after config changes
+- Fixed sub-agents hanging indefinitely during codebase retrieval
+- Fixed interleaved/garbled streaming output when sending messages rapidly
+- Fixed Option+Backspace word deletion in kitty protocol terminals
+- Fixed Ctrl+W word deletion not treating newlines as word boundaries
+- Fixed verbose mode truncating the first line of bash command output
+- Fixed `--quiet` flag not suppressing MCP server initialization messages
+- Fixed MCP server OAuth authentication not responding to Enter key
+- Fixed session resume failing after workspace switch
+- Fixed `/new` command in cloud agent mode not creating a new session
+- Fixed message queue stalling until a new message was sent
+- Fixed spurious warnings when settings.json is empty
+- Fixed prompt hint color changing when text wraps to a new line
+- Fixed custom command parameter hint not disappearing after typing a space
+- Fixed text wrapping issues at narrow terminal widths
+- Fixed `auggie tools remove` not showing an error for non-existent tools
+- Fixed sub-agent failures showing "Done in 0s" instead of error details
+- Fixed numpad keys not working correctly
+- Improved error messages when resuming sessions
+
 ### 0.15.0
 
 #### New Features
