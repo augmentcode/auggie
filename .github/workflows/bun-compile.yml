@@ -39,7 +39,7 @@ jobs:
 
       - name: Create entry point
         run: |
-          printf 'process.argv[1] = process.execPath;\nawait import("@augmentcode/auggie");\n' > augment.mjs
+          echo 'await import("@augmentcode/auggie");' > augment.mjs
 
       - name: Compile binary
         run: bun build augment.mjs --compile --target=${{ matrix.target }} --outfile=${{ matrix.output }}
