@@ -34,9 +34,12 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Install package
+        run: bun install @augmentcode/auggie@${{ inputs.version || '0.17.0-prerelease.14' }}
+
       - name: Create entry point
         run: |
-          echo 'await import("npm:@augmentcode/auggie@${{ inputs.version || '0.17.0-prerelease.14' }}");' > augment.mjs
+          echo 'await import("@augmentcode/auggie");' > augment.mjs
 
       - name: Compile binary
         run: bun build augment.mjs --compile --target=${{ matrix.target }} --outfile=${{ matrix.output }}
