@@ -1,0 +1,68 @@
+# Bun Compile
+# Compiles Auggie CLI into self-contained native binaries using Bun,
+# pulling the pre-built @augmentcode/auggie package from npm.
+
+name: Bun Compile
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'npm package version (e.g. 0.17.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: bun-darwin-arm64
+            output: auggie-bun-darwin-arm64
+          - target: bun-darwin-x64
+            output: auggie-bun-darwin-x64
+          - target: bun-linux-x64
+            output: auggie-bun-linux-x64
+          - target: bun-windows-x64
+            output: auggie-bun-windows-x64.exe
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Create entry point
+        run: |
+          echo 'await import("npm:@augmentcode/auggie@${{ inputs.version }}");' > augment.mjs
+
+      - name: Compile binary
+        run: bun build augment.mjs --compile --target=${{ matrix.target }} --outfile=${{ matrix.output }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.output }}
+          path: ${{ matrix.output }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "v${{ inputs.version }}" \
+            --generate-notes \
+            artifacts/*
+
