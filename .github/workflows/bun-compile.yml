@@ -10,9 +10,8 @@ on:
         description: 'npm package version (e.g. 0.17.0)'
         required: true
         type: string
-  push:
-    branches:
-      - auggie-bun-compile-workflow
+  repository_dispatch:
+    types: [npm-published]
 
 jobs:
   build:
@@ -35,7 +34,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install package
-        run: bun install @augmentcode/auggie@${{ inputs.version || '0.17.0-prerelease.14' }}
+        run: bun install @augmentcode/auggie@${{ inputs.version || github.event.client_payload.version }}
 
       - name: Create entry point
         run: |
@@ -67,8 +66,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release create "v${{ inputs.version || '0.17.0-prerelease.14' }}" \
-            --title "v${{ inputs.version || '0.17.0-prerelease.14' }}" \
+          gh release create "v${{ inputs.version || github.event.client_payload.version }}" \
+            --title "v${{ inputs.version || github.event.client_payload.version }}" \
             --generate-notes \
             artifacts/*
 
