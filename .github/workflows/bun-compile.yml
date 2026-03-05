@@ -20,13 +20,13 @@ jobs:
       matrix:
         include:
           - target: bun-darwin-arm64
-            output: auggie-bun-darwin-arm64
+            output: auggie-darwin-arm64
           - target: bun-darwin-x64
-            output: auggie-bun-darwin-x64
+            output: auggie-darwin-x64
           - target: bun-linux-x64
-            output: auggie-bun-linux-x64
+            output: auggie-linux-x64
           - target: bun-windows-x64
-            output: auggie-bun-windows-x64.exe
+            output: auggie-windows-x64.exe
     permissions:
       contents: read
     steps:
