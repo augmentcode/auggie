@@ -41,7 +41,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install package
-        run: bun install @augmentcode/auggie@${{ inputs.version || github.event.client_payload.version || '0.17.0-prerelease.14' }}
+        run: bun install @augmentcode/auggie@${{ inputs.version || github.event.client_payload.version || '0.18.1' }}
 
       - name: Create entry point
         run: |
@@ -73,8 +73,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          gh release create "v${{ inputs.version || github.event.client_payload.version || '0.17.0-prerelease.14' }}" \
-            --title "v${{ inputs.version || github.event.client_payload.version || '0.17.0-prerelease.14' }}" \
+          gh release create "v${{ inputs.version || github.event.client_payload.version || '0.18.1' }}" \
+            --title "v${{ inputs.version || github.event.client_payload.version || '0.18.1' }}" \
             --generate-notes \
             artifacts/*
 
