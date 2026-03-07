@@ -46,7 +46,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.output }}
+          name: auggie-${{ matrix.target }}
           path: ${{ matrix.output }}
 
   release:
