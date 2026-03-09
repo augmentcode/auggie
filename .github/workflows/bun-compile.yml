@@ -1,0 +1,92 @@
+# Bun Compile
+# Compiles Auggie CLI into self-contained native binaries using Bun,
+# pulling the pre-built @augmentcode/auggie package from npm.
+
+name: Bun Compile
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'npm package version (e.g. 0.17.0)'
+        required: true
+        type: string
+  repository_dispatch:
+    types: [npm-published]
+  push:
+    branches:
+      - auggie-bun-compile-workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: bun-darwin-arm64
+            output: auggie-darwin-arm64
+            artifact: auggie-darwin-arm64
+          - target: bun-darwin-x64
+            output: auggie-darwin-x64
+            artifact: auggie-darwin-x64
+          - target: bun-linux-x64
+            output: auggie-linux-x64
+            artifact: auggie-linux-x64
+          - target: bun-windows-x64
+            output: auggie-windows-x64.exe
+            artifact: auggie-windows-x64
+    permissions:
+      contents: read
+    steps:
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install package
+        env:
+          VERSION: ${{ inputs.version || github.event.client_payload.version }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version provided. Supply via workflow_dispatch input or repository_dispatch payload."
+            exit 1
+          fi
+          bun install "@augmentcode/auggie@${VERSION}"
+
+      - name: Create entry point
+        run: |
+          echo 'await import("@augmentcode/auggie");' > augment.mjs
+
+      - name: Compile binary
+        run: bun build augment.mjs --compile --target=${{ matrix.target }} --outfile=${{ matrix.output }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.output }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version || github.event.client_payload.version }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version provided. Cannot create release."
+            exit 1
+          fi
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --generate-notes \
+            artifacts/*
+
