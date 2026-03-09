@@ -41,7 +41,14 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install package
-        run: bun install @augmentcode/auggie@${{ inputs.version || github.event.client_payload.version || '0.18.1' }}
+        env:
+          VERSION: ${{ inputs.version || github.event.client_payload.version }}
+        run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version provided. Supply via workflow_dispatch input or repository_dispatch payload."
+            exit 1
+          fi
+          bun install "@augmentcode/auggie@${VERSION}"
 
       - name: Create entry point
         run: |
@@ -72,9 +79,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          VERSION: ${{ inputs.version || github.event.client_payload.version }}
         run: |
-          gh release create "v${{ inputs.version || github.event.client_payload.version || '0.18.1' }}" \
-            --title "v${{ inputs.version || github.event.client_payload.version || '0.18.1' }}" \
+          if [ -z "$VERSION" ]; then
+            echo "::error::No version provided. Cannot create release."
+            exit 1
+          fi
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
             --generate-notes \
             artifacts/*
 
