@@ -73,6 +73,7 @@ jobs:
           security unlock-keychain -p "temppass" build.keychain
           security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "temppass" build.keychain
+          rm -f certificate.p12
 
       - name: Sign binary
         if: contains(matrix.target, 'darwin')
@@ -83,7 +84,7 @@ jobs:
             exit 1
           fi
           echo "Signing with identity: $IDENTITY"
-          codesign --force --options runtime --sign "$IDENTITY" ${{ matrix.output }}
+          codesign --force --options runtime --timestamp --sign "$IDENTITY" ${{ matrix.output }}
 
       - name: Notarize binary
         if: contains(matrix.target, 'darwin')
@@ -94,6 +95,7 @@ jobs:
         run: |
           zip "${{ matrix.output }}.zip" "${{ matrix.output }}"
           xcrun notarytool submit "${{ matrix.output }}.zip" --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          rm -f "${{ matrix.output }}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
