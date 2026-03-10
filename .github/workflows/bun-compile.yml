@@ -18,20 +18,24 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - target: bun-darwin-arm64
+            os: macos-latest
             output: auggie-darwin-arm64
             artifact: auggie-darwin-arm64
           - target: bun-darwin-x64
+            os: macos-latest
             output: auggie-darwin-x64
             artifact: auggie-darwin-x64
           - target: bun-linux-x64
+            os: ubuntu-latest
             output: auggie-linux-x64
             artifact: auggie-linux-x64
           - target: bun-windows-x64
+            os: ubuntu-latest
             output: auggie-windows-x64.exe
             artifact: auggie-windows-x64
     permissions:
@@ -57,6 +61,34 @@ jobs:
       - name: Compile binary
         run: bun build augment.mjs --compile --target=${{ matrix.target }} --outfile=${{ matrix.output }}
 
+      - name: Import code signing certificate
+        if: contains(matrix.target, 'darwin')
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p "temppass" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "temppass" build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "temppass" build.keychain
+
+      - name: Sign binary
+        if: contains(matrix.target, 'darwin')
+        run: |
+          codesign --force --options runtime --sign "Developer ID Application: Augment Code Inc" ${{ matrix.output }}
+
+      - name: Notarize binary
+        if: contains(matrix.target, 'darwin')
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          zip "${{ matrix.output }}.zip" "${{ matrix.output }}"
+          xcrun notarytool submit "${{ matrix.output }}.zip" --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -74,6 +106,12 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          shasum -a 256 auggie-* > checksums.txt
+          cat checksums.txt
 
       - name: Create GitHub Release
         env:
