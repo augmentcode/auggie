@@ -121,7 +121,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || github.event.client_payload.version }}
+          VERSION: ${{ inputs.version || github.event.client_payload.version || '0.18.0' }}
         run: |
           if [ -z "$VERSION" ]; then
             echo "::error::No version provided. Cannot create release."
