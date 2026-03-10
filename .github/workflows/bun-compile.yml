@@ -48,7 +48,7 @@ jobs:
 
       - name: Install package
         env:
-          VERSION: ${{ inputs.version || github.event.client_payload.version }}
+          VERSION: ${{ inputs.version || github.event.client_payload.version || '0.18.0' }}
         run: |
           if [ -z "$VERSION" ]; then
             echo "::error::No version provided. Supply via workflow_dispatch input or repository_dispatch payload."
