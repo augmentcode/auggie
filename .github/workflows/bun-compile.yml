@@ -78,6 +78,10 @@ jobs:
         if: contains(matrix.target, 'darwin')
         run: |
           IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No Developer ID signing identity found in build.keychain"
+            exit 1
+          fi
           echo "Signing with identity: $IDENTITY"
           codesign --force --options runtime --sign "$IDENTITY" ${{ matrix.output }}
 
@@ -112,7 +116,7 @@ jobs:
       - name: Generate checksums
         run: |
           cd artifacts
-          shasum -a 256 auggie-* > checksums.txt
+          sha256sum auggie-* > checksums.txt
           cat checksums.txt
 
       - name: Create GitHub Release
