@@ -8,15 +8,13 @@ on:
     inputs:
       version:
         description: 'npm package version (e.g. 0.17.0)'
-        required: false
-        default: '0.19.0-prerelease.5'
+        required: true
         type: string
   repository_dispatch:
     types: [npm-published]
   push:
     branches:
       - auggie-bun-compile-workflow
-      - auggie-macos-signing
 
 jobs:
   build:
@@ -48,7 +46,7 @@ jobs:
 
       - name: Install package
         env:
-          VERSION: ${{ inputs.version || github.event.client_payload.version || '0.19.0-prerelease.5' }}
+          VERSION: ${{ inputs.version || github.event.client_payload.version }}
         run: |
           if [ -z "$VERSION" ]; then
             echo "::error::No version provided. Supply via workflow_dispatch input or repository_dispatch payload."
@@ -121,7 +119,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          VERSION: ${{ inputs.version || github.event.client_payload.version || '0.19.0-prerelease.5' }}
+          VERSION: ${{ inputs.version || github.event.client_payload.version }}
         run: |
           if [ -z "$VERSION" ]; then
             echo "::error::No version provided. Cannot create release."
