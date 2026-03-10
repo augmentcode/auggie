@@ -79,7 +79,9 @@ jobs:
       - name: Sign binary
         if: contains(matrix.target, 'darwin')
         run: |
-          codesign --force --options runtime --sign "Developer ID Application: Augment Code Inc" ${{ matrix.output }}
+          IDENTITY=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "Signing with identity: $IDENTITY"
+          codesign --force --options runtime --sign "$IDENTITY" ${{ matrix.output }}
 
       - name: Notarize binary
         if: contains(matrix.target, 'darwin')
