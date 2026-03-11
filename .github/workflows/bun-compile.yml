@@ -131,8 +131,16 @@ jobs:
             echo "::error::No version provided. Cannot create release."
             exit 1
           fi
-          gh release create "v${VERSION}" \
-            --title "v${VERSION}" \
-            --generate-notes \
-            artifacts/*
+          if [[ "$VERSION" == *prerelease* ]]; then
+            gh release create "v${VERSION}" \
+              --title "v${VERSION}" \
+              --generate-notes \
+              --prerelease \
+              artifacts/*
+          else
+            gh release create "v${VERSION}" \
+              --title "v${VERSION}" \
+              --generate-notes \
+              artifacts/*
+          fi
 
