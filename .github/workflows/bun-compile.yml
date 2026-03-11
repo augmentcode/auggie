@@ -52,7 +52,23 @@ jobs:
             echo "::error::No version provided. Supply via workflow_dispatch input or repository_dispatch payload."
             exit 1
           fi
-          bun install "@augmentcode/auggie@${VERSION}"
+          # Retry with backoff — npm registry may not have propagated the version yet
+          # when triggered immediately via repository_dispatch on publish.
+          max_attempts=5
+          for attempt in $(seq 1 $max_attempts); do
+            echo "Attempt $attempt/$max_attempts: installing @augmentcode/auggie@${VERSION}"
+            if bun install "@augmentcode/auggie@${VERSION}"; then
+              echo "Successfully installed on attempt $attempt"
+              exit 0
+            fi
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              delay=$((attempt * 30))
+              echo "Install failed, retrying in ${delay}s..."
+              sleep "$delay"
+            fi
+          done
+          echo "::error::Failed to install @augmentcode/auggie@${VERSION} after $max_attempts attempts"
+          exit 1
 
       - name: Create entry point
         run: |
