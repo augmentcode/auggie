@@ -1,5 +1,50 @@
 # Changelog
 
+### 0.18.0
+
+#### New Features
+- **Model Picker Badges**: Model picker now shows cost tier indicators and server-controlled badges (e.g. "Free", "New")
+- **Ask Mode Enhancements**: Slash commands (`/`) and external editor (`Ctrl+O`) now work in Ask mode
+- **Single-Click Login**: Streamlined browser-based authentication flow
+- **/context**: `/context` to see context window usage
+
+#### Improvements
+- **Sub-agents Credit Usage**: Add support for subagents credit usage via non interactive mode for enterprise customers and /stats for all users
+- **Faster Tool Execution**: Reduced tool execution delays in large workspaces by caching enumeration state and parallelizing rule file reads
+- **Incremental Session Saving**: Agent progress is now saved after each LLM exchange, preventing loss of work if the process crashes mid-turn
+- **Message Queue Persistence**: Queued messages are now saved to the session file, so they survive CLI restarts
+- **Smarter Input Modes**: Pasting or recalling history entries with a prefix (`/`, `!`, `#`) now automatically enters the corresponding input mode
+- **Slash Command Ordering**: Exact alias matches (e.g. `/q` → `queue`) are now prioritized over fuzzy matches
+- **Stash/Recall Hints**: Added Ctrl+S (stash) and Ctrl+T (recall) to help screens for easier discovery
+- **Task Tool Performance**: Parallelized task tool operations to prevent occasional hanging
+- **Chat History Truncation**: Improved content-aware truncation measurement with a higher default limit, preventing premature history loss in long sessions
+- **Network Resilience**: Improved error messages and circuit breakers for unstable network connections
+
+### 0.17.0
+
+#### New Features
+- Ask mode improvements: Slash commands and Ctrl+O (external editor) now work in ask mode
+- Ctrl+R history search: Persistent reverse history search across sessions
+- Selective session deletion: Delete individual sessions from the session picker
+- Message queue editing: Up arrow key opens the queue popover, with a hint shown in the message placeholder
+- Custom slash commands in --queue: Queued messages now resolve custom slash commands (e.g., `--queue "/my-command"`)
+- --queue support in non-interactive mode: Queue multiple prompts in `--print` mode for chained workflows
+
+#### Improvements
+- Indexing denylist: Permanently decline indexing for specific workspaces with a "Never index this workspace" option
+- Incremental session saving: Agent progress is now saved after each LLM exchange, preventing work loss on crashes
+- Task management: Task system now auto-recovers if the task list is missing, and task names are shown in update displays
+- Sub-agents now have access to MCP tools from their parent agent
+- Session auto-rename now triggers correctly for messages with tool calls
+- Config wizard: All options now visible without scrolling
+- Session list ordering: Newest sessions appear first
+- User message display: Improved formatting with full row highlight and brighter text
+- Improved summarization with incremental updates and backend-driven token counting
+- Remote history sync: Better conflict resolution for synced sessions
+- Memory improvement during git indexing
+- MCP OAuth: Better handling of non-conformant server responses for dynamic client registration
+- TUI rendering flickering improvements
+
 ### 0.16.0
 
 #### New Features
