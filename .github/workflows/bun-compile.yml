@@ -147,8 +147,13 @@ jobs:
             echo "::error::No version provided. Cannot create release."
             exit 1
           fi
+          PRERELEASE_FLAG=""
+          if [[ "$VERSION" == *prerelease* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
             --generate-notes \
+            $PRERELEASE_FLAG \
             artifacts/*
 
