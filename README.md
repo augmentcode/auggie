@@ -33,6 +33,21 @@ auggie "optional initial prompt"
 - Use `auggie --print "your instruction"` to run once and print to stdout (great for CI)
 - Add `--quiet` to return only the final output
 
+## Common flags
+
+| Flag | Description |
+| :--- | :---------- |
+| `-p, --print` | Run one instruction and print to stdout (non-interactive) |
+| `-q, --quiet` | Show only the final assistant message |
+| `-a, --ask` | Ask mode — retrieval and non-editing tools only |
+| `-m, --model <id>` | Select the model to use (`auggie model list` to see options) |
+| `-c, --continue` | Resume the most recent conversation |
+| `-r, --resume [id]` | Resume a specific session by ID or pick interactively |
+| `--rules <path>` | Additional rules file to append to workspace guidelines |
+| `--mcp-config <cfg>` | Path to MCP server configuration JSON |
+
+See the full [CLI reference](https://docs.augmentcode.com/cli/reference) for all flags and commands.
+
 ## Custom slash commands
 
 Store reusable prompts in `.augment/commands/` as markdown files with frontmatter. Once added, they’re available as slash commands (e.g., `/code-review path/to/file`).
