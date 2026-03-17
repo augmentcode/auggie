@@ -50,27 +50,7 @@ your-project/
 └─ ...
 ```
 
-See example command templates in `.augment/commands/` and the docs page linked above.
-
-#### /explain-this-file
-
-Create file: `.augment/commands/explain-this-file.md`
-
-description: Explain the current file in detail
----
-
-You are an expert code explainer.
-
-For the file @file, provide a clear, structured explanation including:
-
-1. **Purpose**: What does this file do overall?
-2. **Key Components**: Main functions/classes/exports and their roles.
-3. **Data Flow**: How data moves through the file (if applicable).
-4. **Potential Improvements**: Any quick suggestions for readability or performance.
-
-Use markdown formatting, code snippets where helpful, and keep it concise but thorough.
-
-See more pre-built examples in [/examples/commands](https://github.com/augmentcode/auggie/tree/main/examples/commands), including the new `/explain-this-file` template.
+See example command templates in [/examples/commands](https://github.com/augmentcode/auggie/tree/main/examples/commands) and the docs page linked above.
 
 ## GitHub Actions for PRs
 
