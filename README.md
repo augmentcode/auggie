@@ -70,7 +70,7 @@ For the file @file, provide a clear, structured explanation including:
 
 Use markdown formatting, code snippets where helpful, and keep it concise but thorough.
 
-Usage: Type /explain-this-file in Auggie while in a file to get an instant breakdown.
+See more pre-built examples in [/examples/commands](https://github.com/augmentcode/auggie/tree/main/examples/commands), including the new `/explain-this-file` template.
 
 ## GitHub Actions for PRs
 
