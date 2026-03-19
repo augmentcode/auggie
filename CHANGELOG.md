@@ -1,5 +1,60 @@
 # Changelog
 
+### 0.20.0
+
+#### New Features
+- **@ Context Picker**: Type `@` in the input to browse and attach agents and rules files to your prompt
+- **Marketplace Auto-Update**: Installed marketplace repos are automatically updated in the background on startup; toggle in marketplace settings.
+- **Recommended Marketplaces**: Projects can declare recommended marketplaces in `.augment/settings.json` that prompt installation on first open. These must be in the project level settings.json file
+- **MCP OAuth Paste Mode**: When authenticating MCP servers over SSH, you can now paste the auth code or redirect URL directly instead of relying on localhost redirect
+- **Effort Levels**: Configure agent effort/reasoning levels for chat requests
+- **Enter Plan Mode Tool**: The agent can now enter plan mode mid-conversation when appropriate
+
+#### Improvements
+- **Parallel Tool Execution**: The CLI agent loop now executes independent tools in parallel for faster responses
+- **Plan Mode**: Plans are now saved to `~/.augment/plans/` and plan mode enforces strict read-only access
+- **Notification Bell on Ask-User**: Terminal bell now rings when the agent prompts for user input (when `notificationMode` is set to `bell`)
+- **Custom Command History**: Custom slash commands are now saved to input history for easy recall with the up arrow
+- **Models List**: `auggie models list` now shows full model information
+- **`--help` Output**: Added `--queue`, `--show-credits`, and `--mcp` to the CLI help text
+- **`--augment-session-json` Flag**: Now accepts both inline JSON and file paths (e.g., `--augment-session-json ~/.augment/session.json`)
+- **Conversation Retrieval**: Improved relevance ranking and caching for the conversation retrieval tool
+- **Terminal Tool**: Better detection of commands that block waiting for stdin input
+- **Jira/Confluence Errors**: Validation errors from Jira and Confluence are now surfaced in chat instead of showing a generic failure message
+
+#### Bug Fixes
+- Fixed `/mcp` toggle not actually enabling/disabling MCP servers
+- Fixed cursor position after the `/clear` command
+- Fixed file write/delete silently failing in multi-folder workspaces
+- Fixed queue display showing duplicate messages
+- Fixed auggie command [name] syntax for executing custom commands
+
+### 0.19.0
+
+#### New Features
+- Multi-workspace support: work with multiple folders simultaneously via `--add-workspace` flag or `/add-workspace` slash command
+- Skills as slash commands: trigger skills deterministically via `/` commands instead of relying on agent auto-detection
+- Multiple settings files: choose which settings file to save to when multiple exist, with 🔒 indicators for organization-managed settings
+- MCP OAuth scopes: MCP server authentication now supports configuring OAuth scopes
+
+#### Improvements
+- Ask-user tool: replaced custom text input with a "Chat about this" option for more natural conversational clarification
+- Ask-user shortcuts: press number keys (1–9) to directly select options
+ servers
+- Session picker: added keyboard shortcuts for faster navigation
+- Processing duration: now displays minutes and hours instead of only seconds
+- Input history: navigating history no longer opens the slash command menu
+- Pasting: pasting text no longer auto-switches to ask mode
+- Upgrade notification: now tells you to restart the CLI after upgrading
+- Session resume: resuming a session now preserves your originally selected model
+- Tool permissions: default to denylist mode to prevent accidental lockout from all tools
+
+#### Bug Fixes
+- Fixed CLI crash on startup caused by logger initialization order
+- Fixed stuck queued messages in cloud mode
+- Fixed apply_patch writing corrupted files when the model produced malformed output
+- Fixed slow CLI exit on macOS/Windows (improved from ~27s to ~200ms)
+
 ### 0.18.0
 
 #### New Features
