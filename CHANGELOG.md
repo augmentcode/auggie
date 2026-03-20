@@ -10,6 +10,10 @@
 - **Effort Levels**: Configure agent effort/reasoning levels for chat requests
 - **Enter Plan Mode Tool**: The agent can now enter plan mode mid-conversation when appropriate
 
+#### Deprecated
+- **Deprecated various flags for auth** - ENV variables AUGMENT_API_TOKEN, AUGMENT_API_URL and flags `--augment-token-file` and `--api-url` are no longer supported
+- Use `AUGMENT_SESSION_AUTH` and `--augment-session-json` instead
+
 #### Improvements
 - **Parallel Tool Execution**: The CLI agent loop now executes independent tools in parallel for faster responses
 - **Plan Mode**: Plans are now saved to `~/.augment/plans/` and plan mode enforces strict read-only access
