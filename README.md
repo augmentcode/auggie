@@ -50,7 +50,7 @@ your-project/
 └─ ...
 ```
 
-See example command templates in `.augment/commands/` and the docs page linked above.
+See example command templates in [/examples/commands](https://github.com/augmentcode/auggie/tree/main/examples/commands) and the docs page linked above.
 
 ## GitHub Actions for PRs
 
