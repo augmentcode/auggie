@@ -7,8 +7,6 @@
 - **MCP OAuth Paste Fallback**: Added a fallback option to paste the authentication code during MCP OAuth flows, simplifying setup in remote SSH environments.
 
 #### Improvements
-- **Cloud Agent Execution**: Added proper timeouts and graceful fail-safes for interactive tools in headless environments.
-- **Cloud Agent Status**: Improved granular status reporting for the cloud agent during execution.
 - **Plan Mode**: The chat transcript now remains visible when transitioning from plan mode to implementation.
 - **Plan Mode Sub-Agent**: Optimized execution by eliminating redundant output operations.
 - **`auggie command list`**: Output now consistently displays help text.
@@ -16,7 +14,6 @@
 - **Terminal Bell**: Now correctly rings when the agent is waiting for user input.
 
 #### Bug Fixes
-- Fixed an issue where the cloud agent queue would not correctly pause when interrupted mid-execution.
 - Fixed a bug where indexing could fail on extremely large repositories by falling back to a native Git approach.
 - Fixed an issue preventing custom plugin commands from being properly invoked via `auggie command`.
 - Fixed a visual bug where "Indexing complete" could incorrectly display multiple times at startup.
