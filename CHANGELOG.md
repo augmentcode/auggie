@@ -1,5 +1,24 @@
 # Changelog
 
+### 0.21.0
+
+#### New Features
+- **Automatic Marketplace Updates**: Installed plugin marketplaces are now automatically updated in the background, with a prompt for workspace-recommended marketplaces.
+- **MCP OAuth Paste Fallback**: Added a fallback option to paste the authentication code during MCP OAuth flows, simplifying setup in remote SSH environments.
+
+#### Improvements
+- **Plan Mode**: The chat transcript now remains visible when transitioning from plan mode to implementation.
+- **Plan Mode Sub-Agent**: Optimized execution by eliminating redundant output operations.
+- **`auggie command list`**: Output now consistently displays help text.
+- **Startup Login Screen**: Updated the message for new users.
+- **Terminal Bell**: Now correctly rings when the agent is waiting for user input.
+
+#### Bug Fixes
+- Fixed a bug where indexing could fail on extremely large repositories by falling back to a native Git approach.
+- Fixed an issue preventing custom plugin commands from being properly invoked via `auggie command`.
+- Fixed a visual bug where "Indexing complete" could incorrectly display multiple times at startup.
+- Fixed an issue where CLI initialization could hang if connecting to an MCP server became stuck.
+
 ### 0.20.0
 
 #### New Features
