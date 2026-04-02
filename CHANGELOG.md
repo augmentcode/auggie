@@ -26,7 +26,6 @@
 - **Marketplace Auto-Update**: Installed marketplace repos are automatically updated in the background on startup; toggle in marketplace settings.
 - **Recommended Marketplaces**: Projects can declare recommended marketplaces in `.augment/settings.json` that prompt installation on first open. These must be in the project level settings.json file
 - **MCP OAuth Paste Mode**: When authenticating MCP servers over SSH, you can now paste the auth code or redirect URL directly instead of relying on localhost redirect
-- **Effort Levels**: Configure agent effort/reasoning levels for chat requests
 - **Enter Plan Mode Tool**: The agent can now enter plan mode mid-conversation when appropriate
 
 #### Deprecated
