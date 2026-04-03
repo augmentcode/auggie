@@ -1,0 +1,20 @@
+{
+  "name": "auggie-marketplace",
+  "description": "Official Auggie plugin marketplace with code review and developer productivity tools",
+  "version": "1.0.0",
+  "author": {
+    "name": "Augment Code"
+  },
+  "homepage": "https://github.com/augmentcode/auggie",
+  "repository": "https://github.com/augmentcode/auggie",
+  "plugins": [
+    {
+      "name": "code-review",
+      "description": "Code review commands and agents for local code reviews powered by git diffs against origin/main",
+      "version": "1.0.0",
+      "source": "./plugin_marketplace/code-review",
+      "category": "code-quality",
+      "tags": ["code-review", "git", "commands", "agents"]
+    }
+  ]
+}
