@@ -1,0 +1,9 @@
+{
+  "name": "code-review",
+  "description": "Code review commands and agents for local code reviews",
+  "version": "1.0.0",
+  "author": {
+    "name": "Augment Code"
+  },
+  "keywords": ["code-review", "git", "commands", "agents"]
+}
