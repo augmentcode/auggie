@@ -1,5 +1,4 @@
 ---
-name: "Git based local Code Review"
 description: "Perform a thorough code review on local changes and return findings as a summary (no comments posted)"
 model: "code-review"
 ---
