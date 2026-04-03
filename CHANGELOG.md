@@ -1,5 +1,24 @@
 # Changelog
 
+### 0.22.0
+
+#### New Features
+- **Fork Session**: Added `/fork` slash command to fork the current session into a new one.
+- **Custom Themes**: Users can now override the default TUI theme.
+
+#### Improvements
+- **Summarization Status**: Conversation summarization indicator is now only shown when summarization is actively happening.
+- **Help Menu**: The `--wait-for-indexing` and `--plugin-dir` flags are now visible in `auggie --help` output.
+- **Plugin Auto-Enable**: Plugins loaded via `--plugin-dir` are now automatically enabled for skills and commands.
+- **Tool Permission Feedback**: Denying a tool permission request now provides clearer feedback.
+- **Error Details**: Fetch errors now surface more detailed cause information.
+
+#### Bug Fixes
+- Fixed excessive summarization calls within a single agent turn.
+- Fixed Tab-only navigation for multi-question prompts in the TUI.
+- Fixed MCP server initialization timing in ACP mode.
+- Fixed queue message rejection handling for enqueued messages.
+
 ### 0.21.0
 
 #### New Features
