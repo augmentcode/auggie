@@ -1,6 +1,7 @@
 name: Trigger Changelog Automation
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
