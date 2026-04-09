@@ -3,25 +3,13 @@
 ### 0.23.0
 
 #### New Features
-- **Side Questions**: Added `/btw` slash command for asking quick side questions without derailing the main conversation.
-- **Session Stats**: Added `auggie session stats` subcommand to view credit usage details for a session.
 - **Git-Based Plugins**: Marketplace plugins can now be sourced directly from Git repositories.
 
 #### Improvements
-- **Dev Deployment Warning**: A visible warning is now displayed when connected to a development deployment.
 - **Login Connectivity Check**: The CLI now tests connectivity to Augment before completing the login flow, providing earlier feedback on connection issues.
 - **Unsupported Plugin Hooks**: Unsupported plugin hooks now show a compact informational message instead of verbose warnings.
-- **Event Command**: Removed the broken `event get` subcommand and added `--verbose` flag to `event list`.
 - **Tool Search**: Improved tool search UX and reliability.
 - **About Command**: `/about` now displays the active runtime (Node or Bun).
-- **Session Lock Handling**: Improved timeout handling when acquiring session locks.
-- **VM Heartbeat**: Reduced VM heartbeat interval for faster responsiveness.
-- **Message Queue**: Increased message queue capacity to 1000 for handling larger workloads.
-
-#### Bug Fixes
-- Fixed expert capability mapping in CLI cloud mode.
-- Fixed tool host not being wired to the command handler in TUI cloud mode.
-- Fixed auth session not propagating to child agents spawned by the daemon.
 
 ### 0.22.0
 
