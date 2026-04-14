@@ -1,5 +1,22 @@
 # Changelog
 
+### 0.24.0
+
+#### New Features
+- **Image Support**: The view tool now supports displaying image files (PNG, JPG, GIF, WEBP).
+- **Context Stats**: Added `auggie context stats` command to display context and token usage information.
+- **JSON Output**: `auggie account status` now supports a `--json` flag for machine-readable output.
+- **Terminal Title Control**: Added option to prevent the CLI from updating the terminal title.
+
+#### Improvements
+- **Upgrade Handling**: `auggie upgrade` now correctly handles non-global npm installations.
+- **Conversation Memory**: Improved memory calculation to account for full agent state.
+
+#### Bug Fixes
+- Fixed OAuth secrets not being cleaned up when an MCP server is removed.
+- Fixed duplicate MCP servers appearing in `/mcp list`.
+- Fixed TUI display glitches when resizing the terminal window.
+
 ### 0.23.0
 
 #### New Features
