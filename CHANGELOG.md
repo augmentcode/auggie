@@ -6,14 +6,9 @@
 - **Image Support**: The view tool now supports displaying image files (PNG, JPG, GIF, WEBP).
 - **Context Stats**: Added `auggie context stats` command to display context and token usage information.
 - **JSON Output**: `auggie account status` now supports a `--json` flag for machine-readable output.
-- **Open in Browser**: Added `/web` slash command to open cloud sessions in a web browser.
 - **Terminal Title Control**: Added option to prevent the CLI from updating the terminal title.
-- **Worktree Isolation**: Cloud daemon child agents now use isolated git worktrees.
 
 #### Improvements
-- **Ask-User Overlay**: The ask-user prompt overlay is now resizable and shows a timeout countdown.
-- **Model Change Sync**: The CLI now reflects model changes made in the web app in real time.
-- **Git Context for Cloud Sessions**: Cloud sessions now receive git branch context at startup and detect live branch switches.
 - **Upgrade Handling**: `auggie upgrade` now correctly handles non-global npm installations.
 - **Conversation Memory**: Improved memory calculation to account for full agent state.
 
@@ -21,7 +16,6 @@
 - Fixed OAuth secrets not being cleaned up when an MCP server is removed.
 - Fixed duplicate MCP servers appearing in `/mcp list`.
 - Fixed TUI display glitches when resizing the terminal window.
-- Fixed cloud session reconnect command.
 
 ### 0.23.0
 
