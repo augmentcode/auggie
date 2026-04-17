@@ -4,6 +4,8 @@
 
 Auggie is Augment’s agentic coding CLI that runs in your terminal. It understands your codebase and helps you ship faster by analyzing code, making safe edits, and automating routine tasks — all via natural language.
 
+Test PR workflow note: this README includes a one-line update for draft PR validation.
+
 Learn more in the Augment Docs:
 
 - Overview: [Introducing Auggie CLI](https://docs.augmentcode.com/cli/overview)
