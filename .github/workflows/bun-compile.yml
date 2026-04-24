@@ -126,7 +126,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      variables: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -163,7 +162,7 @@ jobs:
       - name: Update V1_LATEST_TAG variable
         if: ${{ !contains(inputs.version || github.event.client_payload.version, 'prerelease') }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.VARIABLES_WRITE_TOKEN }}
           VERSION: ${{ inputs.version || github.event.client_payload.version }}
         run: |
           gh api --method PATCH "repos/${{ github.repository }}/actions/variables/V1_LATEST_TAG" \
