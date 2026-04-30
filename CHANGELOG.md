@@ -1,5 +1,48 @@
 # Changelog
 
+### 0.25.0
+
+#### New Features
+- **MCP Server Management**: Added `auggie cloud mcp list`, `apply`, and `delete` commands for managing MCP server configurations, with diagnostics and environment variable expansion support.
+- **Cloud Secret Management**: Added `auggie cloud secret list`, `get`, `set`, `delete`, and `migrate` commands for managing secrets in cloud environments.
+- **VFS Commands**: Added `auggie cloud vfs sync`, `pull`, `push`, and `put` commands for managing virtual filesystem data.
+- **Multi-Workspace Daemon**: The daemon now supports multiple repositories and workspaces simultaneously.
+- **Session Creation with Message**: `auggie cloud session create` now accepts a `--message` flag to send an initial message.
+- **Shared Sessions**: `auggie cloud session list` and `sync` now support `--include-shared` to include sessions shared with you.
+- **PagerDuty Integration**: PagerDuty is now available as a first-class event source for triggers.
+- **Fireworks BYOK Provider**: Fireworks is now a first-class bring-your-own-key provider.
+- **Daemon Pool Environments**: Added daemon pool environment commands for managing compute pools.
+- **Code Completions**: The CLI now supports code completions via the sidecar.
+- **Composable Skills**: Cloud experts now support composable skills with an include resolver.
+- **Auto-Cleanup on Idle**: Cloud expert bundles can now configure automatic cleanup when idle.
+
+#### Improvements
+- **Model Defaults**: Default models updated to Claude 4.5/4.6.
+- **Image Paste**: Cmd+V is now accepted as an image paste shortcut in addition to the existing binding.
+- **BYOK Error Messages**: Bring-your-own-key provider errors now surface upstream details for easier troubleshooting.
+- **Shell Support**: Shell tools now support `sh`, and the TUI uses your configured shell for async commands.
+- **Billing Summary**: Account display now shows a billing summary with credits and cost breakdown including sub-agent rollup.
+- **Expert Apply**: Expert apply now supports changing visibility, pruning triggers, and preserving bundle metadata.
+- **MCP Environment Variables**: MCP servers support environment variable expansion and working directory injection.
+- **Indexing Visibility**: Improved status visibility when codebase indexing gets stuck.
+- **Daemon Reliability**: Added websocket connection watchdog, increased max agents default, and added timestamps to daemon logs.
+- **Session List Pagination**: Large session lists are now paginated to avoid timeouts.
+- **VFS Scope Naming**: VFS scope renamed from `tenant` to `org` for clarity.
+
+#### Bug Fixes
+- Fixed ESC key behavior in Enhance mode and slash command menus no longer interrupting the agent.
+- Fixed image attachments not passing through the TUI message queue.
+- Fixed tool-call blocks disappearing in cloud-connect TUI history.
+- Fixed `session delete` failing when workspace ID is missing.
+- Fixed duplicate rows appearing in the CLI transcript queue.
+- Fixed deleted daemon agents incorrectly restarting.
+- Fixed API retry error messages appearing raw in TUI and headless output.
+- Fixed session errors not being surfaced to users.
+- Removed spurious "Logging configured" message on CLI startup.
+- Fixed `/stats` message count accuracy by excluding tool-result continuations.
+- Fixed `/web` fallback link formatting.
+- Fixed `view_range` display for end-of-file ranges in tool call titles.
+
 ### 0.24.0
 
 #### New Features
