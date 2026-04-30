@@ -1,5 +1,29 @@
 # Changelog
 
+### 0.25.0
+
+#### Improvements
+- **Model Defaults**: Default models updated to Claude 4.5/4.6.
+- **Image Paste**: Cmd+V is now accepted as an image paste shortcut in addition to the existing binding.
+- **Shell Support**: Shell tools now support `sh`, and the TUI uses your configured shell for async commands.
+- **Billing Summary**: Account display now shows a billing summary with credits and cost breakdown including sub-agent rollup.
+- **MCP Environment Variables**: MCP servers support environment variable expansion and working directory injection.
+- **Indexing Visibility**: Improved status visibility when codebase indexing gets stuck.
+- **Session List Pagination**: Large session lists are now paginated to avoid timeouts.
+
+#### Bug Fixes
+- Fixed ESC key behavior in Enhance mode and slash command menus no longer interrupting the agent.
+- Fixed image attachments not passing through the TUI message queue.
+- Fixed tool-call blocks disappearing in cloud-connect TUI history.
+- Fixed `session delete` failing when workspace ID is missing.
+- Fixed duplicate rows appearing in the CLI transcript queue.
+- Fixed API retry error messages appearing raw in TUI and headless output.
+- Fixed session errors not being surfaced to users.
+- Removed spurious "Logging configured" message on CLI startup.
+- Fixed `/stats` message count accuracy by excluding tool-result continuations.
+- Fixed `/web` fallback link formatting.
+- Fixed `view_range` display for end-of-file ranges in tool call titles.
+
 ### 0.24.0
 
 #### New Features
