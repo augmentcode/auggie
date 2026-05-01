@@ -1,5 +1,17 @@
 # Changelog
 
+### 0.25.1
+
+#### New Features
+- **Transcript Persistence**: New `keepTranscriptOnNewSession` setting preserves conversation history when starting a new TUI session.
+- **Non-Interactive Login**: Added `--no-tui` flag to `auggie login` for headless and scripted environments.
+
+#### Bug Fixes
+- Fixed TUI flickering during indexing, typing, and sub-agent work.
+- Fixed stale agent state persisting after starting a new session with `/new`.
+- Fixed `rebuild` command failing when script file paths were passed instead of file contents.
+- Fixed queued request IDs not being preserved across retries.
+
 ### 0.25.0
 
 #### Improvements
