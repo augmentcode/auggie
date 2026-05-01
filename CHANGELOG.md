@@ -3,26 +3,13 @@
 ### 0.25.1
 
 #### New Features
-- **Cloud Trigger Management**: Added commands to create, list, and manage cloud triggers.
 - **Transcript Persistence**: New `keepTranscriptOnNewSession` setting preserves conversation history when starting a new TUI session.
 - **Non-Interactive Login**: Added `--no-tui` flag to `auggie login` for headless and scripted environments.
-- **Cloud Environment Defaults**: New `set-default`, `get-default`, and `unset-default` commands for managing cloud environment defaults.
-- **Cosmos Alias**: `auggie cosmos` is now an alias for `auggie cloud`.
-
-#### Improvements
-- **VFS Performance**: Parallelized VFS content fetching for faster file synchronization.
-- **Connection Resilience**: VM connections now retry with backoff for transient errors.
-- **Image Attachments**: Consistent image-attachment size limits across all clients.
-- **Environment Defaults**: Daemon and pool environments now support default configuration.
-- **Session Listing**: `cloud sessions list` now defaults to showing only your own sessions.
 
 #### Bug Fixes
 - Fixed TUI flickering during indexing, typing, and sub-agent work.
-- Fixed daemon reconnection failures after pre-open errors.
 - Fixed stale agent state persisting after starting a new session with `/new`.
-- Fixed daemon child sessions showing incorrect recovery banners.
 - Fixed `rebuild` command failing when script file paths were passed instead of file contents.
-- Fixed registry MCP servers not supporting session-only disable toggle.
 - Fixed queued request IDs not being preserved across retries.
 
 ### 0.25.0
