@@ -1,5 +1,20 @@
 # Changelog
 
+### 0.25.2
+
+#### New Features
+- **Custom Webhooks**: Expert builders can now configure typed custom webhooks for GitLab and Jira integrations.
+- **Chat Placeholder Text**: Expert configs now support a `placeholderText` field to customize the chat composer placeholder.
+
+#### Improvements
+- **Cosmos Branding**: Injected system-prompt rules now use the updated "Cosmos" branding.
+- **Backward Compatibility**: Added deprecated `--no-tui` alias to ensure smooth rollout for existing scripts.
+
+#### Bug Fixes
+- Fixed `auggie daemon` auth errors to be consistent with `auggie -p` behavior.
+- Fixed cloud expert prompt rendering for headless sessions.
+- Suppressed noisy setup logs during daemon early failures.
+
 ### 0.25.1
 
 #### New Features
