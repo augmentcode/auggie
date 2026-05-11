@@ -15,6 +15,14 @@
       "source": "./plugin_marketplace/code-review",
       "category": "code-quality",
       "tags": ["code-review", "git", "commands", "agents"]
+    },
+    {
+      "name": "warp",
+      "description": "Native Warp notifications when Auggie completes tasks or needs input",
+      "version": "2.0.0",
+      "source": "./plugin_marketplace/warp",
+      "category": "productivity",
+      "tags": ["notifications", "terminal", "warp"]
     }
   ]
 }
