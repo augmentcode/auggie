@@ -13,6 +13,9 @@
     ],
     "Stop": [
       {
+        "metadata": {
+          "includeConversationData": true
+        },
         "hooks": [
           {
             "type": "command",

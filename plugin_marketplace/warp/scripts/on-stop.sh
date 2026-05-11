@@ -17,8 +17,8 @@ source "$SCRIPT_DIR/build-payload.sh"
 # Read hook input from stdin
 INPUT=$(cat)
 
-QUERY=$(echo "$INPUT" | jq -r '._exchange.exchange.request_message // ""' 2>/dev/null)
-RESPONSE=$(echo "$INPUT" | jq -r '._exchange.exchange.response_text // ""' 2>/dev/null)
+QUERY=$(echo "$INPUT" | jq -r '.conversation.userPrompt // ""' 2>/dev/null)
+RESPONSE=$(echo "$INPUT" | jq -r '.conversation.agentTextResponse // ""' 2>/dev/null)
 
 # Truncate for notification display
 if [ -n "$QUERY" ] && [ ${#QUERY} -gt 200 ]; then
