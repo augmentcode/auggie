@@ -1,5 +1,37 @@
 # Changelog
 
+### 0.27.0
+
+#### New Features
+- **Cosmos Handoff**: Added a `/cosmos` command for handing a session off to Cosmos.
+- **Warp Integration**: Added Warp detection and an `/install-warp` command.
+- **Webhooks**: Added GitHub webhook support, custom webhook capabilities, multi-line descriptions, and webhook updates.
+- **Plugin Marketplaces**: Plugin marketplaces can now be added from a specific branch or tag.
+- **Hooks**: Added PromptSubmit hooks and support for updating input from PreToolUse hooks.
+- **Subagents**: Subagents can now report when they finish work.
+- **Daemon Pool Status**: Added commands to view daemon pool slot usage and per-daemon status.
+- **Session History**: ACP integrations can now access CLI session history.
+
+#### Improvements
+- **Session Picker**: The session picker shows more sessions, supports scrolling, and filters out subagent sessions.
+- **Pasted Text**: Long pasted content now collapses into expandable paste blocks.
+- **Cloud Agent Resources**: Cloud agents can load skills, commands, MCP servers, and extra agent directories from shared file storage.
+- **Connection Reliability**: Longer chat stream timeouts and improved daemon liveness checks reduce false reconnects.
+- **Tool Output Handling**: Large tool results are truncated more safely in cloud sessions.
+- **Shared Sessions**: CLI shared session listings now better match organization access controls.
+- **Environment Management**: Environment snapshots are materialized on creation, and apply conflicts are easier to understand.
+- **Expert Configuration**: Expert bundles preserve idle cleanup settings, and triggers warn when required capabilities are missing.
+- **Workspace Shortcut**: `run-as-agent` now accepts `-w` as a shortcut for `--workspace`.
+- **Terminology**: User-facing messages now consistently use Cosmos terminology.
+
+#### Bug Fixes
+- Fixed webhook CLI route handling.
+- Fixed custom webhook subscriptions and event source filtering.
+- Fixed header-auth MCP secrets in daemon mode.
+- Fixed unnecessary empty session creation after connection failures and in MCP mode.
+- Fixed muted background colors and summary text appearing in stream anchors.
+- Fixed expert include render failures so agents degrade gracefully.
+
 ### 0.25.1
 
 #### New Features
