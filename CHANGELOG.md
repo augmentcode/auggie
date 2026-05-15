@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.27.1
+
+#### New Features
+- **General-Purpose Sub-Agent**: Added a built-in general-purpose sub-agent for deep research, code search, and multi-step workflows.
+
 ### 0.25.1
 
 #### New Features
