@@ -1,5 +1,21 @@
 # Changelog
 
+### 0.28.0
+
+#### New Features
+- **General-Purpose Subagent**: Added a built-in general-purpose subagent option for broader multi-step research and implementation tasks.
+
+#### Improvements
+- **Model Defaults**: Added a configurable default model setting, and `/model` changes now apply only to the current session.
+- **Markdown Links**: The TUI now shows destination URLs for markdown links.
+- **Daemon Update Hints**: The app now warns when a connected daemon is out of date.
+- **Cloud Error Visibility**: Cloud sessions now surface CLI startup errors more directly in Cosmos.
+- **VFS Diagnostics**: VFS sync warnings and MCP merge collision errors now include clearer troubleshooting details.
+- **Lazy Skill Includes**: Lazy-loaded skill bodies can now include nested skills.
+
+#### Bug Fixes
+- Fixed cloud agents to retry transient knowledgebase sync failures and stop cleanly on unrecoverable errors.
+
 ### 0.27.0
 
 #### New Features
