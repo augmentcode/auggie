@@ -1,5 +1,29 @@
 # Changelog
 
+### 0.29.0
+
+#### New Features
+- **Prompt Modules**: Added reusable prompt modules and a `auggie cloud prompt-module render` command for expert instructions from docs and VFS.
+- **Cloud Session Management**: Added commands to rename, archive, unarchive, pin, unpin, and list pinned cloud sessions.
+- **Auggie Guide**: Added a built-in `auggie-guide` subagent for answering Auggie CLI and Cosmos questions from the docs.
+- **Daemon Spaces**: Added CLI support for plain daemon Spaces.
+- **Daemon Indexing**: Added `--allow-indexing` support to `auggie daemon` so spawned child agents can use codebase indexing.
+
+#### Improvements
+- **Session Metadata**: Session JSON now records per-exchange model IDs, summarization billing, and sub-agent histories.
+- **Indexing Visibility**: `auggie daemon` now reports indexing status at startup and explains how to enable it when possible.
+- **MCP Reliability**: MCP OAuth refreshes are more resilient, and stale shared MCP opt-ins now surface CLI warnings.
+- **CLI Welcome**: The welcome screen now highlights updated model availability.
+- **Tool Compatibility**: The `str-replace-editor` tool no longer requires the legacy instruction reminder field.
+
+#### Bug Fixes
+- Fixed `auggie upgrade` on Windows.
+- Fixed `auggie mcp add --header` to use `-H` and avoid conflicting with help.
+- Fixed daemon auth-session file handling to write atomically and recover from malformed files.
+- Fixed markdown code fences from carrying over between agent turns.
+- Fixed out-of-order messages in long paginated conversation turns.
+- Fixed subagent delegate tool rendering.
+
 ### 0.28.0
 
 #### New Features
