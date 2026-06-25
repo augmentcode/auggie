@@ -3,7 +3,6 @@
 ### 0.29.0
 
 #### New Features
-- **Prompt Modules**: Added reusable prompt modules and a `auggie cloud prompt-module render` command for expert instructions from docs and VFS.
 - **Cloud Session Management**: Added commands to rename, archive, unarchive, pin, unpin, and list pinned cloud sessions.
 - **Auggie Guide**: Added a built-in `auggie-guide` subagent for answering Auggie CLI and Cosmos questions from the docs.
 - **Daemon Spaces**: Added CLI support for plain daemon Spaces.
@@ -14,7 +13,6 @@
 - **Indexing Visibility**: `auggie daemon` now reports indexing status at startup and explains how to enable it when possible.
 - **MCP Reliability**: MCP OAuth refreshes are more resilient, and stale shared MCP opt-ins now surface CLI warnings.
 - **CLI Welcome**: The welcome screen now highlights updated model availability.
-- **Tool Compatibility**: The `str-replace-editor` tool no longer requires the legacy instruction reminder field.
 
 #### Bug Fixes
 - Fixed `auggie upgrade` on Windows.
