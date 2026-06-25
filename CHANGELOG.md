@@ -37,6 +37,11 @@
 #### Bug Fixes
 - Fixed cloud agents to retry transient knowledgebase sync failures and stop cleanly on unrecoverable errors.
 
+### 0.27.1
+
+#### New Features
+- **General-Purpose Sub-Agent**: Added a built-in general-purpose sub-agent for deep research, code search, and multi-step workflows.
+
 ### 0.27.0
 
 #### New Features
