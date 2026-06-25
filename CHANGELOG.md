@@ -74,13 +74,11 @@
 #### New Features
 - **PDF Attachments**: Added support for attaching PDF files to conversations.
 - **Expert Auto-Archive**: Expert YAML bundles now support an auto-archive setting for automatic session cleanup.
-- **Raw Codebase Retrieval**: New raw codebase retrieval tool for direct access to indexed code results.
 
 #### Improvements
 - **Daemon Version Display**: Daemon list and session details now show the CLI version running on each daemon.
 - **Better Entitlement Errors**: Improved error messages when daemon entitlement checks fail.
 - **Non-Interactive Mode Errors**: Permission errors are now surfaced earlier when running feature-gated commands in non-interactive mode.
-- **Removed Deprecated Commands**: Removed the deprecated Slack channel `claim` and `release` commands.
 
 #### Bug Fixes
 - Fixed cloud session sync failing when targeting a specific agent by ID.
