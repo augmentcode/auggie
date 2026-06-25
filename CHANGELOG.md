@@ -1,9 +1,51 @@
 # Changelog
 
+### 0.29.0
+
+#### New Features
+- **Auggie Guide**: Added a built-in `auggie-guide` subagent for answering Auggie CLI and Cosmos questions from the docs.
+- **Daemon Spaces**: Added CLI support for plain daemon Spaces.
+- **Daemon Indexing**: Added `--allow-indexing` support to `auggie daemon` so spawned child agents can use codebase indexing.
+
+#### Improvements
+- **Session Metadata**: Session JSON now records per-exchange model IDs, summarization billing, and sub-agent histories.
+- **Indexing Visibility**: `auggie daemon` now reports indexing status at startup and explains how to enable it when possible.
+- **MCP Reliability**: MCP OAuth refreshes are more resilient, and stale shared MCP opt-ins now surface CLI warnings.
+- **CLI Welcome**: The welcome screen now highlights updated model availability.
+
+#### Bug Fixes
+- Fixed `auggie upgrade` on Windows.
+- Fixed `auggie mcp add --header` to use `-H` and avoid conflicting with help.
+- Fixed daemon auth-session file handling to write atomically and recover from malformed files.
+- Fixed markdown code fences from carrying over between agent turns.
+- Fixed out-of-order messages in long paginated conversation turns.
+- Fixed subagent delegate tool rendering.
+
+### 0.28.0
+
+#### New Features
+- **General-Purpose Subagent**: Added a built-in general-purpose subagent option for broader multi-step research and implementation tasks.
+
+#### Improvements
+- **Model Defaults**: Added a configurable default model setting, and `/model` changes now apply only to the current session.
+- **Markdown Links**: The TUI now shows destination URLs for markdown links.
+- **Daemon Update Hints**: The app now warns when a connected daemon is out of date.
+- **Cloud Error Visibility**: Cloud sessions now surface CLI startup errors more directly in Cosmos.
+- **VFS Diagnostics**: VFS sync warnings and MCP merge collision errors now include clearer troubleshooting details.
+- **Lazy Skill Includes**: Lazy-loaded skill bodies can now include nested skills.
+
+#### Bug Fixes
+- Fixed cloud agents to retry transient knowledgebase sync failures and stop cleanly on unrecoverable errors.
+
 ### 0.27.2
 
 #### Improvements
 - **Network Reliability**: CLI network requests now use a consistent HTTP client for more reliable shutdown and connection cleanup.
+
+### 0.27.1
+
+#### New Features
+- **General-Purpose Sub-Agent**: Added a built-in general-purpose sub-agent for deep research, code search, and multi-step workflows.
 
 ### 0.27.0
 
@@ -36,6 +78,29 @@
 - Fixed unnecessary empty session creation after connection failures and in MCP mode.
 - Fixed muted background colors and summary text appearing in stream anchors.
 - Fixed expert include render failures so agents degrade gracefully.
+
+### 0.26.0
+
+#### New Features
+- **PDF Attachments**: Added support for attaching PDF files to conversations.
+- **Expert Auto-Archive**: Expert YAML bundles now support an auto-archive setting for automatic session cleanup.
+
+#### Improvements
+- **Daemon Version Display**: Daemon list and session details now show the CLI version running on each daemon.
+- **Better Entitlement Errors**: Improved error messages when daemon entitlement checks fail.
+- **Non-Interactive Mode Errors**: Permission errors are now surfaced earlier when running feature-gated commands in non-interactive mode.
+
+#### Bug Fixes
+- Fixed cloud session sync failing when targeting a specific agent by ID.
+
+### 0.25.2
+
+#### Improvements
+- **Backward Compatibility**: Added a deprecated `--no-tui` alias so existing scripts keep working.
+
+#### Bug Fixes
+- Fixed `auggie daemon` auth errors to be consistent with `auggie -p` behavior.
+- Suppressed noisy setup logs during daemon early failures.
 
 ### 0.25.1
 
