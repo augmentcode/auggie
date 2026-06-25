@@ -37,6 +37,11 @@
 #### Bug Fixes
 - Fixed cloud agents to retry transient knowledgebase sync failures and stop cleanly on unrecoverable errors.
 
+### 0.27.2
+
+#### Improvements
+- **Network Reliability**: CLI network requests now use a consistent HTTP client for more reliable shutdown and connection cleanup.
+
 ### 0.27.1
 
 #### New Features
