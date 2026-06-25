@@ -3,7 +3,6 @@
 ### 0.29.0
 
 #### New Features
-- **Cloud Session Management**: Added commands to rename, archive, unarchive, pin, unpin, and list pinned cloud sessions.
 - **Auggie Guide**: Added a built-in `auggie-guide` subagent for answering Auggie CLI and Cosmos questions from the docs.
 - **Daemon Spaces**: Added CLI support for plain daemon Spaces.
 - **Daemon Indexing**: Added `--allow-indexing` support to `auggie daemon` so spawned child agents can use codebase indexing.
