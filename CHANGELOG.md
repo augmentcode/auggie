@@ -69,6 +69,20 @@
 - Fixed muted background colors and summary text appearing in stream anchors.
 - Fixed expert include render failures so agents degrade gracefully.
 
+### 0.26.0
+
+#### New Features
+- **PDF Attachments**: Added support for attaching PDF files to conversations.
+- **Expert Auto-Archive**: Expert YAML bundles now support an auto-archive setting for automatic session cleanup.
+
+#### Improvements
+- **Daemon Version Display**: Daemon list and session details now show the CLI version running on each daemon.
+- **Better Entitlement Errors**: Improved error messages when daemon entitlement checks fail.
+- **Non-Interactive Mode Errors**: Permission errors are now surfaced earlier when running feature-gated commands in non-interactive mode.
+
+#### Bug Fixes
+- Fixed cloud session sync failing when targeting a specific agent by ID.
+
 ### 0.25.2
 
 #### Improvements
