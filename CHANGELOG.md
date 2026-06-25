@@ -1,5 +1,31 @@
 # Changelog
 
+### 0.30.0
+
+#### New Features
+- **Cloud Projects**: Added `auggie cloud project` commands to create and manage projects and their agents.
+- **Cloud Tunnels**: Added `auggie cloud tunnel open/close/list` commands.
+- **Cloud Analytics**: Added `auggie cloud analytics` commands to record custom events and view cost analytics.
+- **Sub-Agent Hooks**: PreToolUse and PostToolUse hooks now run during sub-agent sessions.
+
+#### Improvements
+- **Expert Discovery**: `auggie cloud expert list` adds usage-ranked discovery (`--by-usage`), a `--space-id` filter, Space membership display, and improved discovery ergonomics.
+- **Secrets Spaces**: `auggie cloud secret list` and `set` now accept a `--space` flag to scope secrets to a Space.
+- **Workspace Discovery**: `auggie daemon` can auto-discover git workspaces under a non-git container (with optional nesting depth) and accepts `-w`/`--workspace-root`; cloud agents on custom environments also auto-discover workspaces.
+- **MCP Server Restart**: Added targeted MCP server restart without restarting the cloud VM.
+- **MCP Diagnostics**: Selected-but-dropped registry MCP servers are now reported so diagnostics resolve correctly.
+- **Context Compression**: Restored context compression so long agent sessions handle large conversations more reliably.
+- **Syntax Highlighting**: Added Scala and additional language grammars to the TUI syntax highlighter.
+- **Cloud Events**: Added Teams as a cloud events source.
+
+#### Bug Fixes
+- Fixed the agent loop silently exiting on an empty model response (previously surfaced as "Worked for 0s"); it now retries and reports an error.
+- Fixed the cloud message queue staying paused after an agent interrupt.
+- Fixed `knowledgebase` path validation on Windows.
+- Fixed git worktrees to resolve to their main repository for indexing permission checks.
+- Fixed the expert capability map to include GitLab and align Jira/Confluence capabilities.
+- Fixed an overly strict `$augment-*` secret-name validator in MCP bundles.
+
 ### 0.29.0
 
 #### New Features
