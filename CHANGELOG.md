@@ -1,5 +1,74 @@
 # Changelog
 
+### 0.29.0
+
+#### New Features
+- **Auggie Guide**: Added a built-in `auggie-guide` subagent for answering Auggie CLI and Cosmos questions from the docs.
+- **Daemon Spaces**: Added CLI support for plain daemon Spaces.
+- **Daemon Indexing**: Added `--allow-indexing` support to `auggie daemon` so spawned child agents can use codebase indexing.
+
+#### Improvements
+- **Session Metadata**: Session JSON now records per-exchange model IDs, summarization billing, and sub-agent histories.
+- **Indexing Visibility**: `auggie daemon` now reports indexing status at startup and explains how to enable it when possible.
+- **MCP Reliability**: MCP OAuth refreshes are more resilient, and stale shared MCP opt-ins now surface CLI warnings.
+- **CLI Welcome**: The welcome screen now highlights updated model availability.
+
+#### Bug Fixes
+- Fixed `auggie upgrade` on Windows.
+- Fixed `auggie mcp add --header` to use `-H` and avoid conflicting with help.
+- Fixed daemon auth-session file handling to write atomically and recover from malformed files.
+- Fixed markdown code fences from carrying over between agent turns.
+- Fixed out-of-order messages in long paginated conversation turns.
+- Fixed subagent delegate tool rendering.
+
+### 0.28.0
+
+#### New Features
+- **General-Purpose Subagent**: Added a built-in general-purpose subagent option for broader multi-step research and implementation tasks.
+
+#### Improvements
+- **Model Defaults**: Added a configurable default model setting, and `/model` changes now apply only to the current session.
+- **Markdown Links**: The TUI now shows destination URLs for markdown links.
+- **Daemon Update Hints**: The app now warns when a connected daemon is out of date.
+- **Cloud Error Visibility**: Cloud sessions now surface CLI startup errors more directly in Cosmos.
+- **VFS Diagnostics**: VFS sync warnings and MCP merge collision errors now include clearer troubleshooting details.
+- **Lazy Skill Includes**: Lazy-loaded skill bodies can now include nested skills.
+
+#### Bug Fixes
+- Fixed cloud agents to retry transient knowledgebase sync failures and stop cleanly on unrecoverable errors.
+
+### 0.27.0
+
+#### New Features
+- **Cosmos Handoff**: Added a `/cosmos` command for handing a session off to Cosmos.
+- **Warp Integration**: Added Warp detection and an `/install-warp` command.
+- **Webhooks**: Added GitHub webhook support, custom webhook capabilities, multi-line descriptions, and webhook updates.
+- **Plugin Marketplaces**: Plugin marketplaces can now be added from a specific branch or tag.
+- **Hooks**: Added PromptSubmit hooks and support for updating input from PreToolUse hooks.
+- **Subagents**: Subagents can now report when they finish work.
+- **Daemon Pool Status**: Added commands to view daemon pool slot usage and per-daemon status.
+- **Session History**: ACP integrations can now access CLI session history.
+
+#### Improvements
+- **Session Picker**: The session picker shows more sessions, supports scrolling, and filters out subagent sessions.
+- **Pasted Text**: Long pasted content now collapses into expandable paste blocks.
+- **Cloud Agent Resources**: Cloud agents can load skills, commands, MCP servers, and extra agent directories from shared file storage.
+- **Connection Reliability**: Longer chat stream timeouts and improved daemon liveness checks reduce false reconnects.
+- **Tool Output Handling**: Large tool results are truncated more safely in cloud sessions.
+- **Shared Sessions**: CLI shared session listings now better match organization access controls.
+- **Environment Management**: Environment snapshots are materialized on creation, and apply conflicts are easier to understand.
+- **Expert Configuration**: Expert bundles preserve idle cleanup settings, and triggers warn when required capabilities are missing.
+- **Workspace Shortcut**: `run-as-agent` now accepts `-w` as a shortcut for `--workspace`.
+- **Terminology**: User-facing messages now consistently use Cosmos terminology.
+
+#### Bug Fixes
+- Fixed webhook CLI route handling.
+- Fixed custom webhook subscriptions and event source filtering.
+- Fixed header-auth MCP secrets in daemon mode.
+- Fixed unnecessary empty session creation after connection failures and in MCP mode.
+- Fixed muted background colors and summary text appearing in stream anchors.
+- Fixed expert include render failures so agents degrade gracefully.
+
 ### 0.26.0
 
 #### New Features
@@ -15,7 +84,15 @@
 
 #### Bug Fixes
 - Fixed cloud session sync failing when targeting a specific agent by ID.
-- Fixed Git PR and branch sync for worktree-based sessions.
+
+### 0.25.2
+
+#### Improvements
+- **Backward Compatibility**: Added a deprecated `--no-tui` alias so existing scripts keep working.
+
+#### Bug Fixes
+- Fixed `auggie daemon` auth errors to be consistent with `auggie -p` behavior.
+- Suppressed noisy setup logs during daemon early failures.
 
 ### 0.25.1
 
