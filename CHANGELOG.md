@@ -69,6 +69,15 @@
 - Fixed muted background colors and summary text appearing in stream anchors.
 - Fixed expert include render failures so agents degrade gracefully.
 
+### 0.25.2
+
+#### Improvements
+- **Backward Compatibility**: Added a deprecated `--no-tui` alias so existing scripts keep working.
+
+#### Bug Fixes
+- Fixed `auggie daemon` auth errors to be consistent with `auggie -p` behavior.
+- Suppressed noisy setup logs during daemon early failures.
+
 ### 0.25.1
 
 #### New Features
