@@ -6,7 +6,6 @@
 - **Cloud Workflow Triggers**: `auggie cloud` experts can now use Jira, Confluence, GitLab, and Microsoft Teams as persistent workflow trigger sources.
 - **Session Space Pinning**: `auggie cloud session create` now accepts `--space-id` to pin a new session to a Space.
 - **VFS File Links**: Added `auggie cloud vfs get-url` to generate compact, durable links to VFS files.
-- **Daemon Diff View**: Added a diff view for the Auggie daemon.
 
 #### Improvements
 - **Daemon Worktree Directory**: `auggie daemon` can now be configured with a custom worktree directory.
