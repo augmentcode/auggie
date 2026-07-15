@@ -1,5 +1,19 @@
 # Changelog
 
+### 0.32.0
+
+#### Improvements
+- **Error Visibility**: Improved visibility for API errors lacking detailed descriptions.
+- **MCP Reliability**: Improved MCP reliability by automatically restarting wedged servers.
+- **MCP Monitoring**: Enhanced MCP server health monitoring and added a guard for empty credentials.
+- **Event Logging**: Added originating webhook information to the cloud session event log.
+
+#### Bug Fixes
+- **Chat Summaries**: Fixed an issue where stale thinking signatures remained in chat summaries.
+- **macOS Initialization**: Fixed a macOS permission issue affecting terminal initialization at install time.
+- **MCP Diagnostics**: Fixed a bug where MCP servers would stay in a "Connecting..." state in the diagnostics view.
+- **MCP Content**: Fixed an issue where non-text/image MCP content was not correctly surfaced to the agent.
+
 ### 0.31.0
 
 #### New Features
