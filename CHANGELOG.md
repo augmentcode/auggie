@@ -2,33 +2,16 @@
 
 ### 0.32.0
 
-#### New Features
-- **Cloud Tunnel**: Promoted the cloud tunnel command to stable and removed the experimental label.
-- **VFS Granular Sharing**: Added granular file sharing controls and access requests for cloud agent files.
-- **Automation Triggers**: Added support for Azure DevOps as an automation trigger.
-- **Cloud File Comments**: Added support for inline and document-level comments in the cloud file viewer.
-- **MCP @-Mentions**: Added the ability to @-mention MCP servers in the cloud agent composer.
-- **Daemon Diff Support**: Added support for viewing file diffs in daemon-backed cloud sessions.
-
 #### Improvements
 - **Error Visibility**: Improved visibility for API errors lacking detailed descriptions.
-- **Cloud Error Legibility**: Improved legibility of model-unavailable rejections for cloud sessions.
-- **Integration Status**: Added Atlassian status reporting to the cloud integration command.
-- **VFS File Size**: Increased the cloud agent file size limit to 4 MiB.
-- **Session Cleanup**: Automated cleanup of temporary worktrees when archiving or deleting sessions.
-- **Session Details**: Added the CLI version to the cloud session details view.
 - **MCP Reliability**: Improved MCP reliability by automatically restarting wedged servers.
 - **MCP Monitoring**: Enhanced MCP server health monitoring and added a guard for empty credentials.
 - **Event Logging**: Added originating webhook information to the cloud session event log.
-- **Shell Consistency**: Propagated the local shell selection to child and cloud agents for a consistent terminal experience.
-- **Connection Recovery**: Added a watchdog to automatically recover WebSocket connections when resuming from sleep.
 
 #### Bug Fixes
 - **Chat Summaries**: Fixed an issue where stale thinking signatures remained in chat summaries.
 - **macOS Initialization**: Fixed a macOS permission issue affecting terminal initialization at install time.
 - **MCP Diagnostics**: Fixed a bug where MCP servers would stay in a "Connecting..." state in the diagnostics view.
-- **MCP UI**: Resolved an issue where the @-mention spinner would get stuck when an MCP server failed to add.
-- **VFS Share Links**: Fixed VFS share links to correctly resolve in the cloud viewer.
 - **MCP Content**: Fixed an issue where non-text/image MCP content was not correctly surfaced to the agent.
 
 ### 0.31.0
