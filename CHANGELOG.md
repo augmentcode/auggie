@@ -1,5 +1,28 @@
 # Changelog
 
+### 0.33.0
+
+#### New Features
+- **Cloud Triggers**: Added `auggie cloud trigger enable/disable` commands to manage persistent workflow triggers.
+- **Session Cost**: Added `auggie cloud session cost` to view the credit usage and billing breakdown for a specific session.
+- **Worker Sessions**: `auggie session get` now displays a session's child worker sessions.
+- **Daemon Filesystem**: Added support for browsing a daemon's filesystem within the agent session.
+
+#### Improvements
+- **MCP Reliability**: Hardened MCP servers with OAuth callback WAF unblocking, empty-token rejection, and proactive usability probing at startup.
+- **MCP Error Visibility**: Improved stdio error visibility and added automatic secret scrubbing for MCP server logs.
+- **MCP Refresh**: Added support for the `tools/list_changed` notification to dynamically refresh the agent's cached tool list.
+- **MCP Provenance**: The TUI now displays the provenance (origin) of MCP servers to clarify which plugin or organization provided them.
+- **Knowledgebase Terminology**: Renamed "skills" to "prompt modules" across the knowledgebase and CLI for better alignment with Cosmos.
+- **VFS Links**: Simplified `auggie cloud vfs get-url` paths and improved fallback handling for the `AUGMENT_VFS_DIR` environment variable.
+- **Daemon Diagnostics**: Added guidance on clearing stale daemon pool IDs and improved multi-repo workspace examples in help text.
+- **Windows PTY**: The Windows daemon now prefers the latest version of PowerShell for its PTY sessions.
+
+#### Bug Fixes
+- **MCP Stability**: Fixed an issue where transient connectivity probes could incorrectly mark a connected MCP server as failed.
+- **MCP Cleanup**: Fixed a bug where removed MCP servers could reappear after a global host rebuild.
+- **VFS Pathing**: Fixed VFS path resolution to avoid double-encoding slashes in file URLs.
+
 ### 0.32.0
 
 #### Improvements
