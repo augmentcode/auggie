@@ -4,9 +4,7 @@
 
 #### New Features
 - **Cloud Triggers**: Added `auggie cloud trigger enable/disable` commands to manage persistent workflow triggers.
-- **Session Cost**: Added `auggie cloud session cost` to view the credit usage and billing breakdown for a specific session.
 - **Worker Sessions**: `auggie session get` now displays a session's child worker sessions.
-- **Daemon Filesystem**: Added support for browsing a daemon's filesystem within the agent session.
 
 #### Improvements
 - **MCP Reliability**: Hardened MCP servers with OAuth callback WAF unblocking, empty-token rejection, and proactive usability probing at startup.
