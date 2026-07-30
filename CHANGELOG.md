@@ -1,5 +1,20 @@
 # Changelog
 
+### 0.34.0
+
+#### New Features
+- **Billing JSON Output**: Included billing information in CLI JSON output.
+- **Sensitive Path Protection**: Added approval requirements for saving files to sensitive paths.
+- **Daemon Environments**: `auggie cloud environment get` now supports daemon targets.
+
+#### Improvements
+- **Hosted Artifacts Consent**: Gated hosted-artifacts feature descriptions on explicit user consent.
+- **Expert Triggers**: Preserved trigger actors when applying expert configurations.
+
+#### Bug Fixes
+- **Credential Resolution**: Restored interactive credential resolution for MCP servers.
+- **Daemon Lifecycle**: Preserved daemon execution lifecycle during automatic updates.
+
 ### 0.33.0
 
 #### New Features
