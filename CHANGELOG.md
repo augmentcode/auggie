@@ -3,7 +3,6 @@
 ### 0.34.0
 
 #### New Features
-- **Desktop Installer**: Added `auggie cloud desktop ensure` to manage display-stack installers.
 - **Billing JSON Output**: Included billing information in CLI JSON output.
 - **Sensitive Path Protection**: Added approval requirements for saving files to sensitive paths.
 - **Daemon Environments**: `auggie cloud environment get` now supports daemon targets.
