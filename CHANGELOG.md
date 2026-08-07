@@ -1,5 +1,23 @@
 # Changelog
 
+### 0.35.0
+
+#### New Features
+- **Secrets API**: Added API and runtime support for managing secrets.
+- **Daemon Pool Bundles**: Added declarative configuration for daemon pools.
+
+#### Improvements
+- **Environment Rebuilds**: Environment rebuild operations now run asynchronously.
+- **Plan-Mode Editors**: Plan-mode editor paths now expand `~` to the home directory.
+- **MCP Scopes**: Private and shared MCP scope changes now work when organization-level access controls are disabled.
+- **Local Daemons**: Prevented duplicate local daemons from starting.
+- **Explore Agents**: Corrected the tool allowlist for explore sub-agents.
+
+#### Bug Fixes
+- **OAuth Recovery**: Improved recovery when hosted MCP OAuth sessions expire.
+- **Azure DevOps Projects**: Preserved Azure DevOps repository project information.
+- **Authentication Security**: Auth session tokens are now written with restricted file permissions.
+
 ### 0.34.0
 
 #### New Features
