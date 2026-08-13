@@ -3,7 +3,6 @@
 ### 0.35.0
 
 #### New Features
-- **Secrets API**: Added API and runtime support for managing secrets.
 - **Daemon Pool Bundles**: Added declarative configuration for daemon pools.
 
 #### Improvements
