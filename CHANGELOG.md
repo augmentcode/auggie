@@ -1,5 +1,22 @@
 # Changelog
 
+### 0.36.0
+
+#### New Features
+- **Reasoning Effort Flag**: Added a flag to control the model's reasoning effort from the CLI.
+
+#### Bug Fixes
+- Fixed a crash that could occur when replaying a session summary that included unsupported thinking content.
+- Removed the `secret get --reveal` flag since it did not work.
+- The daemon now validates the host's Git version at startup and reports a clear error if it's too old.
+- Fixed the agent failing to parse file view ranges from malformed tool calls.
+- Improved error messages when an MCP server's header secret configuration fails.
+- Fixed prompt module output being cut off before completion.
+- Fixed duplicate error notifications when a VFS sync failed.
+- Extended the knowledgebase download timeout to prevent failures on large codebases.
+- Patched security vulnerabilities identified in a routine dependency scan.
+- Fixed several issues where VFS syncing could destroy or resurrect deleted files.
+
 ### 0.35.0
 
 #### New Features
