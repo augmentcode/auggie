@@ -2,12 +2,8 @@
 
 ### 0.36.0
 
-#### New Features
-- **Reasoning Effort Flag**: Added a flag to control the model's reasoning effort from the CLI.
-
 #### Bug Fixes
 - Fixed a crash that could occur when replaying a session summary that included unsupported thinking content.
-- Removed the `secret get --reveal` flag since it did not work.
 - The daemon now validates the host's Git version at startup and reports a clear error if it's too old.
 - Fixed the agent failing to parse file view ranges from malformed tool calls.
 - Improved error messages when an MCP server's header secret configuration fails.
