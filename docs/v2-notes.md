@@ -1,0 +1,165 @@
+# Auggie 1.x Preview & Migration Guide
+
+Auggie CLI is preparing for its first major release: **Auggie 1.x.x**!
+
+After extensive development and feedback across the `0.x` series, the upcoming 1.x release represents a major evolution of Auggie. It replaces the underlying terminal rendering architecture for immediate responsiveness, introduces unified TUI navigation with type-to-filter across all menus, and adds interactive workflow tools like session tree visualization, git worktree management, and session export/import.
+
+This guide outlines release channels, headline feature highlights, breaking changes, items still in development, and a detailed changelog of customer-relevant fixes and improvements correlated by release tags.
+
+---
+
+## 1. Release Channels & Distribution Tags
+
+Auggie is published to npm under `@augmentcode/auggie`. Packages are available across three distribution tags:
+
+| Channel / Tag | Version Series | Recommended For | Description |
+|---|---|---|---|
+| `latest` | `0.x.x` | Everyday Production | Current stable release line. Remains the default until 1.x completes preview testing. |
+| `preview` | `1.x.x` | Early Adopters & Testers | Preview channel for the upcoming 1.x major release. Try out new capabilities and share feedback. |
+| `daemon` | `1.x.x` | Automated Runners & CI | Pinned builds for headless automation, background workers, and CI environments. |
+
+### Installation
+
+Install or upgrade to the 1.x preview:
+```bash
+npm install -g @augmentcode/auggie@preview
+```
+
+Switch back to the stable 0.x release at any time:
+```bash
+npm install -g @augmentcode/auggie@latest
+```
+
+In all channels, the command you run in your terminal is simply `auggie`.
+
+---
+
+## 2. Feature Highlights (What’s New in 1.x)
+
+> *Note: These are curated highlights of user-facing capabilities introduced in 1.x that were not available in 0.x. For release-by-release details, see the [Changelog](#5-detailed-changelog) below.*
+
+- **Snappier Terminal UI (Direct ANSI Engine)**:
+  In 0.x, the terminal interface could stutter or lag during fast token streaming or when printing large diffs. In 1.x, the rendering engine has been rewritten from scratch with a direct terminal renderer (`pi-tui`), delivering instant scrolling, smooth rendering, and zero redraw lag.
+- **Native Editor Integration via ACP (Agent Client Protocol)**:
+  Auggie 1.x includes native support for ACP, enabling you to use Auggie as your coding agent directly inside editors like VS Code and Zed. Run `auggie acp` to start the protocol bridge and connect your favorite editor seamlessly.
+- **Interactive Thinking Effort Controls**:
+  On reasoning models, you can adjust thinking levels interactively rather than being locked into static model configurations. Press **Tab** in the `/model` selector to cycle through thinking efforts (`off` → `minimal` → `low` → `medium` → `high` → `xhigh`), or use **Shift+Tab** from the main prompt. The active thinking level is displayed directly in the status footer.
+- **Predictive Headroom & Compaction Management (`/compact`)**:
+  In addition to automated background compaction with intelligent headroom budgeting to avoid token limits, 1.x adds the `/compact` slash command to let you manually summarize conversation history on demand.
+- **Improved TUI Navigation & Unified Key Mapping**:
+  Navigation across menus and popovers is now unified:
+  - **Type-to-Filter**: All selectors (model picker, worktree selector, settings) support typing directly to filter results.
+  - **Consistent Keybindings**: Standardized navigation across the interface (`j`/`k` or arrow keys, readline shortcuts like `Ctrl+A`/`Ctrl+E`, `Escape` to step back or dismiss).
+  - **Custom Keybindings**: Configure personal keybindings in `~/.augment/keybindings.json` and reload them on the fly with `/reload`. Run `/hotkeys` anytime to view the complete shortcut cheat sheet.
+- **Session Tree Navigation (`/tree`)**:
+  While 0.x supported forking sessions with `/fork`, it lacked a way to visualize or navigate between branches. In 1.x, `/tree` provides an interactive visual session tree so you can view conversation branches and jump between them.
+- **Interactive Git Worktree Management (`/worktree`)**:
+  In 1.x, you can manage git worktrees directly from inside Auggie using `/worktree`. An interactive selector lets you create isolated worktrees for experimental tasks, switch between them, and clean them up when finished.
+- **Session Export & Import (`/export`, `/import`)**:
+  You can now export your conversation session to standalone HTML or JSONL files via `/export`, or import and resume a previous session from a JSONL file with `/import`.
+- **Interactive Permission Rule Manager (`/permissions`)**:
+  Run `/permissions` in any session to inspect active tool permission sources (managed, local, project, global) and interactively add, edit, or remove permission rules directly in the TUI.
+- **In-Session Inspectors (`/rules`, `/hotkeys`)**:
+  Inspect active configuration layers in real time: `/rules` to view loaded system and workspace rules, and `/hotkeys` for a complete keyboard shortcut reference.
+- **Configurable Themes**:
+  Settings in `.augment/settings.json` now support custom color themes via `theme` (`"dark"`, `"light"`, or custom theme files) and persistent reasoning budgets via `defaultThinkingLevel`.
+
+---
+
+## 3. Breaking Changes & Migration Notes
+
+When upgrading from `0.x` to `1.x`, keep the following changes in mind:
+
+### Personas Deprecated & Replaced by Subagents
+In 0.x, Auggie supported backend-configured "Personas" via the `/persona` slash command and CLI `auggie persona` commands to adjust system prompts and disable certain tools. 
+
+In 1.x, the separate persona abstraction has been retired in favor of native, standardized customization mechanisms:
+- **Custom Subagents / Agents**: Define role-specific behaviors, instructions, and dedicated toolsets in `.augment/agents/<name>.md` (workspace) or `~/.augment/agents/<name>.md` (global).
+- **Custom Rules & Prompts**: Set project guidelines and prompt overrides using `.augment/rules/*.md`, `AGENTS.md`, or `.augment/SYSTEM.md`.
+- **Tool Permissions**: Restrict or require user confirmation for specific tools via `/permissions` or `.augment/settings.json`.
+
+### Hook Tool Names Changed (With Temporary Backward Compatibility)
+Tool names have been standardized to short, canonical verbs across Auggie 1.x. If you have custom hooks configured in `.augment/hooks.json` or plugin settings, note the following canonical tool name updates:
+
+| 1.x Canonical Name | 0.x / Legacy Names (Supported via Backward Compatibility Aliases) | Description |
+|---|---|---|
+| `read` | `view`, `read-file`, `read_file` | Read file contents |
+| `edit` | `str-replace-editor`, `str_replace_editor`, `edit-file`, `edit_file` | Targeted string replacement in files |
+| `write` | `save-file`, `save_file`, `write-file`, `write_file` | Create or overwrite files |
+| `grep` | `grep-search`, `grep_search` | Search files using regex patterns |
+| `find` | `file-search`, `file_search`, `find-by-name` | Find files matching glob patterns |
+| `bash` | `launch-process`, `launch_process`, `shell` | Run shell commands |
+
+> **Note on Compatibility**: Temporary backward compatibility is provided in 1.x. Existing hook matchers and permission rules specifying legacy tool names (e.g. `matcher: "str-replace-editor"`) will continue to trigger for the canonical 1.x tools during the preview period. However, you should update your configuration to use the canonical names.
+
+### Hook Payloads: Changed Files Detection
+In 0.x, hook events for shell execution attempted to calculate and inject an internal list of modified files into the hook payload. This has been removed from `bash` hooks (and is being phased out across other tool hooks). Hooks requiring a list of modified files should rely directly on version control (e.g., `git status --porcelain` or `git diff --name-only`) rather than tool-level payload heuristics.
+
+### Keybinding & Configuration Updates
+- **`Shift+Tab` Shortcut**: `Shift+Tab` now cycles reasoning effort on thinking models (replacing the legacy plan-mode toggle from 0.x).
+- **Settings Preservation**: Existing settings in `.augment/settings.json` and `~/.augment/settings.json` (such as custom shell paths, default models, and MCP servers) continue to be honored automatically.
+
+---
+
+## 4. Still in the Works for GA (Customer Roadmap)
+
+Items actively being finalized before 1.x becomes the default (`latest`) release:
+
+- **Seamless 0.x Session Migration**:
+  Automatic compatibility and fast resume when opening historical `0.x` session history files in `1.x`, enabling you to inspect, resume, or fork earlier sessions without manual format conversion.
+- **Hotkey Mapping & Backward Compatibility**:
+  Refining and finalizing keyboard shortcuts across the terminal interface — ensuring familiar `0.x` hotkeys remain intuitive or backward-compatible, while establishing clean default mappings for new 1.x capabilities (alongside custom bindings via `~/.augment/keybindings.json`).
+
+---
+
+## 5. Detailed Changelog
+
+### Recent Releases (Last 10 Active Tags)
+
+#### `v1.2.0-prerelease.202610091519`
+- **MCP Reliability**: Gracefully handle and report status on rejected targeted MCP server restarts ([#1736](https://github.com/augmentcode/cosmos-agent/pull/1736)).
+
+#### `v1.2.0-prerelease.202610090920`
+- **Settings**: Respect and preserve legacy display preferences across sessions ([#1738](https://github.com/augmentcode/cosmos-agent/pull/1738)).
+
+#### `v1.2.0-prerelease.202610081217`
+- **CLI Help**: Cleaned up and trimmed CLI `--help` examples and tool listings for better readability ([#1737](https://github.com/augmentcode/cosmos-agent/pull/1737)).
+- **Cloud Workflows**: Preserved PR artifacts when local tool definitions share names with cloud tools ([#1720](https://github.com/augmentcode/cosmos-agent/pull/1720)).
+
+#### `v1.2.0-prerelease.202610080924`
+- **Thinking Selector**: Polished thinking selector labels, keyboard hints, and status footer indicators in the TUI ([#1734](https://github.com/augmentcode/cosmos-agent/pull/1734)).
+- **Rules**: Correctly honor frontmatter rule types for workspace rules ([#1728](https://github.com/augmentcode/cosmos-agent/pull/1728)).
+- **Model Selection**: Honor configured model registry defaults and fallback cleanly when a model is unspecified ([#1732](https://github.com/augmentcode/cosmos-agent/pull/1732)).
+- **Permissions**: Enforce organization and tenant tool permission policies consistently across sessions and subagents ([#1725](https://github.com/augmentcode/cosmos-agent/pull/1725)).
+
+#### `v1.2.0-prerelease.202610071518`
+- **Interactive Permissions Manager**: Added the `/permissions` interactive TUI screen to inspect, add, edit, and delete tool permission rules across scopes ([#1702](https://github.com/augmentcode/cosmos-agent/pull/1702)).
+- **Startup Performance**: Cached and reused integration tool definitions across sessions for faster CLI startup ([#1718](https://github.com/augmentcode/cosmos-agent/pull/1718)).
+- **CLI Help**: Deduplicated extension flags in `--help` output ([#1730](https://github.com/augmentcode/cosmos-agent/pull/1730)).
+
+#### `v1.2.0-prerelease.202610071218`
+- **TUI Tool Formatting**: Formatted and rendered remote tool calls and expandable result blocks cleanly in the terminal ([#1719](https://github.com/augmentcode/cosmos-agent/pull/1719)).
+
+#### `v1.2.0-prerelease.202610070820`
+- **Code Indexing**: Fixed background file watcher to properly capture and upload incremental code edits in active workspaces ([#1729](https://github.com/augmentcode/cosmos-agent/pull/1729)).
+- **Cloud Preference**: Persisted session cloud preference across commands until CLI restart ([#1722](https://github.com/augmentcode/cosmos-agent/pull/1722)).
+
+#### `v1.2.0-prerelease.202610061520`
+- **GitHub PR Reviews**: Preserved inline review comment reply relationships and threading ([#1704](https://github.com/augmentcode/cosmos-agent/pull/1704)).
+
+#### `v1.2.0-prerelease.202610051436`
+- **System Prompts**: Honored user-defined custom system prompts in session agent loops ([#1717](https://github.com/augmentcode/cosmos-agent/pull/1717)).
+
+#### `v1.2.0-prerelease.202610051219`
+- **MCP Discovery**: Kept MCP server discovery from blocking CLI startup and isolated server connection failures ([#1716](https://github.com/augmentcode/cosmos-agent/pull/1716)).
+
+---
+
+### Older Releases (Summary)
+
+Earlier prereleases in the `v1.0.x` – `v1.2.0` cycle delivered foundational architecture and tool enhancements:
+- **Bash Tool**: Raised default command execution timeout to 600s ([#1705](https://github.com/augmentcode/cosmos-agent/pull/1705)).
+- **Plugin Management**: Added the `auggie plugin marketplace add <source>` command to configure custom plugin marketplaces ([#1701](https://github.com/augmentcode/cosmos-agent/pull/1701)).
+- **MCP Startup**: Kept integration discovery off the startup critical path to accelerate CLI initialization ([#1715](https://github.com/augmentcode/cosmos-agent/pull/1715)).
+- **Diagnostics & Logging**: Preserved structured stack traces in debug logs ([#1703](https://github.com/augmentcode/cosmos-agent/pull/1703)).
+- **Foundation Architecture**: Ported core interactive runtime to the direct ANSI engine (`pi-tui`), established headless daemon runner support, and stabilized the ACP protocol bridge.

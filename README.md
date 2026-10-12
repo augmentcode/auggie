@@ -8,6 +8,7 @@ Learn more in the Augment Docs:
 
 - Overview: [Introducing Auggie CLI](https://docs.augmentcode.com/cli/overview)
 - Custom Commands Examples: [Custom Slash Commands Examples](https://docs.augmentcode.com/cli/custom-commands-examples)
+- Auggie 1.x Preview: [Auggie 1.x Preview & Migration Guide](docs/v2-notes.md)
 
 ## Quick start
 
