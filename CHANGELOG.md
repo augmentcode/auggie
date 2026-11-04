@@ -1,5 +1,28 @@
 # Changelog
 
+### 0.37.0
+
+#### New Features
+- **MCP Server Trust and Verification**: Added install-time warnings and change detection for local MCP servers, and enhanced tool approval prompts to display tool descriptions.
+- **Daemon Pool Credentials**: Added support for GitHub user OAuth and GitHub App workspace credentials when connecting daemons to a pool.
+
+#### Improvements
+- **Session Titles**: Session titles now use a topic-focused format and preserve ticket prefixes when present.
+- **Model Deprecation**: Deprecated models are now hidden from CLI model lists and pickers, and sessions using retired models automatically migrate to recommended replacements.
+- **MCP Failure Guidance**: Improved error messages and troubleshooting guidance when MCP servers fail to start or disconnect unexpectedly.
+- **Tool Approval Protection**: Added approval requirements for sensitive file editing tools and sanitized external GitHub content against prompt injection.
+
+#### Bug Fixes
+- **Chat Replay Fidelity**: Fixed an issue where extended thinking and model reasoning metadata were lost when resuming or restoring chat sessions.
+- **MCP OAuth Authorization**: Fixed authorization failures when connecting to MCP servers that use bare resource origins or require explicit offline access scopes.
+- **Tool Search**: Fixed tool search failing to resolve MCP servers when using case-insensitive shorthand names.
+- **Git Repository Discovery**: Fixed repository auto-discovery on hosts running older Git versions.
+- **Daemon Terminals**: Fixed daemon terminal sessions opening in the container root instead of the discovered repository workspace.
+- **Daemon Diff Polling**: Fixed daemon diff polling failing when targeting discovered repository roots.
+- **CLI Auto-Updates**: Fixed CLI update checks to strictly track npm distribution tags and stay within the installed major version.
+- **Daemon Startup Resilience**: Fixed daemon startup and agent connections failing abruptly on transient HTTP errors by automatically retrying.
+- **Account Status**: Fixed account status output to use canonical subscription links for credit recovery and plan management.
+
 ### 0.36.0
 
 #### Bug Fixes
