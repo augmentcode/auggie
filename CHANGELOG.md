@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.37.1
+
+#### Bug Fixes
+- **Automatic Updates**: Fixed an issue where automatic updates across major versions were blocked for stable CLI releases.
+
 ### 0.36.0
 
 #### Bug Fixes
