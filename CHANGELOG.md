@@ -7,6 +7,7 @@ Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the A
 #### Breaking Changes
 - **Personas replaced by agents**: `/persona` is gone; use custom agents, rules, and `/permissions` instead.
 - **Plan mode shortcut**: Shift+Tab now changes reasoning effort instead of toggling plan mode.
+- **New line shortcut**: Option/Alt+Enter now queues the message as a follow-up instead of inserting a new line. Use Shift+Enter, or Ctrl+J in any terminal.
 - **Tool names**: Tools are now `read`, `edit`, `write`, `grep`, `find`, and `bash`. Hooks using the old names still match for now.
 - **Hook payloads**: `bash` hooks no longer list changed files; use `git status` or `git diff` instead.
 - **Bash output**: The agent sees up to the last 2000 lines or 50 KB of bash output, plus a path to the full output, instead of a ~100-line excerpt.
