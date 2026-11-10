@@ -1,5 +1,42 @@
 # Changelog
 
+### 1.2.0
+
+Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically. See the [Auggie 1.x guide](https://github.com/augmentcode/auggie/blob/main/docs/1.x-preview-guide.md) for details.
+
+#### New Features
+- **Faster terminal UI**: A new renderer keeps scrolling and streaming smooth, and every menu supports type-to-filter.
+- **Session tools**: `/tree` browses conversation branches, `/worktree` manages git worktrees, `/export` and `/import` save and resume sessions, and `/compact` summarizes on demand.
+- **Side questions**: `/btw` answers a one-shot question while the main agent continues; discard it or keep the answer in the conversation.
+- **Reasoning effort**: `/effort` picks how much a reasoning model thinks, or `/effort <level>` sets it directly. Shift+Tab, and Tab in `/model`, also change it.
+- **Getting started**: A skippable introduction appears in chat after login.
+- **Daemon error logs**: An Errors tab shows every retained error with a count, and Logs and Errors wrap long entries with independent scrolling.
+- **Windows background commands**: The terminal UI supports background commands on Windows.
+
+#### Changes
+- **Personas replaced by agents**: `/persona` is gone; use custom agents, rules, and `/permissions` instead.
+- **Plan mode shortcut**: Shift+Tab now changes reasoning effort instead of toggling plan mode.
+- **Tool names**: Tools are now `read`, `edit`, `write`, `grep`, `find`, and `bash`. Hooks using the old names still match for now.
+- **Hook payloads**: `bash` hooks no longer list changed files; use `git status` or `git diff` instead.
+- **Bash output**: The agent sees up to the last 2000 lines or 50 KB of bash output, plus a path to the full output, instead of a ~100-line excerpt.
+- **MCP tool discovery**: Choose Automatic, Always on, or Always off in `/settings`.
+- **Resume keeps launch options**: Resuming a session restores its `--permission` and `--add-workspace` values unless you pass them again.
+- **Removed**: Inline completions while typing, and Gist-based session sharing.
+
+#### Bug Fixes
+- Searches stay in your project because Augment models now know the current working directory.
+- A local MCP server that fails during startup is retried automatically, and a server that reconnects after sign-in shows as connected again.
+- Ctrl+J inserts a new line in terminals with enhanced key reporting.
+- Hide thinking no longer leaves a `Thinking...` line in each reply.
+- Background Git and SSH operations no longer take over daemon dashboard keyboard input or hang waiting for authentication.
+- The indexing percentage no longer shows 100% while files are still pending.
+- `/plugins` shows each plugin's commands, agents, rules, MCP servers, hooks, and skills, including for disabled plugins.
+
+### 0.37.1
+
+#### Improvements
+- **Upgrade to 1.x**: Stable 0.x installs with auto-update enabled now upgrade to the newest stable Auggie 1.x.
+
 ### 0.36.0
 
 #### Bug Fixes
