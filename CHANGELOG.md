@@ -2,7 +2,7 @@
 
 ### 1.2.0
 
-Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically. See the [Auggie 1.x guide](https://github.com/augmentcode/auggie/blob/main/docs/1.x-preview-guide.md) for details.
+Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically.
 
 #### New Features
 - **Faster terminal UI**: A new renderer keeps scrolling and streaming smooth, and every menu supports type-to-filter.
