@@ -4,6 +4,16 @@
 
 Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically.
 
+#### Breaking Changes
+- **Personas replaced by agents**: `/persona` is gone; use custom agents, rules, and `/permissions` instead.
+- **Plan mode shortcut**: Shift+Tab now changes reasoning effort instead of toggling plan mode.
+- **New line shortcut**: Option/Alt+Enter now queues the message as a follow-up instead of inserting a new line. Use Shift+Enter, or Ctrl+J in any terminal.
+- **Tool names**: Tools are now `read`, `edit`, `write`, `grep`, `find`, and `bash`. Hooks using the old names still match for now.
+- **Hook payloads**: `bash` hooks no longer list changed files; use `git status` or `git diff` instead.
+- **Bash output**: The agent sees up to the last 2000 lines or 50 KB of bash output, plus a path to the full output, instead of a ~100-line excerpt.
+- **Removed**: Inline completions while typing, and Gist-based session sharing.
+- **Staying on 0.x**: Install `@augmentcode/auggie@v0-release` and set `"autoUpdate": false` in `~/.augment/settings.json` (or `AUGMENT_DISABLE_AUTO_UPDATE=1`); otherwise 0.x upgrades back to 1.x.
+
 #### New Features
 - **Faster terminal UI**: A new renderer keeps scrolling and streaming smooth, and every menu supports type-to-filter.
 - **Session tools**: `/tree` browses conversation branches, `/worktree` manages git worktrees, `/export` and `/import` save and resume sessions, and `/compact` summarizes on demand.
@@ -14,14 +24,8 @@ Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the A
 - **Windows background commands**: The terminal UI supports background commands on Windows.
 
 #### Changes
-- **Personas replaced by agents**: `/persona` is gone; use custom agents, rules, and `/permissions` instead.
-- **Plan mode shortcut**: Shift+Tab now changes reasoning effort instead of toggling plan mode.
-- **Tool names**: Tools are now `read`, `edit`, `write`, `grep`, `find`, and `bash`. Hooks using the old names still match for now.
-- **Hook payloads**: `bash` hooks no longer list changed files; use `git status` or `git diff` instead.
-- **Bash output**: The agent sees up to the last 2000 lines or 50 KB of bash output, plus a path to the full output, instead of a ~100-line excerpt.
 - **MCP tool discovery**: Choose Automatic, Always on, or Always off in `/settings`.
 - **Resume keeps launch options**: Resuming a session restores its `--permission` and `--add-workspace` values unless you pass them again.
-- **Removed**: Inline completions while typing, and Gist-based session sharing.
 
 #### Bug Fixes
 - Searches stay in your project because Augment models now know the current working directory.
