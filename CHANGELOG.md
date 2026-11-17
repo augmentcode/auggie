@@ -1,5 +1,12 @@
 # Changelog
 
+### 1.2.2
+
+### Fixed
+
+- **Windows session import**: Fixed `/import-legacy-sessions` on Windows.
+- **Windows shell fallback**: Unusable Bash installations are skipped so commands can use another available shell.
+
 ### 1.2.0
 
 Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically.
