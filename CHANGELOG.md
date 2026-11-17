@@ -7,6 +7,17 @@
 - **Windows session import**: Fixed `/import-legacy-sessions` on Windows.
 - **Windows shell fallback**: Unusable Bash installations are skipped so commands can use another available shell.
 
+### 1.2.1
+
+### Fixed
+
+- **Daemon shutdown**: Stopping a daemon session waits for it to exit and forcibly terminates it if graceful shutdown stalls.
+- **Onboarding history**: Comments and trailing commas no longer replay onboarding, and malformed history is backed up and reset with a short warning.
+- **Windows startup**: Auggie no longer hangs at startup on Windows while installing its search tools; the prompt appears right away and a failed install shows a warning.
+- **Windows Backspace**: Backspace now deletes characters in the interactive TUI on Windows consoles, including the VS Code integrated terminal.
+- **Shared-host daemons**: Daemon sessions now start reliably when multiple local users share a host.
+- **Print session options**: Local print sessions now save and restore `--permission` and `--add-workspace` values when resumed.
+
 ### 1.2.0
 
 Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically.
