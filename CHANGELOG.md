@@ -1,5 +1,8 @@
 # Changelog
 
+### Known Issues
+- **Windows startup hang on some Node versions**: On Windows, Auggie 1.x can hang at the logo on first launch while it installs its search tools (fd and ripgrep) when running on Node 24.16–24.17 or Node 26. Switch to Node 22 or Node 24.18 or later (for example `nvm install 24` then `nvm use 24`) and relaunch. Alternatively, run `auggie --offline`, or place `fd.exe` and `rg.exe` in `%USERPROFILE%\.augment\bin`. You can delete leftover `extract_tmp_*` folders in that directory. Linux and macOS are not affected. A fix is in progress.
+
 ### 1.2.0
 
 Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically.
