@@ -7,6 +7,17 @@
 - **Windows session import**: Fixed `/import-legacy-sessions` on Windows.
 - **Windows shell fallback**: Unusable Bash installations are skipped so commands can use another available shell.
 
+### 1.2.1
+
+### Fixed
+
+- **Daemon shutdown**: Stopping a daemon session waits for it to exit and forcibly terminates it if graceful shutdown stalls.
+- **Onboarding history**: Comments and trailing commas no longer replay onboarding, and malformed history is backed up and reset with a short warning.
+- **Windows startup**: Auggie no longer hangs at startup on Windows while installing its search tools; the prompt appears right away and a failed install shows a warning.
+- **Windows Backspace**: Backspace now deletes characters in the interactive TUI on Windows consoles, including the VS Code integrated terminal.
+- **Shared-host daemons**: Daemon sessions now start reliably when multiple local users share a host.
+- **Print session options**: Local print sessions now save and restore `--permission` and `--add-workspace` values when resumed.
+
 ### 1.2.0
 
 Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the Auggie CLI built on the open-source [pi](https://github.com/badlogic/pi-mono) coding agent. `npm install -g @augmentcode/auggie` now installs 1.x, and 0.x installs with auto-update enabled upgrade automatically.
@@ -25,7 +36,6 @@ Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the A
 #### New Features
 - **Faster terminal UI**: A new renderer keeps scrolling and streaming smooth, and every menu supports type-to-filter.
 - **Session tools**: `/tree` browses conversation branches, `/worktree` manages git worktrees, `/export` and `/import` save and resume sessions, and `/compact` summarizes on demand.
-- **Side questions**: `/btw` answers a one-shot question while the main agent continues; discard it or keep the answer in the conversation.
 - **Reasoning effort**: `/effort` picks how much a reasoning model thinks, or `/effort <level>` sets it directly. Shift+Tab, and Tab in `/model`, also change it.
 - **Getting started**: A skippable introduction appears in chat after login.
 - **Daemon error logs**: An Errors tab shows every retained error with a count, and Logs and Errors wrap long entries with independent scrolling.
