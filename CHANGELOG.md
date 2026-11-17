@@ -13,7 +13,7 @@ Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the A
 - **Bash output**: The agent sees up to the last 2000 lines or 50 KB of bash output, plus a path to the full output, instead of a ~100-line excerpt.
 - **Removed**: Inline completions while typing, and Gist-based session sharing.
 - **Staying on 0.x**: Install `@augmentcode/auggie@v0-release` and set `"autoUpdate": false` in `~/.augment/settings.json` (or `AUGMENT_DISABLE_AUTO_UPDATE=1`); otherwise 0.x upgrades back to 1.x.
-- **0.x sessions**: Sessions from Auggie 0.x don't appear in `/resume` until you import them. Run `/import-legacy-sessions` in the same project to bring over sessions from the last 4 months.
+- **0.x sessions**: Sessions from Auggie 0.x don't appear in `/resume` until you import them. Run `/import-legacy-sessions` in the same project to bring over sessions.
 
 #### New Features
 - **Faster terminal UI**: A new renderer keeps scrolling and streaming smooth, and every menu supports type-to-filter.
