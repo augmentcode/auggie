@@ -36,7 +36,6 @@ Auggie 1.2.0 is the first stable release of Auggie 1.x, a major rewrite of the A
 #### New Features
 - **Faster terminal UI**: A new renderer keeps scrolling and streaming smooth, and every menu supports type-to-filter.
 - **Session tools**: `/tree` browses conversation branches, `/worktree` manages git worktrees, `/export` and `/import` save and resume sessions, and `/compact` summarizes on demand.
-- **Side questions**: `/btw` answers a one-shot question while the main agent continues; discard it or keep the answer in the conversation.
 - **Reasoning effort**: `/effort` picks how much a reasoning model thinks, or `/effort <level>` sets it directly. Shift+Tab, and Tab in `/model`, also change it.
 - **Getting started**: A skippable introduction appears in chat after login.
 - **Daemon error logs**: An Errors tab shows every retained error with a count, and Logs and Errors wrap long entries with independent scrolling.
