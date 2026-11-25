@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.2.3
+
+- **MCP server mode**: Use `auggie --mcp` to serve `codebase-retrieval` to MCP clients. Add `--mcp-auto-workspace` to select a workspace per request.
+
 ### 1.2.2
 
 ### Fixed
